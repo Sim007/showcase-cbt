@@ -8,7 +8,8 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 
 - `ci/`, `contracts/`, `playwright/` en `deelsystemen/` staan uitsluitend op de hoofdmap. Nooit een kopie in een hoofdstukmap.
 - Services staan alleen in `deelsystemen/`, één exemplaar per deelsysteem. Een genummerde map bevat nooit een service.
-- Een deelsysteemmap is een houder, geen service. Elke microservice en elke micro-frontend staat eronder als eigen component: `deelsystemen/payment/payment-api/`, `deelsystemen/payment/payment-mf/`. Ook een frontend hoort daar en niet in een hoofdstukmap.
+- Een deelsysteemmap is een houder en zelf geen service. Elke service staat eronder in een eigen map: `deelsystemen/payment/payment-api/`, `deelsystemen/payment/payment-mf/`. Ook een frontend hoort daar en niet in een hoofdstukmap.
+- Namen enkelvoud: `payment`, niet `payments`. Zo heten het deelsysteem, de map en het artifact in het register hetzelfde.
 - Een genummerde map bevat alleen tests: compose, demoscript, hoofdstukspecifieke specs, README.
 - De spec wordt nooit van schijf gelezen. Alles gaat via `ci/get-contract.sh`.
 - Geen logica in yaml. Pipelinebestanden roepen uitsluitend scripts uit `ci/` aan.
@@ -18,6 +19,7 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 ## Werkwijze
 
 - Begin elke opdracht met een plan en wacht op akkoord. Bouw daarna in kleine commits, één onderwerp per commit.
+- Elke commit die `docs/showcase-cbt.md` raakt, bumpt de versieregel en krijgt een regel in de wijzigingslog. Eén commit is één versie: nooit twee wijzigingen onder hetzelfde nummer, want dan valt er niet meer naar terug te vallen.
 - Kom je iets tegen dat niet klopt met het document of dat niet werkt zoals verwacht: meld het en stop. Niet stilzwijgend een alternatief kiezen.
 - Voeg geen library toe zonder één regel in de commit waarom hij nodig is. Zo min mogelijk dependencies.
 - Vereenvoudigingen die bewust voor de demo zijn gemaakt — register zonder authenticatie, opslag in memory — krijgen een commentaarregel op de plek zelf en komen in de README onder "Vereenvoudigingen".
@@ -30,7 +32,8 @@ Nederlands voor de kernbegrippen, Engels voor techniek.
 |---|---|
 | grens | interface waar eigenaarschap wisselt tussen deelsystemen |
 | contract | de gepubliceerde specificatie van een grens |
-| deelsysteem | een zelfstandig te releasen applicatie |
+| deelsysteem | wat één team bezit en zelfstandig naar productie brengt; bestaat uit services |
+| service | één bouwbaar en deploybaar onderdeel van een deelsysteem: een microservice of een micro-frontend. Nooit "component" |
 | contractverificatie | toetsing van een implementatie aan de gepubliceerde spec |
 
 Testlagen heten `unit`, `integratie` en `contract`, als JUnit-tag en in de pipeline-uitvoer. Gebruik die woorden overal hetzelfde.
