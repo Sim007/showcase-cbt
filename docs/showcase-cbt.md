@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.5.4
+Versie 0.5.5
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -93,11 +93,14 @@ showcase-cbt/
 ├── playwright/               config en gedeelde specs: smoke, later UI
 ├── deelsystemen/             één map per deelsysteem, daaronder één per service
 │   ├── order/
-│   │   └── order-api/
+│   │   ├── order-api/
+│   │   └── order-mf/
 │   ├── payment/
-│   │   └── payment-api/
+│   │   ├── payment-api/
+│   │   └── payment-mf/
 │   ├── notification/         h6
-│   │   └── notification-api/
+│   │   ├── notification-api/
+│   │   └── notification-mf/
 │   └── portal/               h9
 │       └── portal-shell/
 ├── 01-basis/                 compose, demo, README
@@ -115,7 +118,9 @@ Twee regels dragen deze indeling. **Wat gedeeld is, staat op de hoofdmap en best
 
 Dat een deelsysteem niet in een hoofdstukmap thuishoort, volgt uit de showcase zelf: hoofdstuk 6 breidt Payment uit met een uitgaande grens naar Notification, en hoofdstuk 8 hangt er een frontend aan. Payment groeit dus mee met meerdere hoofdstukken en kan niet van één ervan zijn. De nummering hoort bij de tests, niet bij de code die getest wordt.
 
-**Een deelsysteem bestaat uit services.** De deelsysteemmap is daarom een houder en zelf geen service: elke microservice en elke micro-frontend staat eronder als eigen service, met een eigen build en een eigen image. Payment wordt zo `deelsystemen/payment/payment-api/`, en de frontend uit hoofdstuk 8 komt daar als `payment-mf/` naast te staan in plaats van in `08-frontend-binnenkant/`. Dat is dezelfde regel een niveau dieper: een service hoort bij het deelsysteem dat hem bezit, niet bij het hoofdstuk dat hem toevallig als eerste nodig heeft.
+**Een deelsysteem bestaat uit services.** De deelsysteemmap is daarom een houder en zelf geen service: elke microservice en elke micro-frontend staat eronder als eigen service, met een eigen build en een eigen image. Payment wordt zo `deelsystemen/payment/payment-api/`, met `payment-mf/` ernaast in plaats van in `08-frontend-binnenkant/`. Dat is dezelfde regel een niveau dieper: een service hoort bij het deelsysteem dat hem bezit, niet bij het hoofdstuk dat hem toevallig als eerste nodig heeft. Elk deelsysteem met een gezicht naar de gebruiker heeft een eigen micro-frontend: `order-mf`, `payment-mf`, `notification-mf`. Welke daarvan hoofdstuk 8 uitwerkt, is een andere vraag (O9).
+
+**De portal stelt samen, hij bezit niet.** De shell laadt die micro-frontends op de pagina, maar hun broncode blijft bij het deelsysteem dat ze bezit. Zou `payment-mf` onder `deelsystemen/portal/` staan, dan wisselt er bij shell ↔ remote geen eigenaarschap meer en heeft hoofdstuk 9 geen grens meer om te tonen. Samenstellen op runtime en bezitten in de repository zijn hier twee verschillende dingen — en dat verschil is nu juist wat een frontend-grens tot een grens maakt.
 
 Er zijn vier deelsystemen. Order en Payment dragen de grens uit hoofdstuk 1. Notification komt erbij in hoofdstuk 6 — Payment → Notification is een grens, dus wisselt daar eigenaarschap, en dan is Notification geen service van Payment maar een deelsysteem naast Payment. Portal komt erbij in hoofdstuk 9, met de shell erin: die wordt door een ander team geleverd dan de remotes die erin hangen, en dat is precies wat die grens interessant maakt.
 
@@ -533,7 +538,7 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 | O5 | Eigenaarschap van de spec: in de provider-repo of in een aparte spec-repo met review door de architect. Technisch afgedekt via het aansluitpunt in 1.9; dit is een vraag voor de werkwijze, niet voor deze showcase |
 | O7 | Bestaande OpenAPI-naar-WireMock-generatoren beoordelen voordat stap 2–5 zelf wordt gebouwd |
 | O8 | Pins op info-endpoints als surrogaat voor monitoring (F4): tijdelijk voor de showcase of blijvend naast monitoring |
-| O9 | Welk deelsysteem de UI van hoofdstuk 8 krijgt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec |
+| O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
 
 ---
 
@@ -674,7 +679,7 @@ De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, 
 | | |
 |---|---|
 | Grens | shell ↔ remote: een ander team levert de remote |
-| Plaats | de shell is een service van het deelsysteem Portal: `deelsystemen/portal/portal-shell/`. De remotes zijn de micro-frontends van de andere deelsystemen |
+| Plaats | de shell is een service van het deelsysteem Portal: `deelsystemen/portal/portal-shell/`. De remotes zijn de micro-frontends van de andere deelsystemen en blijven daar ook staan: de shell stelt samen, hij bezit niet |
 | Contract | exposed module-API: componenten, props, events |
 | Toevoeging | het contract is geen spec: versiebeheer loopt via een package in plaats van het register, en verificatie is deels een typecheck in plaats van runtime-validatie |
 | Open vraag | schemavalidatie in de browser op Test: het enige dat een contractafwijking bij de echte buur zichtbaar maakt |
@@ -686,6 +691,7 @@ De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, 
 
 | Versie | Wijziging |
 |---|---|
+| 0.5.5 | Micro-frontends in het repositoryoverzicht: Order, Payment en Notification krijgen er elk een. Vastgelegd dat de portal samenstelt maar niet bezit — de remotes blijven bij hun eigen deelsysteem staan, anders wisselt er bij shell ↔ remote geen eigenaarschap meer en heeft hoofdstuk 9 geen grens meer te tonen. O9 gaat daarmee over welke micro-frontend hoofdstuk 8 uitwerkt, niet over welke bestaat. |
 | 0.5.4 | Wat 0.5.3 een *component* noemde heet nu een **service**; er is één woord voor het ding onder een deelsysteem. Notification en Portal vastgelegd als de derde en vierde deelsysteem, met hun services in het repositoryoverzicht. |
 | 0.5.3 | Een deelsysteem bestaat uit microservices: de deelsysteemmap is een houder, elke microservice en micro-frontend staat eronder als eigen component. De frontend van hoofdstuk 8 komt daarmee in `deelsystemen/<naam>/<naam>-mf/` en niet in de hoofdstukmap; de portal-shell van hoofdstuk 9 wordt een eigen deelsysteem. O9 toegevoegd: welk deelsysteem de UI van hoofdstuk 8 krijgt. |
 | 0.5.2 | Kolom *Vereist* voor hoofdstuk 6 en 7 noemt nu `ci/` en `deelsystemen/payment/` in plaats van "de scripts uit hoofdstuk 1". Die formulering hoorde bij de oude indeling, waarin Payment onder `01-basis/` stond. |
