@@ -1,0 +1,36 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: order-api
+  datasource:
+    # Vereenvoudiging: H2 in memory, en een eigen database. Er is geen gedeelde opslag
+    # met Payment.
+    url: jdbc:h2:mem:order;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+payment:
+  # De buur. In de CI-omgeving wijst dit naar de stub, op Test naar het echte deelsysteem.
+  base-url: ${PAYMENT_BASE_URL:http://localhost:8081}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Uitsluitend health en info. Nooit een wildcard.
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  contract:
+    groep: order-payment
+    artifact: payment-api
+    # De pin van de consumer: hij volgt geen latest.
+    pin: 1.0.0
