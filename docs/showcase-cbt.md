@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.5.5
+Versie 0.5.6
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -539,6 +539,7 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 | O7 | Bestaande OpenAPI-naar-WireMock-generatoren beoordelen voordat stap 2–5 zelf wordt gebouwd |
 | O8 | Pins op info-endpoints als surrogaat voor monitoring (F4): tijdelijk voor de showcase of blijvend naast monitoring |
 | O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
+| O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
 
 ---
 
@@ -691,6 +692,7 @@ De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, 
 
 | Versie | Wijziging |
 |---|---|
+| 0.5.6 | O10 toegevoegd: wat de micro-frontend van Notification laat zien. Hij is nodig als remote voor hoofdstuk 9, maar hoofdstuk 6 heeft geen UI nodig, dus zijn inhoud is nergens belegd. |
 | 0.5.5 | Micro-frontends in het repositoryoverzicht: Order, Payment en Notification krijgen er elk een. Vastgelegd dat de portal samenstelt maar niet bezit — de remotes blijven bij hun eigen deelsysteem staan, anders wisselt er bij shell ↔ remote geen eigenaarschap meer en heeft hoofdstuk 9 geen grens meer te tonen. O9 gaat daarmee over welke micro-frontend hoofdstuk 8 uitwerkt, niet over welke bestaat. |
 | 0.5.4 | Wat 0.5.3 een *component* noemde heet nu een **service**; er is één woord voor het ding onder een deelsysteem. Notification en Portal vastgelegd als de derde en vierde deelsysteem, met hun services in het repositoryoverzicht. |
 | 0.5.3 | Een deelsysteem bestaat uit microservices: de deelsysteemmap is een houder, elke microservice en micro-frontend staat eronder als eigen component. De frontend van hoofdstuk 8 komt daarmee in `deelsystemen/<naam>/<naam>-mf/` en niet in de hoofdstukmap; de portal-shell van hoofdstuk 9 wordt een eigen deelsysteem. O9 toegevoegd: welk deelsysteem de UI van hoofdstuk 8 krijgt. |
