@@ -8,6 +8,7 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 
 - `ci/`, `contracts/`, `playwright/` en `deelsystemen/` staan uitsluitend op de hoofdmap. Nooit een kopie in een hoofdstukmap.
 - Services staan alleen in `deelsystemen/`, één exemplaar per deelsysteem. Een genummerde map bevat nooit een service.
+- Een deelsysteemmap is een houder, geen service. Elke microservice en elke micro-frontend staat eronder als eigen component: `deelsystemen/payment/payment-api/`, `deelsystemen/payment/payment-mf/`. Ook een frontend hoort daar en niet in een hoofdstukmap.
 - Een genummerde map bevat alleen tests: compose, demoscript, hoofdstukspecifieke specs, README.
 - De spec wordt nooit van schijf gelezen. Alles gaat via `ci/get-contract.sh`.
 - Geen logica in yaml. Pipelinebestanden roepen uitsluitend scripts uit `ci/` aan.
