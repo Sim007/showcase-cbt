@@ -1,6 +1,6 @@
 # 6. Async
 
-> Vereist de scripts uit hoofdstuk 1. Nog niet uitgewerkt.
+> Vereist `ci/` en `deelsystemen/payment/`. Nog niet uitgewerkt.
 
 De grens Payment → Notification over een queue of topic, met AsyncAPI als contract. Er is
 geen response: provider-verificatie wordt *valideer wat ik publiceer*, consumer-verificatie

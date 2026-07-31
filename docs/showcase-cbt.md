@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.5.1
+Versie 0.5.2
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -61,14 +61,14 @@ De showcase loopt langs drie assen. Een deel varieert het **grenstype**: hetzelf
 | 3 | Breaking wijziging | levenscyclus | twee majors serveren en verifiëren, v2.0.0 | 1 |
 | 4 | Acceptatie | testsoort | e2e gebruikersflow over de keten | 1 |
 | 5 | Sunset | levenscyclus | oude major uit de runtime | 3 |
-| 6 | Async | grenstype | Payment → Notification, AsyncAPI | scripts uit 1 |
-| 7 | SOAP | grenstype | externe betaalprovider, WSDL/XSD | scripts uit 1 |
+| 6 | Async | grenstype | Payment → Notification, AsyncAPI | `ci/` en `deelsystemen/payment/` |
+| 7 | SOAP | grenstype | externe betaalprovider, WSDL/XSD | `ci/` en `deelsystemen/payment/` |
 | 8 | Frontend binnen een deelsysteem | binnenkant | Angular → eigen backend | 1 |
 | 9 | Frontend in shell | grenstype | shell ↔ remote, module-API | eigen model |
 
 Hoofdstuk 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de contractlevenscyclus overheen loopt, geen vijf basissen. Hoofdstuk 1 tot en met 5 dekken de testfeatures F2 (een REST-grens), F3 (versiecontrole bij deployment) en F4 (monitoring op productie); 6 en 7 dekken F5 (async) en F6 (SOAP), en 9 gaat over een frontend-grens. Hoofdstuk 8 heeft bewust geen testfeature: de kaders gelden op grenzen, niet op de binnenkant.
 
-**De showcase is een boom, geen rij.** De kolom *Vereist* zegt wat er af moet zijn; 6 en 7 hebben alleen de scripts uit hoofdstuk 1 nodig en niet de volledige basis. De nummering is vlak gehouden omdat 1.2 in dit document al een subparagraaf aanduidt.
+**De showcase is een boom, geen rij.** De kolom *Vereist* zegt wat er af moet zijn, en dat is niet altijd een hoofdstuk: 6 en 7 hebben `ci/` en het deelsysteem Payment nodig, maar niets uit de tests van hoofdstuk 1. Dat services op de hoofdmap staan in plaats van in een hoofdstukmap, maakt zo'n afhankelijkheid pas benoembaar. De nummering is vlak gehouden omdat 1.2 in dit document al een subparagraaf aanduidt.
 
 **De volgorde is de bouwvolgorde.** Hoofdstuk 1 draagt ruwweg de helft van al het bouwwerk; 2 tot en met 5 zijn er kleine uitbreidingen op en maken het verhaal compleet tot het einde van de contractlevenscyclus. Pas daarna wordt het contractformaat gevarieerd. De frontend staat achteraan omdat hij het model oprekt en een nog openstaande keuze raakt.
 
@@ -608,7 +608,7 @@ Het contract wordt niet verwijderd — het register is immutable. Wat verdwijnt 
 
 ## 6. Async
 
-> Vereist de scripts uit hoofdstuk 1. Nog niet uitgewerkt.
+> Vereist `ci/` en `deelsystemen/payment/`. Nog niet uitgewerkt.
 
 | | |
 |---|---|
@@ -624,7 +624,7 @@ De kleinste stap van de drie grenstypen: Apicurio is van origine een schema regi
 
 ## 7. SOAP
 
-> Vereist de scripts uit hoofdstuk 1. Nog niet uitgewerkt.
+> Vereist `ci/` en `deelsystemen/payment/`. Nog niet uitgewerkt.
 
 | | |
 |---|---|
@@ -671,5 +671,6 @@ Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsys
 
 | Versie | Wijziging |
 |---|---|
+| 0.5.2 | Kolom *Vereist* voor hoofdstuk 6 en 7 noemt nu `ci/` en `deelsystemen/payment/` in plaats van "de scripts uit hoofdstuk 1". Die formulering hoorde bij de oude indeling, waarin Payment onder `01-basis/` stond. |
 | 0.5.1 | Services verplaatst naar `deelsystemen/` op de hoofdmap; genummerde mappen bevatten alleen nog tests. Tegenvoorbeeld bij scenario A vervangen: `merchantId` verplicht toevoegen in plaats van `currency` uit de required-lijst halen. Dat laatste is geen breaking wijziging — een verzoek wordt er minder streng van — en werd door gate noch register geweigerd. Contractpad naar `contracts/order-payment/v1.0.0/`. In 1.9 vastgelegd dat het tweede net in Apicurio 3.3.1 ook voor OPENAPI werkt, en wat de gate niet ziet. |
 | 0.5.0 | Startversie |

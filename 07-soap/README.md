@@ -1,6 +1,6 @@
 # 7. SOAP
 
-> Vereist de scripts uit hoofdstuk 1. Nog niet uitgewerkt.
+> Vereist `ci/` en `deelsystemen/payment/`. Nog niet uitgewerkt.
 
 De grens Payment → externe betaalprovider, met WSDL/XSD als contract dat niet in eigen
 bezit is. Publiceren vervalt: de externe partij levert het contract en de organisatie pint
