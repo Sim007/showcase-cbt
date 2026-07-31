@@ -1,0 +1,50 @@
+# Apicurio Registry — het contractregister voor de hele showcase.
+# Eén exemplaar op de wortel; geen enkel hoofdstuk krijgt een eigen register.
+#
+# Vereenvoudiging: opslag in memory. Het register is leeg na een herstart, en dat is
+# voor een demo precies goed: elke demo begint vanaf een schone lei. Een echte
+# installatie draait op sql of kafkasql.
+#
+# Vereenvoudiging: geen authenticatie. Iedereen op de laptop mag publiceren en
+# ophalen. In een echte installatie zit hier OIDC voor, met rollen per team.
+
+services:
+  registry:
+    image: quay.io/apicurio/apicurio-registry:3.3.1
+    container_name: cbt-registry
+    # De image draait al als uid 1001; expliciet gezet zodat het niet stilzwijgend
+    # verandert bij een tagbump.
+    user: "1001"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      # Geen APICURIO_STORAGE_KIND: zonder die variabele draait 3.3.1 op h2 in memory.
+      # De waarde "mem" bestaat niet meer in 3.x en laat de container falen; sql en
+      # kafkasql zijn de enige varianten en vragen allebei een externe database.
+      #
+      # De UI draait in de browser op een andere poort en praat dus cross-origin.
+      QUARKUS_HTTP_CORS_ORIGINS: http://localhost:8888
+    ports:
+      - "8080:8080"
+    healthcheck:
+      # 3.3.1 stelt geen /q/health bloot; system/info is het endpoint waar de
+      # scripts toch al op leunen.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/apis/registry/v3/system/info"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  registry-ui:
+    image: quay.io/apicurio/apicurio-registry-ui:3.3.1
+    container_name: cbt-registry-ui
+    user: "1001"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      # De browser praat rechtstreeks met de API, dus dit is de host-URL en niet
+      # de servicenaam binnen het compose-netwerk.
+      REGISTRY_API_URL: http://localhost:8080/apis/registry/v3
+    ports:
+      - "8888:8080"
+    depends_on:
+      - registry
