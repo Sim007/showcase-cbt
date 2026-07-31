@@ -25,8 +25,9 @@ Licentie: [MIT](LICENSE). De volledige beschrijving staat in
 ## Vereisten
 
 Docker en bash. Op Windows via WSL2, niet via Git Bash. `curl` gebruiken de scripts van
-de host; extern gereedschap — oasdiff, jq — draait als container op een vastgepinde tag
-via [ci/lib/tools.sh](ci/lib/tools.sh).
+de host; extern gereedschap — oasdiff, jq, Maven — draait als container op een vastgepinde
+tag via [ci/lib/tools.sh](ci/lib/tools.sh). Er is dus geen JDK of Maven op de machine
+nodig om de deelsystemen te bouwen.
 
 ## Stap 1
 
@@ -47,6 +48,41 @@ Het register draait op <http://localhost:8080>, de UI op <http://localhost:8888>
 het enige pad waarlangs iets aan de spec komt: nooit van schijf, nooit uit de repo van
 de provider.
 
+## Stap 2
+
+De twee deelsystemen van de grens: `payment-api` als provider, `order-api` als consumer.
+Testlagen `unit` en `integratie`; contractverificatie en de stub volgen in stap 3.
+
+```sh
+export CBT_ROOT="$PWD" && . ci/lib/tools.sh
+
+mvn deelsystemen/payment/payment-api test
+mvn deelsystemen/order/order-api test
+
+# Losse testlagen, zoals de pipeline ze straks draait
+mvn deelsystemen/payment/payment-api test -Dgroups=unit
+mvn deelsystemen/payment/payment-api test -Dgroups=integratie
+```
+
+Draaien:
+
+```sh
+docker build -t cbt/payment-api:1.0.0 deelsystemen/payment/payment-api
+docker build -t cbt/order-api:1.0.0   deelsystemen/order/order-api
+
+docker run -d --name cbt-payment -p 8081:8081 cbt/payment-api:1.0.0
+docker run -d --name cbt-order   -p 8082:8082 \
+  -e PAYMENT_BASE_URL=http://host.docker.internal:8081 cbt/order-api:1.0.0
+
+curl -X POST http://localhost:8082/orders \
+  -H 'Content-Type: application/json' -d '{"amount":49.95,"currency":"EUR"}'
+```
+
+Een bedrag boven 500.00 levert `CANCELLED` op in plaats van `CONFIRMED`. Het onderscheid
+tussen een contractschending (400) en een afgewezen betaling (201 met `DECLINED`) is de
+kern van hoofdstuk 1. Beide deelsystemen melden hun contractversie op
+`/actuator/info` — de provider de gepubliceerde versie, de consumer zijn pin.
+
 ## Vereenvoudigingen
 
 Bewuste versimpelingen voor de demo. Ze staan hier bij elkaar zodat niemand ze aanziet
@@ -57,6 +93,9 @@ voor een blauwdruk.
 | Het register kent geen authenticatie | `compose/registry.yml` | OIDC ervoor, met rollen per team |
 | Het register slaat op in memory en is leeg na een herstart | `compose/registry.yml` | sql of kafkasql op een externe database |
 | `publish-contract.sh` wordt met de hand aangeroepen | `ci/publish-contract.sh` | vanuit een pipeline; dat verandert wie het script start, niet wat het doet |
+| Beide deelsystemen gebruiken H2 in memory en zijn leeg na een herstart | `application.yml` van elke service | een eigen database per deelsysteem; gedeelde opslag blijft uitgesloten |
+| Identificaties lopen op vanaf 1 per proces (`pay-000001`) | `PaymentService`, `OrderService` | een UUID of een sequence. Hier bewust deterministisch: een demo mag niet van toeval of van de tijd afhangen |
+| Order's integratietests gebruiken een test-double op de client | `OrderIntegratieTest` | vanaf stap 3 de stub die uit de spec uit het register wordt gegenereerd |
 
 ## Bevindingen
 
