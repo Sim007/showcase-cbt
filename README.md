@@ -66,6 +66,7 @@ omdat een showcase die alleen het geslaagde pad toont, minder waard is.
 |---|---|
 | Apicurio 3.3.1 | `APICURIO_STORAGE_KIND=mem` uit de 3.0-documentatie bestaat niet meer en laat de container falen. Zonder die variabele draait 3.3.1 op h2 in memory, wat is wat de showcase nodig heeft. |
 | Apicurio 3.3.1 | Er is geen `/q/health`-endpoint; de healthcheck draait op `system/info`. |
-| Compatibility rule | De rule `BACKWARD` doet voor artifact type `OPENAPI` in 3.3.1 wél inhoudelijk werk: een breuk die de gate omzeilt, krijgt HTTP 400 met een `RuleViolationException`. Het tweede net uit §1.9 van het document bestaat dus echt. |
-| Diff-gate | `currency` uit de `required`-lijst halen is voor oasdiff géén breaking wijziging: een verzoek wordt daarmee minder streng. Het document gebruikt dat in §2 als voorbeeld van een breuk die geweigerd wordt; dat klopt niet. De omgekeerde beweging — `currency` weer verplicht maken — is wél breaking en wordt wél geweigerd. |
-| Contractpad | Het document schrijft `contracts/order-payment/v1/openapi.yaml`, de repository gebruikt `v1.0.0/`. |
+| Diff-gate | oasdiff kent de gevolgen van `additionalProperties: false` niet: een veld uit een requestschema halen levert een warning op en geen error. Zie §1.9 van het document. |
+
+Twee bevindingen zijn verwerkt in het document zelf (versie 0.5.1) en staan daarom niet
+meer in deze tabel: het tegenvoorbeeld bij scenario A, en het contractpad.

@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.5.0
+Versie 0.5.1
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -146,7 +146,7 @@ De hele showcase gebruikt hetzelfde fictieve systeem: **Order → Payment → No
 
 **Versie in het pad.** De provider moet bij een major twee versies naast elkaar serveren. Een padprefix maakt dat zichtbaar — in een demo zie je letterlijk twee routes draaien — waar een versieheader onzichtbaar blijft.
 
-Dit is de spec zoals hij als v1.0.0 wordt gepubliceerd. Hij is hier met de hand ontworpen en wordt ongewijzigd overgenomen in `contracts/order-payment/v1/openapi.yaml`; het bestand in de repository is de werkkopie, deze tekst de herkomst.
+Dit is de spec zoals hij als v1.0.0 wordt gepubliceerd. Hij is hier met de hand ontworpen en wordt ongewijzigd overgenomen in `contracts/order-payment/v1.0.0/openapi.yaml`; het bestand in de repository is de werkkopie, deze tekst de herkomst.
 
 ```yaml
 openapi: 3.0.3
@@ -258,7 +258,7 @@ components:
           type: string
 ```
 
-**Drie dingen zitten er bewust in.** Beide voorbeeldresponses tonen een andere `status`, zodat de stub niet alleen het happy path laat zien. `additionalProperties: false` maakt een niet-gedeclareerd veld een contractschending in plaats van iets dat stilzwijgend meelift. En de wijzigingen voor de latere demo's liggen vast: scenario A voegt `paymentMethod` optioneel toe (v1.1.0), scenario B maakt van `amount` een object met `value` en `currency` en haalt `currency` uit de root (v2.0.0).
+**Drie dingen zitten er bewust in.** Beide voorbeeldresponses tonen een andere `status`, zodat de stub niet alleen het happy path laat zien. `additionalProperties: false` maakt een niet-gedeclareerd veld een contractschending in plaats van iets dat stilzwijgend meelift. En de wijzigingen voor de latere demo's liggen vast: scenario A voegt `paymentMethod` optioneel toe (v1.1.0), scenario B maakt van `amount` een object met `value` en `currency` en haalt `currency` uit de root (v2.0.0). Het tegenvoorbeeld bij scenario A ligt daarmee ook vast: `merchantId` verplicht toevoegen. Dezelfde beweging als `paymentMethod` — er komt een veld bij — en één woord verschil.
 
 **Wat het schema niet dekt** is de semantiek: dat een bedrag groter dan nul moet zijn en de valutacode moet bestaan. Dat blijven de twee unittests uit 1.4.
 
@@ -447,7 +447,9 @@ Een contract komt niet in het register omdat iemand het erin zet, maar omdat het
 | 2 | oasdiff tegen de nieuwe spec | breaking wijziging zonder major-bump |
 | 3 | publiceren met expliciete versie | versie bestaat al |
 
-De diff-gate hoort bij de contractwijziging, niet bij de pipeline van Payment of Order: het is een vergelijking van twee artefacten, geen runtime-gedrag. Bij het aanmaken van het artifact wordt de compatibility rule op BACKWARD gezet, zodat het register een tweede net vormt als de gate wordt overgeslagen.
+De diff-gate hoort bij de contractwijziging, niet bij de pipeline van Payment of Order: het is een vergelijking van twee artefacten, geen runtime-gedrag. Bij het aanmaken van het artifact wordt de compatibility rule op BACKWARD gezet, zodat het register een tweede net vormt als de gate wordt overgeslagen. Dat tweede net doet in Apicurio 3.3.1 ook voor artifact type `OPENAPI` inhoudelijk werk: een breuk die de gate omzeilt, krijgt HTTP 400 met een `RuleViolationException`.
+
+**Wat de gate niet ziet.** oasdiff redeneert over de spec en niet over de implementatie, en kent de gevolgen van `additionalProperties: false` niet. Een veld uit een requestschema verwijderen levert daarom een warning op en geen error, terwijl bestaande consumers die het veld nog meesturen een 400 krijgen. Dezelfde soort grens als bij het schema zelf: de gate dekt de structuur, niet de betekenis.
 
 Hiermee dekt dit hoofdstuk alle drie de detectiemomenten in de bouwstraat: breaking change op de schemawijziging, non-conforme provider-implementatie, non-conforme consumeraanroep. In hoofdstuk 1 heeft de gate nog niets te vergelijken — er is één versie. Vanaf hoofdstuk 2 doet hij werk.
 
@@ -533,7 +535,7 @@ Scenario A uit de contractlevenscyclus, plus het governance-scenario: technisch 
 
 **Wat hier structureel nieuw is:** de diff-gate heeft voor het eerst iets te vergelijken. In hoofdstuk 1 draait hij tegen een leeg register.
 
-**Demo:** publiceer v1.1.0, draai daarna Order's pipeline ongewijzigd. Groen, op v1.0.0, zonder dat iemand iets heeft aangeraakt. Draai daarna een variant waarin `currency` uit de required-lijst verdwijnt onder hetzelfde minor-nummer: de gate weigert, en het register weigert als tweede net.
+**Demo:** publiceer v1.1.0, draai daarna Order's pipeline ongewijzigd. Groen, op v1.0.0, zonder dat iemand iets heeft aangeraakt. Draai daarna het tegenvoorbeeld onder hetzelfde minor-nummer: `merchantId` verplicht toevoegen. De gate weigert (`new-required-request-property`), en het register weigert als tweede net. De demo zet de twee naast elkaar: één veld erbij is veilig of breaking afhankelijk van één woord, en dat verschil is precies waar de gate voor bestaat.
 
 **Governance-variant:** de consumer opent een verzoek op de spec, de provider besluit en publiceert. Dat de provider besluit, is de grens met consumer-driven. Er verandert niets aan de pipelines.
 
@@ -662,4 +664,5 @@ Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsys
 
 | Versie | Wijziging |
 |---|---|
+| 0.5.1 | Tegenvoorbeeld bij scenario A vervangen: `merchantId` verplicht toevoegen in plaats van `currency` uit de required-lijst halen. Dat laatste is geen breaking wijziging — een verzoek wordt er minder streng van — en werd door gate noch register geweigerd. Contractpad naar `contracts/order-payment/v1.0.0/`. In 1.9 vastgelegd dat het tweede net in Apicurio 3.3.1 ook voor OPENAPI werkt, en wat de gate niet ziet. |
 | 0.5.0 | Startversie |
