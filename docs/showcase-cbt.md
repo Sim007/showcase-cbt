@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.5.2
+Versie 0.5.3
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -63,7 +63,7 @@ De showcase loopt langs drie assen. Een deel varieert het **grenstype**: hetzelf
 | 5 | Sunset | levenscyclus | oude major uit de runtime | 3 |
 | 6 | Async | grenstype | Payment → Notification, AsyncAPI | `ci/` en `deelsystemen/payment/` |
 | 7 | SOAP | grenstype | externe betaalprovider, WSDL/XSD | `ci/` en `deelsystemen/payment/` |
-| 8 | Frontend binnen een deelsysteem | binnenkant | Angular → eigen backend | 1 |
+| 8 | Frontend binnen een deelsysteem | binnenkant | Angular → eigen backend | `ci/` en het eigen deelsysteem |
 | 9 | Frontend in shell | grenstype | shell ↔ remote, module-API | eigen model |
 
 Hoofdstuk 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de contractlevenscyclus overheen loopt, geen vijf basissen. Hoofdstuk 1 tot en met 5 dekken de testfeatures F2 (een REST-grens), F3 (versiecontrole bij deployment) en F4 (monitoring op productie); 6 en 7 dekken F5 (async) en F6 (SOAP), en 9 gaat over een frontend-grens. Hoofdstuk 8 heeft bewust geen testfeature: de kaders gelden op grenzen, niet op de binnenkant.
@@ -91,9 +91,11 @@ showcase-cbt/
 ├── contracts/                alle specs, per grens en versie
 ├── compose/registry.yml      Apicurio, gedeeld
 ├── playwright/               config en gedeelde specs: smoke, later UI
-├── deelsystemen/             alle services, één exemplaar per deelsysteem
+├── deelsystemen/             alle services, één map per deelsysteem
 │   ├── order/
+│   │   └── order-api/
 │   └── payment/
+│       └── payment-api/
 ├── 01-basis/                 compose, demo, README
 ├── 02-wijziging-zonder-breuk/
 ├── 03-breaking/
@@ -108,6 +110,10 @@ showcase-cbt/
 Twee regels dragen deze indeling. **Wat gedeeld is, staat op de hoofdmap en bestaat één keer**: `ci/`, `contracts/`, `playwright/` en `deelsystemen/`. Zodra een hoofdstuk een eigen kopie van `get-contract.sh` of van Payment krijgt, is de claim dat het mechanisme uniform is niet meer waar. En **de genummerde mappen bevatten geen services, maar tests**: een compose die de juiste deelsystemen samenstelt, een demoscript, hoofdstukspecifieke specs en een README die het argument uitlegt.
 
 Dat een deelsysteem niet in een hoofdstukmap thuishoort, volgt uit de showcase zelf: hoofdstuk 6 breidt Payment uit met een uitgaande grens naar Notification, en hoofdstuk 8 hangt er een frontend aan. Payment groeit dus mee met meerdere hoofdstukken en kan niet van één ervan zijn. De nummering hoort bij de tests, niet bij de code die getest wordt.
+
+**Een deelsysteem bestaat uit microservices.** De deelsysteemmap is daarom een houder en geen service: elke microservice en elke micro-frontend staat eronder als eigen component, met een eigen build en een eigen image. Payment wordt zo `deelsystemen/payment/payment-api/`, en de frontend uit hoofdstuk 8 komt daar als `payment-mf/` naast te staan in plaats van in `08-frontend-binnenkant/`. Dat is dezelfde regel een niveau dieper: een component hoort bij het deelsysteem dat hem bezit, niet bij het hoofdstuk dat hem toevallig als eerste nodig heeft.
+
+Twee deelsystemen komen er later bij. Notification is er een, met `notification-api/` uit hoofdstuk 6 — Payment → Notification is een grens, dus wisselt daar eigenaarschap. De portal-shell uit hoofdstuk 9 is er ook een: hij wordt door een ander team geleverd dan de remotes die erin hangen, en dat is precies wat die grens interessant maakt.
 
 Losstaand te draaien is daarmee elke genummerde map, mits de deelsystemen die hij samenstelt gebouwd zijn.
 
@@ -523,6 +529,7 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 | O5 | Eigenaarschap van de spec: in de provider-repo of in een aparte spec-repo met review door de architect. Technisch afgedekt via het aansluitpunt in 1.9; dit is een vraag voor de werkwijze, niet voor deze showcase |
 | O7 | Bestaande OpenAPI-naar-WireMock-generatoren beoordelen voordat stap 2–5 zelf wordt gebouwd |
 | O8 | Pins op info-endpoints als surrogaat voor monitoring (F4): tijdelijk voor de showcase of blijvend naast monitoring |
+| O9 | Welk deelsysteem de UI van hoofdstuk 8 krijgt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec |
 
 ---
 
@@ -640,16 +647,19 @@ Dit is het antwoord op de vraag of contracttesten ook buiten de eigen organisati
 
 ## 8. Frontend binnen een deelsysteem
 
-> Vereist hoofdstuk 1. Nog niet uitgewerkt.
+> Vereist `ci/` en het eigen deelsysteem. Nog niet uitgewerkt.
 
 | | |
 |---|---|
 | Grens | **geen** — Angular en backend zijn van hetzelfde team, er wisselt geen eigenaarschap |
+| Plaats | `deelsystemen/<naam>/<naam>-mf/`, naast de backend van hetzelfde deelsysteem |
 | Contract | de eigen OpenAPI van het deelsysteem; publicatie in het register is hier optioneel |
 | Toevoeging | de frontend als consumer: pinnen, stub genereren, schemavalidatie in de browser; dit is de plek voor Playwright en ajv |
 | Status | teamkeuze, geen gezamenlijk kader — afspraken gelden op grenzen, niet op de binnenkant |
 
 Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsysteem, met een uitdrukkelijk andere boodschap dan de rest van de showcase: het mag, het werkt, en het wordt niet voorgeschreven. Hij levert ook de UI die hoofdstuk 1 bewust niet heeft.
+
+De frontend is een component van een deelsysteem en staat dus in `deelsystemen/`, niet in de hoofdstukmap; `08-frontend-binnenkant/` bevat alleen de tests eromheen. Wélk deelsysteem de UI krijgt, is nog niet besloten (O9).
 
 ---
 
@@ -660,6 +670,7 @@ Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsys
 | | |
 |---|---|
 | Grens | shell ↔ remote: een ander team levert de remote |
+| Plaats | de shell is een eigen deelsysteem: `deelsystemen/portal/portal-shell/`. De remotes zijn de micro-frontends van de andere deelsystemen |
 | Contract | exposed module-API: componenten, props, events |
 | Toevoeging | het contract is geen spec: versiebeheer loopt via een package in plaats van het register, en verificatie is deels een typecheck in plaats van runtime-validatie |
 | Open vraag | schemavalidatie in de browser op Test: het enige dat een contractafwijking bij de echte buur zichtbaar maakt |
@@ -671,6 +682,7 @@ Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsys
 
 | Versie | Wijziging |
 |---|---|
+| 0.5.3 | Een deelsysteem bestaat uit microservices: de deelsysteemmap is een houder, elke microservice en micro-frontend staat eronder als eigen component. De frontend van hoofdstuk 8 komt daarmee in `deelsystemen/<naam>/<naam>-mf/` en niet in de hoofdstukmap; de portal-shell van hoofdstuk 9 wordt een eigen deelsysteem. O9 toegevoegd: welk deelsysteem de UI van hoofdstuk 8 krijgt. |
 | 0.5.2 | Kolom *Vereist* voor hoofdstuk 6 en 7 noemt nu `ci/` en `deelsystemen/payment/` in plaats van "de scripts uit hoofdstuk 1". Die formulering hoorde bij de oude indeling, waarin Payment onder `01-basis/` stond. |
 | 0.5.1 | Services verplaatst naar `deelsystemen/` op de hoofdmap; genummerde mappen bevatten alleen nog tests. Tegenvoorbeeld bij scenario A vervangen: `merchantId` verplicht toevoegen in plaats van `currency` uit de required-lijst halen. Dat laatste is geen breaking wijziging — een verzoek wordt er minder streng van — en werd door gate noch register geweigerd. Contractpad naar `contracts/order-payment/v1.0.0/`. In 1.9 vastgelegd dat het tweede net in Apicurio 3.3.1 ook voor OPENAPI werkt, en wat de gate niet ziet. |
 | 0.5.0 | Startversie |
