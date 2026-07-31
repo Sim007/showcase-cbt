@@ -1,0 +1,37 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: payment-api
+  jackson:
+    deserialization:
+      # Het contract zegt additionalProperties: false. Spring Boot zet dit standaard uit;
+      # zonder deze regel lift een niet-gedeclareerd veld stilzwijgend mee en is een
+      # contractschending onzichtbaar.
+      fail-on-unknown-properties: true
+  datasource:
+    # Vereenvoudiging: H2 in memory. Elke herstart begint leeg, wat voor een demo precies
+    # goed is. Er is geen gedeelde database met Order.
+    url: jdbc:h2:mem:payment;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Uitsluitend health en info. Nooit een wildcard.
+        include: health,info
+  info:
+    env:
+      enabled: true
+
+info:
+  contract:
+    groep: order-payment
+    artifact: payment-api
+    versie: 1.0.0
