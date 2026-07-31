@@ -6,8 +6,9 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 
 ## Onwrikbaar
 
-- `ci/`, `contracts/` en `playwright/` staan uitsluitend op de wortel. Nooit een kopie in een hoofdstukmap.
-- Hoofdstuk 02 t/m 05 bevatten geen services; die gebruiken `01-basis/`.
+- `ci/`, `contracts/`, `playwright/` en `deelsystemen/` staan uitsluitend op de hoofdmap. Nooit een kopie in een hoofdstukmap.
+- Services staan alleen in `deelsystemen/`, één exemplaar per deelsysteem. Een genummerde map bevat nooit een service.
+- Een genummerde map bevat alleen tests: compose, demoscript, hoofdstukspecifieke specs, README.
 - De spec wordt nooit van schijf gelezen. Alles gaat via `ci/get-contract.sh`.
 - Geen logica in yaml. Pipelinebestanden roepen uitsluitend scripts uit `ci/` aan.
 - Nooit committen wat gegenereerd is: stubmappings, `build/`, `node_modules/`, `.env`.

@@ -81,7 +81,7 @@ Hoofdstuk 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de co
 | Licentie | MIT: vrij te gebruiken, zonder garantie en zonder aansprakelijkheid |
 | Gebruiksmodel | referentie om te bekijken en te draaien; fork of template voor wie er zelf mee wil spelen |
 
-**Eén repository met een map per hoofdstuk.** Niet negen repositories: dan ontstaan negen kopieën van dezelfde scripts die uit elkaar lopen, en toont de showcase onbedoeld aan dat het niet standaardiseerbaar is.
+**Eén repository.** Niet negen repositories: dan ontstaan negen kopieën van dezelfde scripts die uit elkaar lopen, en toont de showcase onbedoeld aan dat het niet standaardiseerbaar is. Binnen die ene repository staat wat gedeeld is op de hoofdmap en heeft elk hoofdstuk daarnaast een eigen genummerde map.
 
 ```
 showcase-cbt/
@@ -91,7 +91,10 @@ showcase-cbt/
 ├── contracts/                alle specs, per grens en versie
 ├── compose/registry.yml      Apicurio, gedeeld
 ├── playwright/               config en gedeelde specs: smoke, later UI
-├── 01-basis/                 payment, order, compose, demo
+├── deelsystemen/             alle services, één exemplaar per deelsysteem
+│   ├── order/
+│   └── payment/
+├── 01-basis/                 compose, demo, README
 ├── 02-wijziging-zonder-breuk/
 ├── 03-breaking/
 ├── 04-acceptatie/
@@ -102,15 +105,19 @@ showcase-cbt/
 └── 09-frontend-shell/
 ```
 
-Twee regels dragen deze indeling. **`ci/`, `contracts/` en `playwright/` staan uitsluitend op de wortel**: zodra een showcase een eigen kopie van `get-contract.sh` krijgt, is de claim dat het mechanisme uniform is niet meer waar. En **hoofdstuk 2 tot en met 5 bevatten geen services**; die gebruiken de deelsystemen uit `01-basis/` en voegen alleen een spec en een demoscript toe. Losstaand te draaien zijn daarmee de mappen met services: 01, 06, 07, 08 en 09.
+Twee regels dragen deze indeling. **Wat gedeeld is, staat op de hoofdmap en bestaat één keer**: `ci/`, `contracts/`, `playwright/` en `deelsystemen/`. Zodra een hoofdstuk een eigen kopie van `get-contract.sh` of van Payment krijgt, is de claim dat het mechanisme uniform is niet meer waar. En **de genummerde mappen bevatten geen services, maar tests**: een compose die de juiste deelsystemen samenstelt, een demoscript, hoofdstukspecifieke specs en een README die het argument uitlegt.
 
-**Testgereedschap wordt hergebruikt, niet per hoofdstuk opnieuw ingericht.** Playwright staat op de wortel in `playwright/` — niet onder een naam als `e2e`, want hij bedient meerdere lagen. Eén smoke-spec wordt op een base-URL geparametriseerd: dezelfde spec draait in de CI-omgeving tegen de stub, op Test tegen de echte buur en op Acceptatie tegen de samenstelling. `ci/smoke.sh <base-url>` is het enige aanroeppunt. Playwright is in dit soort omgevingen doorgaans al in gebruik voor de e2e van een deelsysteem; de showcase sluit daarop aan in plaats van er een tweede werkwijze naast te zetten. Showcasespecifieke specs — bijvoorbeeld die van de UI in hoofdstuk 8 — staan in de hoofdstukmap zelf.
+Dat een deelsysteem niet in een hoofdstukmap thuishoort, volgt uit de showcase zelf: hoofdstuk 6 breidt Payment uit met een uitgaande grens naar Notification, en hoofdstuk 8 hangt er een frontend aan. Payment groeit dus mee met meerdere hoofdstukken en kan niet van één ervan zijn. De nummering hoort bij de tests, niet bij de code die getest wordt.
+
+Losstaand te draaien is daarmee elke genummerde map, mits de deelsystemen die hij samenstelt gebouwd zijn.
+
+**Testgereedschap wordt hergebruikt, niet per hoofdstuk opnieuw ingericht.** Playwright staat op de hoofdmap in `playwright/` — niet onder een naam als `e2e`, want hij bedient meerdere lagen. Eén smoke-spec wordt op een base-URL geparametriseerd: dezelfde spec draait in de CI-omgeving tegen de stub, op Test tegen de echte buur en op Acceptatie tegen de samenstelling. `ci/smoke.sh <base-url>` is het enige aanroeppunt. Playwright is in dit soort omgevingen doorgaans al in gebruik voor de e2e van een deelsysteem; de showcase sluit daarop aan in plaats van er een tweede werkwijze naast te zetten. Showcasespecifieke specs — bijvoorbeeld die van de UI in hoofdstuk 8 — staan in de hoofdstukmap zelf.
 
 **De smoke gaat niet over inhoud.** De gedeelde smoke-spec assert uitsluitend op HTTP-status en op het doorlopen van de keten — geen veldwaarden, geen businessregels. Anders draait hij groen tegen de stub en rood tegen de echte buur om een reden die niets met de grens te maken heeft, en verhuist bovendien werk van een goedkope laag naar een dure.
 
 **Laptopbudget is een ontwerpeis.** Alles draait naast een IDE tijdens een presentatie. Daarom is elke showcase los op te starten en is er geen enkel moment waarop alles tegelijk nodig is: registry plus één showcase is de maximale opstelling. Wat daar niet in past, wordt vereenvoudigd in plaats van uitgebreid.
 
-**Het document staat in de repository.** `docs/` bevat dit document; `CLAUDE.md` op de wortel verwijst ernaar en herhaalt de regels die niet overtreden mogen worden. Een showcase zonder het waarom is een hoop code zonder argument.
+**Het document staat in de repository.** `docs/` bevat dit document; `CLAUDE.md` op de hoofdmap verwijst ernaar en herhaalt de regels die niet overtreden mogen worden. Een showcase zonder het waarom is een hoop code zonder argument.
 
 **Veilige code en schone dependencies.** Zo min mogelijk libraries: elke dependency is een toekomstige kwetsbaarheid, en bij deze functionaliteit zijn er weinig nodig. Per toegevoegde library staat in de commit waarom hij nodig is. Verder: geen secrets in code, yaml of compose — alles uit environment met een `.env.example` in de repository; Actuator stelt uitsluitend `health` en `info` bloot en nooit een wildcard; foutresponses volgen het `Error`-schema uit het contract en bevatten geen stacktrace of interne paden; XML-parsers hebben externe entiteiten en DTD's uitgeschakeld; images staan op een vastgepinde tag en containers draaien als non-root; scripts gebruiken `set -euo pipefail` en geven nooit credentials op de commandoregel. Dependabot staat aan, zodat de showcase niet stilletjes veroudert tussen twee demo's door.
 
@@ -664,5 +671,5 @@ Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsys
 
 | Versie | Wijziging |
 |---|---|
-| 0.5.1 | Tegenvoorbeeld bij scenario A vervangen: `merchantId` verplicht toevoegen in plaats van `currency` uit de required-lijst halen. Dat laatste is geen breaking wijziging — een verzoek wordt er minder streng van — en werd door gate noch register geweigerd. Contractpad naar `contracts/order-payment/v1.0.0/`. In 1.9 vastgelegd dat het tweede net in Apicurio 3.3.1 ook voor OPENAPI werkt, en wat de gate niet ziet. |
+| 0.5.1 | Services verplaatst naar `deelsystemen/` op de hoofdmap; genummerde mappen bevatten alleen nog tests. Tegenvoorbeeld bij scenario A vervangen: `merchantId` verplicht toevoegen in plaats van `currency` uit de required-lijst halen. Dat laatste is geen breaking wijziging — een verzoek wordt er minder streng van — en werd door gate noch register geweigerd. Contractpad naar `contracts/order-payment/v1.0.0/`. In 1.9 vastgelegd dat het tweede net in Apicurio 3.3.1 ook voor OPENAPI werkt, en wat de gate niet ziet. |
 | 0.5.0 | Startversie |
