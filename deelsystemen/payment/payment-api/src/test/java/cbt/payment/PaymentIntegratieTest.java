@@ -97,6 +97,18 @@ class PaymentIntegratieTest {
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
     }
 
+    /**
+     * Een onbekend pad is een 404 en geen 500. Het vangnet voor onverwachte fouten mag de
+     * status die Spring al heeft bepaald niet overschrijven.
+     */
+    @Test
+    void onbekend_pad_levert_een_404_op() throws Exception {
+        mockMvc.perform(get("/actuator/env"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/v1/betalingen"))
+                .andExpect(status().isNotFound());
+    }
+
     /** Een foutresponse bevat nooit een stacktrace of een intern pad. */
     @Test
     void foutresponse_lekt_niets() throws Exception {

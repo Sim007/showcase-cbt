@@ -80,6 +80,16 @@ class OrderIntegratieTest {
                 .andExpect(jsonPath("$.code").value("ORDER_NOT_FOUND"));
     }
 
+    /**
+     * Een onbekend pad is een 404 en geen 500. Het vangnet voor onverwachte fouten mag de
+     * status die Spring al heeft bepaald niet overschrijven.
+     */
+    @Test
+    void onbekend_pad_levert_een_404_op() throws Exception {
+        mockMvc.perform(get("/actuator/env"))
+                .andExpect(status().isNotFound());
+    }
+
     private void betaalStatus(String status) {
         when(paymentClient.create(anyString(), any(BigDecimal.class), anyString()))
                 .thenAnswer(aanroep -> new PaymentClient.PaymentView(
