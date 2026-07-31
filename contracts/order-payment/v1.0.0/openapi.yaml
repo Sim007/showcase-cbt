@@ -1,0 +1,107 @@
+openapi: 3.0.3
+info:
+  title: Payment API
+  version: 1.0.0
+  description: Betaalgrens tussen Order en Payment.
+paths:
+  /v1/payments:
+    post:
+      operationId: createPayment
+      summary: Betaling aanmaken voor een order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+            example:
+              orderId: ord-10231
+              amount: 49.95
+              currency: EUR
+      responses:
+        '201':
+          description: Betaling aangemaakt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              example:
+                paymentId: pay-88f21c
+                orderId: ord-10231
+                status: ACCEPTED
+        '400':
+          description: Ongeldig verzoek
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: INVALID_AMOUNT
+                message: amount must be greater than zero
+  /v1/payments/{paymentId}:
+    get:
+      operationId: getPayment
+      summary: Betaling opvragen
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Betaling gevonden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              example:
+                paymentId: pay-88f21c
+                orderId: ord-10231
+                status: DECLINED
+        '404':
+          description: Betaling niet gevonden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: PAYMENT_NOT_FOUND
+                message: no payment with id pay-000000
+components:
+  schemas:
+    PaymentRequest:
+      type: object
+      required: [orderId, amount, currency]
+      additionalProperties: false
+      properties:
+        orderId:
+          type: string
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+    Payment:
+      type: object
+      required: [paymentId, orderId, status]
+      additionalProperties: false
+      properties:
+        paymentId:
+          type: string
+        orderId:
+          type: string
+        status:
+          type: string
+          enum: [ACCEPTED, DECLINED]
+    Error:
+      type: object
+      required: [code, message]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        message:
+          type: string
