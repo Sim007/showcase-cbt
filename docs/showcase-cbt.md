@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.5.3
+Versie 0.5.4
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -91,11 +91,15 @@ showcase-cbt/
 ├── contracts/                alle specs, per grens en versie
 ├── compose/registry.yml      Apicurio, gedeeld
 ├── playwright/               config en gedeelde specs: smoke, later UI
-├── deelsystemen/             alle services, één map per deelsysteem
+├── deelsystemen/             één map per deelsysteem, daaronder één per service
 │   ├── order/
 │   │   └── order-api/
-│   └── payment/
-│       └── payment-api/
+│   ├── payment/
+│   │   └── payment-api/
+│   ├── notification/         h6
+│   │   └── notification-api/
+│   └── portal/               h9
+│       └── portal-shell/
 ├── 01-basis/                 compose, demo, README
 ├── 02-wijziging-zonder-breuk/
 ├── 03-breaking/
@@ -111,9 +115,9 @@ Twee regels dragen deze indeling. **Wat gedeeld is, staat op de hoofdmap en best
 
 Dat een deelsysteem niet in een hoofdstukmap thuishoort, volgt uit de showcase zelf: hoofdstuk 6 breidt Payment uit met een uitgaande grens naar Notification, en hoofdstuk 8 hangt er een frontend aan. Payment groeit dus mee met meerdere hoofdstukken en kan niet van één ervan zijn. De nummering hoort bij de tests, niet bij de code die getest wordt.
 
-**Een deelsysteem bestaat uit microservices.** De deelsysteemmap is daarom een houder en geen service: elke microservice en elke micro-frontend staat eronder als eigen component, met een eigen build en een eigen image. Payment wordt zo `deelsystemen/payment/payment-api/`, en de frontend uit hoofdstuk 8 komt daar als `payment-mf/` naast te staan in plaats van in `08-frontend-binnenkant/`. Dat is dezelfde regel een niveau dieper: een component hoort bij het deelsysteem dat hem bezit, niet bij het hoofdstuk dat hem toevallig als eerste nodig heeft.
+**Een deelsysteem bestaat uit services.** De deelsysteemmap is daarom een houder en zelf geen service: elke microservice en elke micro-frontend staat eronder als eigen service, met een eigen build en een eigen image. Payment wordt zo `deelsystemen/payment/payment-api/`, en de frontend uit hoofdstuk 8 komt daar als `payment-mf/` naast te staan in plaats van in `08-frontend-binnenkant/`. Dat is dezelfde regel een niveau dieper: een service hoort bij het deelsysteem dat hem bezit, niet bij het hoofdstuk dat hem toevallig als eerste nodig heeft.
 
-Twee deelsystemen komen er later bij. Notification is er een, met `notification-api/` uit hoofdstuk 6 — Payment → Notification is een grens, dus wisselt daar eigenaarschap. De portal-shell uit hoofdstuk 9 is er ook een: hij wordt door een ander team geleverd dan de remotes die erin hangen, en dat is precies wat die grens interessant maakt.
+Er zijn vier deelsystemen. Order en Payment dragen de grens uit hoofdstuk 1. Notification komt erbij in hoofdstuk 6 — Payment → Notification is een grens, dus wisselt daar eigenaarschap, en dan is Notification geen service van Payment maar een deelsysteem naast Payment. Portal komt erbij in hoofdstuk 9, met de shell erin: die wordt door een ander team geleverd dan de remotes die erin hangen, en dat is precies wat die grens interessant maakt.
 
 Losstaand te draaien is daarmee elke genummerde map, mits de deelsystemen die hij samenstelt gebouwd zijn.
 
@@ -659,7 +663,7 @@ Dit is het antwoord op de vraag of contracttesten ook buiten de eigen organisati
 
 Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsysteem, met een uitdrukkelijk andere boodschap dan de rest van de showcase: het mag, het werkt, en het wordt niet voorgeschreven. Hij levert ook de UI die hoofdstuk 1 bewust niet heeft.
 
-De frontend is een component van een deelsysteem en staat dus in `deelsystemen/`, niet in de hoofdstukmap; `08-frontend-binnenkant/` bevat alleen de tests eromheen. Wélk deelsysteem de UI krijgt, is nog niet besloten (O9).
+De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, niet in de hoofdstukmap; `08-frontend-binnenkant/` bevat alleen de tests eromheen. Wélk deelsysteem de UI krijgt, is nog niet besloten (O9).
 
 ---
 
@@ -670,7 +674,7 @@ De frontend is een component van een deelsysteem en staat dus in `deelsystemen/`
 | | |
 |---|---|
 | Grens | shell ↔ remote: een ander team levert de remote |
-| Plaats | de shell is een eigen deelsysteem: `deelsystemen/portal/portal-shell/`. De remotes zijn de micro-frontends van de andere deelsystemen |
+| Plaats | de shell is een service van het deelsysteem Portal: `deelsystemen/portal/portal-shell/`. De remotes zijn de micro-frontends van de andere deelsystemen |
 | Contract | exposed module-API: componenten, props, events |
 | Toevoeging | het contract is geen spec: versiebeheer loopt via een package in plaats van het register, en verificatie is deels een typecheck in plaats van runtime-validatie |
 | Open vraag | schemavalidatie in de browser op Test: het enige dat een contractafwijking bij de echte buur zichtbaar maakt |
@@ -682,6 +686,7 @@ De frontend is een component van een deelsysteem en staat dus in `deelsystemen/`
 
 | Versie | Wijziging |
 |---|---|
+| 0.5.4 | Wat 0.5.3 een *component* noemde heet nu een **service**; er is één woord voor het ding onder een deelsysteem. Notification en Portal vastgelegd als de derde en vierde deelsysteem, met hun services in het repositoryoverzicht. |
 | 0.5.3 | Een deelsysteem bestaat uit microservices: de deelsysteemmap is een houder, elke microservice en micro-frontend staat eronder als eigen component. De frontend van hoofdstuk 8 komt daarmee in `deelsystemen/<naam>/<naam>-mf/` en niet in de hoofdstukmap; de portal-shell van hoofdstuk 9 wordt een eigen deelsysteem. O9 toegevoegd: welk deelsysteem de UI van hoofdstuk 8 krijgt. |
 | 0.5.2 | Kolom *Vereist* voor hoofdstuk 6 en 7 noemt nu `ci/` en `deelsystemen/payment/` in plaats van "de scripts uit hoofdstuk 1". Die formulering hoorde bij de oude indeling, waarin Payment onder `01-basis/` stond. |
 | 0.5.1 | Services verplaatst naar `deelsystemen/` op de hoofdmap; genummerde mappen bevatten alleen nog tests. Tegenvoorbeeld bij scenario A vervangen: `merchantId` verplicht toevoegen in plaats van `currency` uit de required-lijst halen. Dat laatste is geen breaking wijziging — een verzoek wordt er minder streng van — en werd door gate noch register geweigerd. Contractpad naar `contracts/order-payment/v1.0.0/`. In 1.9 vastgelegd dat het tweede net in Apicurio 3.3.1 ook voor OPENAPI werkt, en wat de gate niet ziet. |
