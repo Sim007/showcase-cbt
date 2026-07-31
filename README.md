@@ -19,7 +19,7 @@ Licentie: [MIT](LICENSE). De volledige beschrijving staat in
 | `contracts/` | alle specs, per grens en versie |
 | `compose/registry.yml` | Apicurio, het contractregister, gedeeld |
 | `playwright/` | config en gedeelde specs: smoke, later UI |
-| `deelsystemen/` | alle services, één exemplaar per deelsysteem |
+| `deelsystemen/` | alle services, één map per deelsysteem; daaronder een map per microservice of micro-frontend |
 | `01-basis/` … `09-frontend-shell/` | een map per hoofdstuk, met alleen tests: compose, demoscript, hoofdstukspecifieke specs, README |
 
 ## Vereisten
