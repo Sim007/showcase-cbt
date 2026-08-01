@@ -1,0 +1,28 @@
+{
+  "_toelichting": [
+    "De spec beschrijft per status één response; Order moet ook een afgewezen betaling",
+    "kunnen verwerken. De scheidslijn tussen ACCEPTED en DECLINED is semantiek en volgt",
+    "niet uit de spec — daarom staat dit scenario met de hand geschreven in deze map, en",
+    "niet in de generator. De drempel van 500,00 komt uit 1.2 van het document.",
+    "",
+    "x-schema wijst de artefactcontrole in stap 7 naar het schema waaraan deze body moet",
+    "voldoen. Handgeschreven of gegenereerd maakt voor die controle niets uit."
+  ],
+  "x-schema": "#/components/schemas/Payment",
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/v1/payments",
+    "headers": { "Content-Type": { "contains": "application/json" } },
+    "bodyPatterns": [ { "matchesJsonPath": "$[?(@.amount > 500.00)]" } ]
+  },
+  "response": {
+    "status": 201,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "paymentId": "pay-88f21c",
+      "orderId": "ord-10231",
+      "status": "DECLINED"
+    }
+  }
+}
