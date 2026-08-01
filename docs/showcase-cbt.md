@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.6.2
+Versie 0.6.3
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -452,6 +452,12 @@ De stub wordt elke run opnieuw gegenereerd uit de spec uit het register en wordt
 
 Op Test en Acceptatie staan de eigen deelsystemen echt. Eén uitzondering: partijen buiten de organisatie draaien op Test als stub, want die omgeving heeft geen koppeling naar buiten. Dat raakt hoofdstuk 7 en verder niets in hoofdstuk 1.
 
+**Waarom zelf genereren en geen kant-en-klare mockserver.** Prism van Stoplight doet twee dingen die hieronder als eigen werk staan al native: hij matcht padtemplates, en hij gebruikt de `example`-waarden uit de spec. Hij valideert bovendien binnenkomende requests tegen de spec, inclusief `additionalProperties: false` — dat is winst die deze opzet niet gratis krijgt.
+
+Waar hij op afknapt is het scenario uit 1.2: een bedrag boven 500,00 hoort `DECLINED` op te leveren. Dat is een responsekeuze op basis van de requestinhoud, en Prism kiest per status altijd hetzelfde voorbeeld. De consumertest van Order zou daarmee de afgewezen betaling nooit kunnen doorlopen. WireMock kan het wel, met een matcher op de body en een prioriteit erboven.
+
+Dat is de reden en de enige: niet dat een eigen generator beter is, maar dat de showcase een responsekeuze nodig heeft die een spec-gedreven mockserver principieel niet kan maken. Wie dat scenario niet heeft, kan hieronder stap 2 tot en met 5 vervangen door één regel.
+
 | # | Stap | Uitvoer |
 |---|---|---|
 | 1 | `get-contract <naam> <pin>` | spec op vast pad, uit het register |
@@ -616,6 +622,8 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 
 **Besloten.** De naamgeving van de testlagen volgt één begrippenlijst en wijkt daar nergens van af; waar dit document "contractverificatie" schrijft, geldt die term consequent in scriptnamen, JUnit-tags en pipeline-uitvoer. Betekenisvolle `example`-waarden zijn een norm voor elke spec: zonder example faalt de stubgeneratie (zie 1.6).
 
+De stub wordt zelf gegenereerd en draait op WireMock (O7, gesloten). Prism van Stoplight is geprobeerd en doet padtemplates, `example`-waarden en requestvalidatie native, maar kan geen response kiezen op basis van de requestinhoud — en dat heeft het scenario uit 1.2 nodig. De reden staat in 1.6.
+
 De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het contract. Het schema legt vast dat er een `code` en een `message` zijn; welke codes voorkomen niet. Een consumer reageert op de HTTP-status, niet op een codestring — anders wordt elke nieuwe foutsituatie bij de provider een contractwijziging. De implementatie gebruikt daardoor ook codes die niet in de spec als voorbeeld staan, zoals `INVALID_REQUEST` bij een niet-gedeclareerd veld.
 
 | # | Openstaand punt |
@@ -624,7 +632,6 @@ De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het cont
 | O3 | Eigenaarschap: wie bewaakt de versieconformiteit en wie voert de rollback uit |
 | O4 | Version state voor deprecated versies in Apicurio 3.x — naamgeving verifiëren |
 | O5 | Eigenaarschap van de spec: in de provider-repo of in een aparte spec-repo met review door de architect. Technisch afgedekt via het aansluitpunt in 1.9; dit is een vraag voor de werkwijze, niet voor deze showcase |
-| O7 | Bestaande OpenAPI-naar-WireMock-generatoren beoordelen voordat stap 2–5 zelf wordt gebouwd |
 | O8 | Pins op info-endpoints als surrogaat voor monitoring (F4): tijdelijk voor de showcase of blijvend naast monitoring |
 | O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
 | O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
@@ -797,6 +804,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.6.3 | O7 gesloten door het te proberen in plaats van te vergelijken: de stub wordt zelf gegenereerd en draait op WireMock. Prism doet padtemplates, examples en requestvalidatie native, maar kiest per status altijd hetzelfde voorbeeld en kan de afgewezen betaling uit 1.2 dus niet opleveren. Reden opgenomen in 1.6, inclusief wat de opzet daarmee laat liggen. |
 | 0.6.2 | Eén compose per deelsysteem, in alle drie de omgevingen dezelfde; een omgeving is een samenstelling van die bestanden en geen eigen beschrijving. Anders staat een deelsysteem drie keer beschreven en lopen die drie uit elkaar. Twee versies uit elkaar gehaald: die van het contract en die van de service, met beide op het info-endpoint. Onveranderlijkheid uitgebreid naar images: geen hertagging, geen `-rc`-achtervoegsel, RC is een status en geen naam. In 1.1 vastgelegd dat productie het enige is dat telt, als de harde reden achter randvoorwaarde 6. Bijlage A toegevoegd over Acceptatie als concessie. O12 erbij. |
 | 0.6.1 | Vastgelegd in 1.13 dat de waarden van `code` in het `Error`-schema geen onderdeel van het contract zijn: het schema legt de structuur vast, niet de verzameling codes. Anders wordt elke nieuwe foutsituatie bij de provider een contractwijziging. |
 | 0.6.0 | Testopzet uitgeschreven. Drie omgevingen in plaats van twee: CI, Test zonder koppeling naar buiten, Acceptatie mét. Deploy per deelsysteem, gate is telkens de vorige omgeving groen. Contractverificatie draait na de deploy op de CI-omgeving en is daar volledig — elke operatie, happy en unhappy. De piramide houdt drie lagen: contracttesten voegt er geen toe maar verlegt de norm in de integratielaag en verkleint de top. `can-i-deploy` vervangen door waarnemen boven voorspellen, gedragen door de versieconformiteitscheck. Randvoorwaarde 6 erbij: rood is eerste prioriteit. Dashboard als onderdeel van het mechanisme. Geen patch, want de opzet verandert wezenlijk. |
