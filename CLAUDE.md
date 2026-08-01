@@ -10,7 +10,8 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 - Services staan alleen in `deelsystemen/`, één exemplaar per deelsysteem. Een genummerde map bevat nooit een service.
 - Een deelsysteemmap is een houder en zelf geen service. Elke service staat eronder in een eigen map: `deelsystemen/payment/payment-api/`, `deelsystemen/payment/payment-mf/`. Ook een frontend hoort daar en niet in een hoofdstukmap.
 - Namen enkelvoud: `payment`, niet `payments`. Zo heten het deelsysteem, de map en het artifact in het register hetzelfde.
-- Een genummerde map bevat alleen tests: compose, demoscript, hoofdstukspecifieke specs, README.
+- Een genummerde map bevat alleen tests: demoscript, hoofdstukspecifieke specs, README.
+- Compose staat op drie plekken, elk met een eigen reden. De CI-omgeving is per deelsysteem: `deelsystemen/<naam>/docker-compose.ci.yml`, met alle services van dat deelsysteem plus stubs. Test en Acceptatie stellen alle deelsystemen samen en staan op de hoofdmap in `compose/`. Het register ook, want dat is gedeelde infrastructuur.
 - De spec wordt nooit van schijf gelezen. Alles gaat via `ci/get-contract.sh`.
 - Geen logica in yaml. Pipelinebestanden roepen uitsluitend scripts uit `ci/` aan.
 - Nooit committen wat gegenereerd is: stubmappings, `build/`, `node_modules/`, `.env`.
@@ -36,7 +37,9 @@ Nederlands voor de kernbegrippen, Engels voor techniek.
 | service | één bouwbaar en deploybaar onderdeel van een deelsysteem: een microservice of een micro-frontend. Nooit "component" |
 | contractverificatie | toetsing van een implementatie aan de gepubliceerde spec |
 
-Testlagen heten `unit`, `integratie` en `contract`, als JUnit-tag en in de pipeline-uitvoer. Gebruik die woorden overal hetzelfde.
+De piramide heeft drie lagen: `unit`, `integratie` en `e2e`. Contracttesten voegt er geen vierde aan toe — contractverificatie ís integratie, met de spec als norm in plaats van de test.
+
+De JUnit-tags zijn `unit`, `integratie` en `contract`. Die derde tag bestaat omdat de pipeline hem op een ander moment draait, na de deploy op de CI-omgeving, en niet omdat het een aparte laag is. Gebruik die woorden overal hetzelfde: in scriptnamen, tags en pipeline-uitvoer.
 
 ## Veiligheid
 
