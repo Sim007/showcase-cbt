@@ -4,11 +4,19 @@
 #
 # De mappings worden elke run gegenereerd uit de spec uit het register en worden nooit
 # gecommit. Read-only gemount: de stub mag ze lezen, niet wijzigen.
+#
+# Geen vast netwerknaam en geen vaste containernaam, hier noch bij de deelsystemen:
+# compose maakt een netwerk per project, en dat is precies wat een omgeving afbakent.
+# Stond alles op één netwerk, dan luisterde deze stub naar dezelfde naam als het echte
+# deelsysteem en werd het toeval welke van de twee antwoordde.
+#
+#   docker compose -p ci-order  -f deelsystemen/order/docker-compose.yml -f compose/stub.yml up -d
+#   docker compose -p test      -f deelsystemen/order/docker-compose.yml \
+#                               -f deelsystemen/payment/docker-compose.yml up -d
 
 services:
   stub:
     image: wiremock/wiremock:3.13.2
-    container_name: cbt-stub
     # Draait onder de servicenaam van de buur die hij vervangt, zodat de consumer niets
     # anders hoeft te weten dan op Test.
     hostname: payment-api
@@ -29,7 +37,3 @@ services:
       timeout: 3s
       retries: 20
 
-networks:
-  default:
-    name: cbt
-    external: false

@@ -8,7 +8,6 @@
 services:
   payment-api:
     image: cbt/payment-api:${PAYMENT_API_VERSIE:-1.0.0}
-    container_name: cbt-payment-api
     # De image draait al als een niet-geprivilegieerde gebruiker; expliciet gezet zodat
     # het niet stilzwijgend verandert bij een tagbump.
     user: "100:101"
@@ -22,7 +21,3 @@ services:
       timeout: 3s
       retries: 20
 
-networks:
-  default:
-    name: cbt
-    external: false

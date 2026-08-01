@@ -7,7 +7,6 @@
 services:
   order-api:
     image: cbt/order-api:${ORDER_API_VERSIE:-1.0.0}
-    container_name: cbt-order-api
     user: "100:101"
     security_opt:
       - no-new-privileges:true
@@ -21,7 +20,3 @@ services:
       timeout: 3s
       retries: 20
 
-networks:
-  default:
-    name: cbt
-    external: false
