@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.6.4
+Versie 0.6.5
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -263,10 +263,12 @@ components:
         amount:
           type: number
           format: double
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 999999999.99
         currency:
           type: string
-          minLength: 3
-          maxLength: 3
+          pattern: '^[A-Z]{3}$'
     Payment:
       type: object
       required: [paymentId, orderId, status]
@@ -292,7 +294,11 @@ components:
 
 **Drie dingen zitten er bewust in.** Beide voorbeeldresponses tonen een andere `status`, zodat de stub niet alleen het happy path laat zien. `additionalProperties: false` maakt een niet-gedeclareerd veld een contractschending in plaats van iets dat stilzwijgend meelift. En de wijzigingen voor de latere demo's liggen vast: scenario A voegt `paymentMethod` optioneel toe (v1.1.0), scenario B maakt van `amount` een object met `value` en `currency` en haalt `currency` uit de root (v2.0.0). Het tegenvoorbeeld bij scenario A ligt daarmee ook vast: `merchantId` verplicht toevoegen. Dezelfde beweging als `paymentMethod` — er komt een veld bij — en één woord verschil.
 
-**Wat het schema niet dekt** is de semantiek: dat een bedrag groter dan nul moet zijn en de valutacode moet bestaan. Dat blijven de twee unittests uit 1.4.
+**Het schema draagt zoveel semantiek als het kan.** Dat een bedrag groter dan nul moet zijn is een regel die JSON Schema kan uitdrukken, dus staat hij er: `minimum: 0` met `exclusiveMinimum: true`. Hetzelfde voor de vorm van een valutacode, met een `pattern`. Wat in de spec staat, kan een consumer controleren voordat hij verstuurt — een unittest bij de provider kan dat niet.
+
+**Wat het schema dan niet dekt** is de rest, en die is echt semantisch: dat een valutacode *bestaat* — `ABC` voldoet aan het patroon en is geen valuta — en dat een bedrag boven 500,00 wordt afgewezen. De eerste blijft een unittest, de tweede is een businessuitkomst en geen contractschending.
+
+> Dit is een correctie op de baseline en geen contractwijziging: v1.0.0 was nog niet uitgeleverd. Was hij dat wel geweest, dan was `pattern` toevoegen breaking geweest — de diff-gate meldt dat ook zo — en had het een major gekost. Een regel die je in het schema had kunnen zetten, is later duur om er alsnog in te krijgen.
 
 ---
 
@@ -806,6 +812,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.6.5 | Semantiek naar het schema waar het schema hem kan dragen: `minimum: 0` met `exclusiveMinimum: true` op `amount`, en een `pattern` op `currency`. Gevonden doordat Schemathesis meldde dat een schema-geldig verzoek werd geweigerd — het schema liet toe wat de implementatie verbood. Correctie op de baseline, want v1.0.0 was nog niet uitgeleverd; na release was `pattern` toevoegen breaking geweest. Wat overblijft is echte semantiek: dat een valutacode bestaat, en de drempel van 500,00. |
 | 0.6.4 | Inleiding verwijst naar `besluiten.md` en `security.md`, zodat de onderbouwing van een keuze vindbaar is vanaf de plek waar de keuze staat. |
 | 0.6.3 | O7 gesloten door het te proberen in plaats van te vergelijken: de stub wordt zelf gegenereerd en draait op WireMock. Prism doet padtemplates, examples en requestvalidatie native, maar kiest per status altijd hetzelfde voorbeeld en kan de afgewezen betaling uit 1.2 dus niet opleveren. Reden opgenomen in 1.6, inclusief wat de opzet daarmee laat liggen. |
 | 0.6.2 | Eén compose per deelsysteem, in alle drie de omgevingen dezelfde; een omgeving is een samenstelling van die bestanden en geen eigen beschrijving. Anders staat een deelsysteem drie keer beschreven en lopen die drie uit elkaar. Twee versies uit elkaar gehaald: die van het contract en die van de service, met beide op het info-endpoint. Onveranderlijkheid uitgebreid naar images: geen hertagging, geen `-rc`-achtervoegsel, RC is een status en geen naam. In 1.1 vastgelegd dat productie het enige is dat telt, als de harde reden achter randvoorwaarde 6. Bijlage A toegevoegd over Acceptatie als concessie. O12 erbij. |
