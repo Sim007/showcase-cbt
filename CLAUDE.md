@@ -11,7 +11,9 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 - Een deelsysteemmap is een houder en zelf geen service. Elke service staat eronder in een eigen map: `deelsystemen/payment/payment-api/`, `deelsystemen/payment/payment-mf/`. Ook een frontend hoort daar en niet in een hoofdstukmap.
 - Namen enkelvoud: `payment`, niet `payments`. Zo heten het deelsysteem, de map en het artifact in het register hetzelfde.
 - Een genummerde map bevat alleen tests: demoscript, hoofdstukspecifieke specs, README.
-- Compose staat op drie plekken, elk met een eigen reden. De CI-omgeving is per deelsysteem: `deelsystemen/<naam>/docker-compose.ci.yml`, met alle services van dat deelsysteem plus stubs. Test en Acceptatie stellen alle deelsystemen samen en staan op de hoofdmap in `compose/`. Het register ook, want dat is gedeelde infrastructuur.
+- Eén compose per deelsysteem: `deelsystemen/<naam>/docker-compose.yml`, met alle services van dat deelsysteem. Dat bestand is in CI, Test en Acceptatie hetzelfde. Een omgeving is een samenstelling van die bestanden (`-f` per deelsysteem), nooit een eigen beschrijving van een deelsysteem. Op de hoofdmap staat wat van geen enkel deelsysteem is: `compose/registry.yml`, `compose/stub.yml`, `compose/extern.yml`.
+- Onveranderlijkheid geldt voor elk artefact. Eén build is één versie, en die image gaat ongewijzigd door alle omgevingen. Geen hertagging, geen `-rc`-achtervoegsel: release candidate is een status, geen naam.
+- Twee versies, niet door elkaar halen: de contractversie is van de grens en staat in het register, de serviceversie is van het deelsysteem en komt uit de build. Beide staan op het info-endpoint, uit elkaar te houden.
 - De spec wordt nooit van schijf gelezen. Alles gaat via `ci/get-contract.sh`.
 - Geen logica in yaml. Pipelinebestanden roepen uitsluitend scripts uit `ci/` aan.
 - Nooit committen wat gegenereerd is: stubmappings, `build/`, `node_modules/`, `.env`.

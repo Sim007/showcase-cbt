@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.6.1
+Versie 0.6.2
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -53,7 +53,9 @@ Valt randvoorwaarde 2 weg — publieke API's, onbekende afnemers — dan verschu
 
 **Autonomie heeft een prijs, en de squad betaalt hem zelf.** Randvoorwaarde 3 geeft vrijheid binnen het eigen deelsysteem. Wat daar tegenover staat is strengheid op de rand: het contract naleven, de gate accepteren, en rood meteen oppakken. Dat is de wissel — geen afstemming vooraf met andere squads, wel discipline op de eigen grens. Wie het eerste wil zonder het tweede te betalen, houdt geen autonomie over maar losse eindjes.
 
-**Rood repareren is geen onderbreking van het sprintwerk maar de voorwaarde ervoor.** Zolang de pipeline of de omgeving rood staat, komt er niets van de squad naar buiten en is er dus geen resultaat om op te leveren. Het gaat er niet om dat de tribe voorgaat op de sprint: er ís geen sprintresultaat zolang het rood is. Dat de keten blijft werken is daarmee geen last van buiten, maar precies wat de eigen vrijheid draagt — omdat de grenzen zijn aangetoond, hoeft niemand met een andere squad een deployvolgorde af te spreken.
+**Er is één ding dat telt en dat is productie.** Alles daarvoor — een groene pipeline, een werkende CI-omgeving, een goedgekeurde Test — is een tussenstand. Een squad die groen staat en niet levert, heeft niets opgeleverd.
+
+Daaruit volgt waarom rood eerste prioriteit is, en het is een hardere reden dan collegialiteit. Zolang de pipeline of de omgeving rood staat, komt er niets van de squad naar buiten en is er dus geen resultaat. Rood repareren is daarmee geen onderbreking van het sprintwerk maar de voorwaarde ervoor: er ís geen sprintresultaat zolang het rood is. En dat de keten blijft werken is geen last van buiten maar precies wat de eigen vrijheid draagt — omdat de grenzen zijn aangetoond, hoeft niemand met een andere squad een deployvolgorde af te spreken.
 
 ### De opbouw
 
@@ -332,6 +334,12 @@ Dat werkt op één voorwaarde: de controles moeten de fout kunnen zien. De smoke
 
 **Transparantie is een deel van het mechanisme, geen bijproduct.** De uitkomst van de controles is per deelsysteem zichtbaar op één dashboard, groen of rood. Zonder dat beeld is "waarnemen in plaats van voorspellen" een belofte die niemand kan controleren, en blijft rood staan omdat niemand hem ziet.
 
+**Er zijn twee versies, en ze bewegen los van elkaar.** De contractversie is die van de grens: hij staat in het register, de provider bepaalt hem via de diff-gate, en hij beweegt alleen als de grens verandert. De serviceversie is die van het deelsysteem: hij komt uit de build en beweegt bij elke release. Payment kan naar serviceversie 1.4.0 zonder dat de contractversie meebeweegt — en dat is precies waarom Order niets merkt, want die pint op het contract en niet op de service.
+
+De relatie is niet één-op-één. Vanaf hoofdstuk 3 serveert één serviceversie twee contractversies naast elkaar; aan de providerkant is het dus een verzameling. Aan de consumerkant blijft het één pin.
+
+**Onveranderlijkheid geldt voor elk artefact, niet alleen voor contracten.** Eén build levert één versie op, en die image gaat ongewijzigd door alle omgevingen. Geen hertagging, geen `-rc`-achtervoegsel dat later verdwijnt: dan is wat je getest hebt niet meer hetzelfde artefact als wat je uitlevert. Release candidate is een status, geen naam. Zakt een versie, dan komt er een volgende — net als in het register, waar ook geen rollback bestaat maar alleen een nieuwe versie.
+
 **Het register is de distributievorm, niet de randvoorwaarde.** De showcase gebruikt Apicurio omdat dat het eindbeeld is. Het contracttesten hangt er niet van af: een provider die zijn spec als getagd build-artefact publiceert en consumers die daarop pinnen, levert dezelfde verificatie op. Alleen `get-contract` verandert dan.
 
 **Effort naar rato van risico.** Niet elk risico krijgt een test. Een risico wordt belegd bij de goedkoopste maatregel die het kan zien: een gate op een artefact, een controle op de omgeving, of menselijk ontwerpwerk.
@@ -366,8 +374,7 @@ De drempel van 500,00 is willekeurig maar vast. Ze levert twee scenario's op die
 
 | | CI-omgeving | Test | Acceptatie |
 |---|---|---|---|
-| Compose | `deelsystemen/<naam>/docker-compose.ci.yml` | `compose/docker-compose.test.yml` | `compose/docker-compose.acceptatie.yml` |
-| Inhoud | één deelsysteem in isolatie | alle deelsystemen, RC-versie | alle deelsystemen, RC-versie |
+| Samenstelling | het deelsysteem + `stub.yml` | alle deelsystemen | alle deelsystemen + `extern.yml` |
 | Buren | WireMock-stub uit de spec | de echte deelsystemen | de echte deelsystemen |
 | Buitenwereld | — | **geen** koppeling; externe partijen staan als stub | **wel** koppeling |
 | Deploy | het deelsysteem uit deze pipeline | één deelsysteem tegelijk | één deelsysteem tegelijk |
@@ -377,9 +384,21 @@ De drempel van 500,00 is willekeurig maar vast. Ze levert twee scenario's op die
 
 **De eenheid van deploy is het deelsysteem.** Bouwen en testen gebeurt per service — `payment-api` en `payment-mf` zijn elk een eigen image — maar wat een omgeving in gaat, is het deelsysteem als geheel.
 
+**Eén compose per deelsysteem, in alle drie de omgevingen dezelfde.** Een deelsysteem staat één keer beschreven, in `deelsystemen/<naam>/docker-compose.yml`. Een omgeving is geen eigen bestand maar een samenstelling van die bestanden:
+
+```sh
+# Test
+docker compose -f deelsystemen/order/docker-compose.yml \
+               -f deelsystemen/payment/docker-compose.yml up -d
+```
+
+Dat is dezelfde regel als bij de scripts: wat gedeeld is, bestaat één keer. Zou Payment apart beschreven staan voor CI, voor Test en voor Acceptatie, dan lopen die drie uit elkaar zodra `payment-mf` erbij komt — en dan toont de CI-omgeving iets aan over een deelsysteem dat elders anders draait. Nu is wat op Test staat per definitie hetzelfde als wat op CI is aangetoond.
+
+Wat per omgeving verschilt, staat niet in een tweede servicedefinitie maar in environment: welke versie er draait, en waar de buur te vinden is. De stub (`compose/stub.yml`) en de externe koppelingen (`compose/extern.yml`) komen erbij als losse bestanden, niet als variant van het deelsysteem zelf.
+
 **Er is geen moment waarop alles tegelijk verhuist.** Elk deelsysteem schuift op zijn eigen tempo op en de gate is telkens de vorige omgeving die groen staat. Dat is randvoorwaarde 4 in de praktijk.
 
-**Acceptatie is de enige omgeving met koppelingen naar buiten**, en dat is wat hem onderscheidt van Test. Op Test staat een externe partij als stub — voor hoofdstuk 7, waar de buur een externe betaalprovider is, betekent dat concreet dat "echte buren" geldt voor de eigen deelsystemen en niet daarbuiten.
+**Acceptatie is de enige omgeving met koppelingen naar buiten**, en dat is wat hem onderscheidt van Test. Op Test staat een externe partij als stub — voor hoofdstuk 7, waar de buur een externe betaalprovider is, betekent dat concreet dat "echte buren" geldt voor de eigen deelsystemen en niet daarbuiten. Waarom Acceptatie er überhaupt is, staat in bijlage A.
 
 ---
 
@@ -392,8 +411,8 @@ De drempel van 500,00 is willekeurig maar vast. Ze levert twee scenario's op die
 | 3 | integratie (`-Dgroups=integratie`) | integratie | code + eigen DB | test |
 | 4 | `get-contract v1` uit register | — | register | — |
 | 5 | drift: runtime-spec vs gepubliceerde spec | geen | artefact | **spec** |
-| 6 | docker build per service + label contractversie | — | — | — |
-| 7 | up `docker-compose.ci.yml` van het deelsysteem | — | draaiend | — |
+| 6 | docker build per service; image krijgt zijn eigen versie en een label met de contractversies die hij serveert | — | — | — |
+| 7 | up: het deelsysteem, zonder stubs | — | draaiend | — |
 | 8 | healthcheck | — | draaiend | — |
 | 9 | contractverificatie (`-Dgroups=contract`) | integratie | **draaiend deelsysteem** | **spec** |
 
@@ -414,8 +433,8 @@ Payment heeft binnen deze scope geen buren; zijn CI-omgeving bevat daarom geen s
 | 3 | integratie (`-Dgroups=integratie`) | integratie | code + eigen DB | test |
 | 4 | `get-contract <pin>` uit register | — | register | — |
 | 5 | stub genereren + valideren | — | artefact | **spec** |
-| 6 | docker build per service + label contractversie | — | — | — |
-| 7 | up `docker-compose.ci.yml` van het deelsysteem (stub, geen Payment) | — | draaiend | — |
+| 6 | docker build per service; image krijgt zijn eigen versie en een label met de contractversie waarop hij pint | — | — | — |
+| 7 | up: het deelsysteem + `stub.yml`, geen Payment | — | draaiend | — |
 | 8 | healthcheck | — | draaiend | — |
 | 9 | contractverificatie (`-Dgroups=contract`) | integratie | **draaiend deelsysteem + stub** | **spec, beide richtingen** |
 
@@ -466,7 +485,7 @@ Geen van beide is een pipelinestap. De controles draaien na **elke** deploy, ong
 | versieconformiteit | welke contractversies draaien samen |
 | smoke over de echte keten | de technische integratie werkt |
 
-Elk deelsysteem meldt zijn contractversie op zijn info-endpoint (provider: gepubliceerde versie, consumer: zijn pin). De versieconformiteitscheck vergelijkt die samenstelling met de verwachte.
+Elk deelsysteem meldt op zijn info-endpoint **beide** versies: zijn eigen serviceversie, en de contractversies waar hij aan hangt — bij de provider de versies die hij serveert, bij de consumer zijn pin. Dat onderscheid moet zichtbaar zijn, anders leest niemand af of `1.1.0` over het deelsysteem of over de grens gaat. De versieconformiteitscheck kijkt naar de contractversies en vergelijkt die samenstelling met de verwachte.
 
 Die check is niet zomaar een van de drie. Hij is degene die het afzien van een `can-i-deploy`-gate verdedigbaar maakt: de smoke gaat niet over inhoud en komt groen door een verkeerde versiecombinatie heen, de versieconformiteitscheck niet.
 
@@ -610,6 +629,7 @@ De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het cont
 | O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
 | O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
 | O11 | Waar het dashboard uit 1.7 gebouwd wordt en waaruit hij zijn gegevens haalt. De info-endpoints leveren de contractversies (zie O8); health en de laatste smoke-uitslag komen ergens anders vandaan |
+| O12 | Hoe wat tijdens het bouwen wordt gewijzigd of ontdekt, terugkomt in dit document. Nu gebeurt dat per geval en met de hand; het moet een vaste stap worden, anders loopt de showcase stilzwijgend voor op zijn eigen ontwerp |
 
 ---
 
@@ -759,10 +779,25 @@ De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, 
 
 ---
 
+## Bijlage A — Acceptatie is een concessie, geen ontwerpkeuze
+
+Er is één ding dat telt en dat is productie. Elke omgeving daarvoor is een plaatsvervanger: hij kost doorlooptijd, hij loopt uit de pas met productie, en hij geeft een zekerheid die alleen productie echt kan geven. Twee omgevingen is al een keuze die verantwoording vraagt; drie vraagt een goed verhaal.
+
+Acceptatie staat in deze showcase omdat de business en de tribe een stabiele plek willen om de gebruikersflow te doorlopen, en omdat het vertrouwen dat die flow ook automatisch en gepland kan draaien er nog niet is. Dat is een organisatorische stand van zaken, geen technische noodzaak.
+
+De showcase neemt hem daarom op zoals hij is, en laat tegelijk zien wat hem overbodig zou maken. **Hoofdstuk 4 draait de gebruikersflow geautomatiseerd** — dat is precies de reden dat Acceptatie bestaat, en meteen het bewijs dat het gepland kan. **Hoofdstuk 7 legt de externe grens onder een contract** — dat is de tweede reden, en die valt daarmee grotendeels weg. Wie beide heeft staan, houdt van de technische onderbouwing van een derde omgeving weinig over.
+
+Wat er dan overblijft is niet-technisch: mensen willen er met eigen ogen naar kijken voordat het naar buiten gaat. Dat is vertrouwen en geen bewijs, en dat argumenteer je niet weg met gereedschap. Wie doet alsof dat hetzelfde probleem is, verliest het gesprek.
+
+Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen dat hij onbesproken blijft. Een concessie die niemand benoemt, wordt vanzelf een uitgangspunt.
+
+---
+
 ## Wijzigingslog
 
 | Versie | Wijziging |
 |---|---|
+| 0.6.2 | Eén compose per deelsysteem, in alle drie de omgevingen dezelfde; een omgeving is een samenstelling van die bestanden en geen eigen beschrijving. Anders staat een deelsysteem drie keer beschreven en lopen die drie uit elkaar. Twee versies uit elkaar gehaald: die van het contract en die van de service, met beide op het info-endpoint. Onveranderlijkheid uitgebreid naar images: geen hertagging, geen `-rc`-achtervoegsel, RC is een status en geen naam. In 1.1 vastgelegd dat productie het enige is dat telt, als de harde reden achter randvoorwaarde 6. Bijlage A toegevoegd over Acceptatie als concessie. O12 erbij. |
 | 0.6.1 | Vastgelegd in 1.13 dat de waarden van `code` in het `Error`-schema geen onderdeel van het contract zijn: het schema legt de structuur vast, niet de verzameling codes. Anders wordt elke nieuwe foutsituatie bij de provider een contractwijziging. |
 | 0.6.0 | Testopzet uitgeschreven. Drie omgevingen in plaats van twee: CI, Test zonder koppeling naar buiten, Acceptatie mét. Deploy per deelsysteem, gate is telkens de vorige omgeving groen. Contractverificatie draait na de deploy op de CI-omgeving en is daar volledig — elke operatie, happy en unhappy. De piramide houdt drie lagen: contracttesten voegt er geen toe maar verlegt de norm in de integratielaag en verkleint de top. `can-i-deploy` vervangen door waarnemen boven voorspellen, gedragen door de versieconformiteitscheck. Randvoorwaarde 6 erbij: rood is eerste prioriteit. Dashboard als onderdeel van het mechanisme. Geen patch, want de opzet verandert wezenlijk. |
 | 0.5.6 | O10 toegevoegd: wat de micro-frontend van Notification laat zien. Hij is nodig als remote voor hoofdstuk 9, maar hoofdstuk 6 heeft geen UI nodig, dus zijn inhoud is nergens belegd. |
