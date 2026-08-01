@@ -1,7 +1,7 @@
 package cbt.payment;
 
 import java.math.BigDecimal;
-import java.util.Currency;
+import java.util.Set;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Service;
@@ -23,6 +23,9 @@ public class PaymentService {
      */
     static final BigDecimal MAX_BEDRAG = new BigDecimal("999999999.99");
 
+    /** Gelijk aan de enum uit het contract. */
+    static final Set<String> VALUTA = Set.of("EUR", "USD", "GBP");
+
     private final PaymentRepository repository;
     private final AtomicLong teller = new AtomicLong();
 
@@ -43,7 +46,7 @@ public class PaymentService {
         if (verzoek.amount().compareTo(MAX_BEDRAG) > 0) {
             throw new PaymentRuleException("INVALID_AMOUNT", "amount exceeds the maximum of " + MAX_BEDRAG);
         }
-        if (!bestaandeValuta(verzoek.currency())) {
+        if (!toegestaneValuta(verzoek.currency())) {
             throw new PaymentRuleException("UNKNOWN_CURRENCY", "unknown currency " + verzoek.currency());
         }
 
@@ -62,16 +65,18 @@ public class PaymentService {
         return repository.findById(paymentId);
     }
 
-    /** ISO 4217 uit de JDK, zodat er geen zelfgemaakte lijst is die veroudert. */
-    private static boolean bestaandeValuta(String code) {
-        if (code == null) {
-            return false;
-        }
-        try {
-            Currency.getInstance(code);
-            return true;
-        } catch (IllegalArgumentException onbekend) {
-            return false;
-        }
+    /**
+     * Precies de enum uit het contract, niet ISO 4217 uit de JDK. Zou Payment meer
+     * accepteren dan hij belooft, dan is de enum in de spec een onwaarheid over wat er
+     * gebeurt — en een consumer die op de spec afgaat, weet minder dan hij denkt.
+     *
+     * Dat deze lijst met de hand gelijk moet blijven aan de spec, is precies waarvoor de
+     * drift-check uit 1.4 bestaat.
+     */
+    private static boolean toegestaneValuta(String code) {
+        // De null-check staat er niet voor de sier: Set.of levert een onveranderlijke set
+        // die bij contains(null) een NullPointerException gooit. Dat werd een 500 op een
+        // verzoek met currency: null.
+        return code != null && VALUTA.contains(code);
     }
 }

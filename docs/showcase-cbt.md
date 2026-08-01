@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.6.5
+Versie 0.6.6
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -268,7 +268,7 @@ components:
           maximum: 999999999.99
         currency:
           type: string
-          pattern: '^[A-Z]{3}$'
+          enum: [EUR, USD, GBP]
     Payment:
       type: object
       required: [paymentId, orderId, status]
@@ -294,9 +294,11 @@ components:
 
 **Drie dingen zitten er bewust in.** Beide voorbeeldresponses tonen een andere `status`, zodat de stub niet alleen het happy path laat zien. `additionalProperties: false` maakt een niet-gedeclareerd veld een contractschending in plaats van iets dat stilzwijgend meelift. En de wijzigingen voor de latere demo's liggen vast: scenario A voegt `paymentMethod` optioneel toe (v1.1.0), scenario B maakt van `amount` een object met `value` en `currency` en haalt `currency` uit de root (v2.0.0). Het tegenvoorbeeld bij scenario A ligt daarmee ook vast: `merchantId` verplicht toevoegen. Dezelfde beweging als `paymentMethod` — er komt een veld bij — en één woord verschil.
 
-**Het schema draagt zoveel semantiek als het kan.** Dat een bedrag groter dan nul moet zijn is een regel die JSON Schema kan uitdrukken, dus staat hij er: `minimum: 0` met `exclusiveMinimum: true`. Hetzelfde voor de vorm van een valutacode, met een `pattern`. Wat in de spec staat, kan een consumer controleren voordat hij verstuurt — een unittest bij de provider kan dat niet.
+**Het schema draagt zoveel semantiek als het kan.** Dat een bedrag groter dan nul moet zijn en onder een grens moet blijven, kan JSON Schema uitdrukken: `minimum`, `exclusiveMinimum`, `maximum`. Welke valuta's worden aangenomen ook: een `enum`. Wat in de spec staat, kan een consumer controleren voordat hij verstuurt — een unittest bij de provider kan dat niet.
 
-**Wat het schema dan niet dekt** is de rest, en die is echt semantisch: dat een valutacode *bestaat* — `ABC` voldoet aan het patroon en is geen valuta — en dat een bedrag boven 500,00 wordt afgewezen. De eerste blijft een unittest, de tweede is een businessuitkomst en geen contractschending.
+De implementatie houdt dezelfde regels aan en accepteert niet meer dan hij belooft. Zou Payment elke ISO 4217-code aannemen terwijl de spec er drie noemt, dan is de spec een onwaarheid over wat er gebeurt en weet een consumer die erop afgaat minder dan hij denkt. Dat die twee met de hand gelijk blijven, is precies waarvoor de drift-check bestaat.
+
+**Wat er dan aan semantiek overblijft** is één ding: dat een bedrag boven 500,00 wordt afgewezen. En dat is geen invoercontrole maar een businessuitkomst — 201 met `DECLINED`, geen 400. Daarmee staat het onderscheid uit 1.2 er scherper: alles wat over de *geldigheid* van een verzoek gaat, staat in het contract; wat over de *uitkomst* gaat, niet.
 
 > Dit is een correctie op de baseline en geen contractwijziging: v1.0.0 was nog niet uitgeleverd. Was hij dat wel geweest, dan was `pattern` toevoegen breaking geweest — de diff-gate meldt dat ook zo — en had het een major gekost. Een regel die je in het schema had kunnen zetten, is later duur om er alsnog in te krijgen.
 
@@ -812,6 +814,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.6.6 | `currency` van een `pattern` naar een `enum` van EUR, USD en GBP, en `maximum` op `amount`. Daarmee staat elke geldigheidsregel in het contract en blijft als semantiek alleen de drempel van 500,00 over — een businessuitkomst, geen invoercontrole. Gemeten met oasdiff: een valuta toevoegen is niet breaking (scenario A), een valuta weghalen wel. De implementatie volgt de enum en accepteert niet meer dan de spec belooft. |
 | 0.6.5 | Semantiek naar het schema waar het schema hem kan dragen: `minimum: 0` met `exclusiveMinimum: true` op `amount`, en een `pattern` op `currency`. Gevonden doordat Schemathesis meldde dat een schema-geldig verzoek werd geweigerd — het schema liet toe wat de implementatie verbood. Correctie op de baseline, want v1.0.0 was nog niet uitgeleverd; na release was `pattern` toevoegen breaking geweest. Wat overblijft is echte semantiek: dat een valutacode bestaat, en de drempel van 500,00. |
 | 0.6.4 | Inleiding verwijst naar `besluiten.md` en `security.md`, zodat de onderbouwing van een keuze vindbaar is vanaf de plek waar de keuze staat. |
 | 0.6.3 | O7 gesloten door het te proberen in plaats van te vergelijken: de stub wordt zelf gegenereerd en draait op WireMock. Prism doet padtemplates, examples en requestvalidatie native, maar kiest per status altijd hetzelfde voorbeeld en kan de afgewezen betaling uit 1.2 dus niet opleveren. Reden opgenomen in 1.6, inclusief wat de opzet daarmee laat liggen. |

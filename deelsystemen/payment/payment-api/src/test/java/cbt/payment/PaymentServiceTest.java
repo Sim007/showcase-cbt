@@ -58,6 +58,13 @@ class PaymentServiceTest {
     }
 
     @Test
+    void valuta_null_is_een_contractschending_en_geen_serverfout() {
+        assertThatThrownBy(() -> service.create(verzoek("10.00", null)))
+                .isInstanceOf(PaymentRuleException.class)
+                .hasFieldOrPropertyWithValue("code", "UNKNOWN_CURRENCY");
+    }
+
+    @Test
     void onbekende_valutacode_is_een_contractschending() {
         assertThatThrownBy(() -> service.create(verzoek("10.00", "XYZ")))
                 .isInstanceOf(PaymentRuleException.class)
