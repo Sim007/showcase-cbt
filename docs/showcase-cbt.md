@@ -1,10 +1,12 @@
 # Showcase CBT
 
-Versie 0.6.3
+Versie 0.6.4
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
 Een showcase die contract-based testing aantoonbaar maakt. Het contexthoofdstuk beschrijft wat overal gelijk is; elk hoofdstuk daarna is los te lezen.
+
+**Dit document beschrijft wat er is en waarom.** Twee andere bestanden in deze map dragen wat hier niet in past. `besluiten.md` bevat de afwegingen achter de keuzes: wat er is geprobeerd, wat eruit kwam, wat het kost en wanneer het herzien moet worden. `security.md` doet hetzelfde voor beveiligingsbevindingen. Beide zijn gedateerd, want een afweging is houdbaar zolang de omstandigheden gelijk blijven en niet langer. Wie zich bij een keuze hieronder afvraagt *waarom dan*, vindt het antwoord daar.
 
 ---
 
@@ -804,6 +806,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.6.4 | Inleiding verwijst naar `besluiten.md` en `security.md`, zodat de onderbouwing van een keuze vindbaar is vanaf de plek waar de keuze staat. |
 | 0.6.3 | O7 gesloten door het te proberen in plaats van te vergelijken: de stub wordt zelf gegenereerd en draait op WireMock. Prism doet padtemplates, examples en requestvalidatie native, maar kiest per status altijd hetzelfde voorbeeld en kan de afgewezen betaling uit 1.2 dus niet opleveren. Reden opgenomen in 1.6, inclusief wat de opzet daarmee laat liggen. |
 | 0.6.2 | Eén compose per deelsysteem, in alle drie de omgevingen dezelfde; een omgeving is een samenstelling van die bestanden en geen eigen beschrijving. Anders staat een deelsysteem drie keer beschreven en lopen die drie uit elkaar. Twee versies uit elkaar gehaald: die van het contract en die van de service, met beide op het info-endpoint. Onveranderlijkheid uitgebreid naar images: geen hertagging, geen `-rc`-achtervoegsel, RC is een status en geen naam. In 1.1 vastgelegd dat productie het enige is dat telt, als de harde reden achter randvoorwaarde 6. Bijlage A toegevoegd over Acceptatie als concessie. O12 erbij. |
 | 0.6.1 | Vastgelegd in 1.13 dat de waarden van `code` in het `Error`-schema geen onderdeel van het contract zijn: het schema legt de structuur vast, niet de verzameling codes. Anders wordt elke nieuwe foutsituatie bij de provider een contractwijziging. |
