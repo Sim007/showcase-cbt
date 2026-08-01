@@ -1,0 +1,27 @@
+# Het deelsysteem Order. Dit bestand is in CI, Test en Acceptatie hetzelfde.
+#
+# Waar Payment te vinden is, verschilt wel per omgeving: op de CI-omgeving is dat de stub
+# uit compose/stub.yml, op Test en Acceptatie het echte deelsysteem. Dat staat in een
+# variabele en niet in een tweede servicedefinitie.
+
+services:
+  order-api:
+    image: cbt/order-api:${ORDER_API_VERSIE:-1.0.0}
+    container_name: cbt-order-api
+    user: "100:101"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      PAYMENT_BASE_URL: ${PAYMENT_BASE_URL:-http://payment-api:8081}
+    ports:
+      - "${ORDER_API_POORT:-8082}:8082"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8082/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+networks:
+  default:
+    name: cbt
+    external: false

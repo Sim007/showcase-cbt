@@ -1,0 +1,35 @@
+# De stub die op de CI-omgeving de buur speelt. Hij staat op de hoofdmap omdat hij van
+# geen enkel deelsysteem is: elke consumer gebruikt dezelfde container, alleen met andere
+# mappings.
+#
+# De mappings worden elke run gegenereerd uit de spec uit het register en worden nooit
+# gecommit. Read-only gemount: de stub mag ze lezen, niet wijzigen.
+
+services:
+  stub:
+    image: wiremock/wiremock:3.13.2
+    container_name: cbt-stub
+    # Draait onder de servicenaam van de buur die hij vervangt, zodat de consumer niets
+    # anders hoeft te weten dan op Test.
+    hostname: payment-api
+    networks:
+      default:
+        aliases:
+          - payment-api
+    security_opt:
+      - no-new-privileges:true
+    command: ["--global-response-templating", "--disable-banner", "--port", "8081"]
+    volumes:
+      - ${STUB_MAPPINGS:-./build/stub}/mappings:/home/wiremock/mappings:ro
+    ports:
+      - "${STUB_POORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/__admin/mappings"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+networks:
+  default:
+    name: cbt
+    external: false

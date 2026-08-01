@@ -71,9 +71,10 @@ Draaien:
 docker build -t cbt/payment-api:1.0.0 deelsystemen/payment/payment-api
 docker build -t cbt/order-api:1.0.0   deelsystemen/order/order-api
 
-docker run -d --name cbt-payment -p 8081:8081 cbt/payment-api:1.0.0
-docker run -d --name cbt-order   -p 8082:8082 \
-  -e PAYMENT_BASE_URL=http://host.docker.internal:8081 cbt/order-api:1.0.0
+# Test: beide deelsystemen, echte buren. Een omgeving is een samenstelling van
+# deelsysteem-bestanden; elk deelsysteem staat maar één keer beschreven.
+docker compose -f deelsystemen/payment/docker-compose.yml \
+               -f deelsystemen/order/docker-compose.yml up -d
 
 curl -X POST http://localhost:8082/orders \
   -H 'Content-Type: application/json' -d '{"amount":49.95,"currency":"EUR"}'
@@ -83,6 +84,8 @@ Een bedrag boven 500.00 levert `CANCELLED` op in plaats van `CONFIRMED`. Het ond
 tussen een contractschending (400) en een afgewezen betaling (201 met `DECLINED`) is de
 kern van hoofdstuk 1. Beide deelsystemen melden hun contractversie op
 `/actuator/info` — de provider de gepubliceerde versie, de consumer zijn pin.
+
+Variabelen — versies, poorten, het adres van de buur — staan in [.env.example](.env.example).
 
 ## Vereenvoudigingen
 

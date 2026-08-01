@@ -1,0 +1,28 @@
+# Het deelsysteem Payment. Dit bestand is in CI, Test en Acceptatie hetzelfde: een
+# deelsysteem staat één keer beschreven. Een omgeving is een samenstelling van
+# deelsysteem-bestanden, geen eigen beschrijving.
+#
+# Payment heeft binnen de scope van hoofdstuk 1 geen buren, dus zijn CI-omgeving is dit
+# bestand en verder niets.
+
+services:
+  payment-api:
+    image: cbt/payment-api:${PAYMENT_API_VERSIE:-1.0.0}
+    container_name: cbt-payment-api
+    # De image draait al als een niet-geprivilegieerde gebruiker; expliciet gezet zodat
+    # het niet stilzwijgend verandert bij een tagbump.
+    user: "100:101"
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${PAYMENT_API_POORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8081/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+networks:
+  default:
+    name: cbt
+    external: false
