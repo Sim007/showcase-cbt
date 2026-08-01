@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.5.6
+Versie 0.6.0
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -38,7 +38,7 @@ De showcase is tot stand gekomen in samenwerking met Claude en gebouwd met Claud
 
 Daaruit volgt waar "af" ligt: een hoofdstuk is klaar zodra het argument overkomt, niet zodra hij de kwaliteit heeft die van productiecode verwacht zou worden.
 
-**Randvoorwaarden waaronder dit werkt.** Deze manier van contracttesten is niet universeel; ze veronderstelt vijf dingen, en die verklaren de keuzes die anders willekeurig lijken.
+**Randvoorwaarden waaronder dit werkt.** Deze manier van contracttesten is niet universeel; ze veronderstelt zes dingen, en die verklaren de keuzes die anders willekeurig lijken.
 
 | | Randvoorwaarde | Gevolg voor het ontwerp |
 |---|---|---|
@@ -47,8 +47,13 @@ Daaruit volgt waar "af" ligt: een hoofdstuk is klaar zodra het argument overkomt
 | 3 | Teams houden vrijheid binnen hun eigen deelsysteem | afspraken gelden op grenzen, niet op de binnenkant |
 | 4 | Het doel is per deelsysteem naar productie kunnen releasen | de contractversie is het synchronisatiepunt, niet de deployvolgorde |
 | 5 | Het gereedschap is open source en zonder licentie te draaien | geen commercieel platform voor contractuitwisseling; losse onderdelen die elk vervangbaar zijn |
+| 6 | Een rode pipeline of omgeving is eerste prioriteit van de squad | waarnemen mag voorspellen vervangen; een signaal dat mag blijven staan is geen signaal |
 
 Valt randvoorwaarde 2 weg — publieke API's, onbekende afnemers — dan verschuift de afweging en worden consumer-driven contracts aantrekkelijker. Valt randvoorwaarde 5 weg, dan komt het bidirectionele model in beeld en wordt een deel van het handwerk hier overbodig. Contract-based testing is hier een middel voor randvoorwaarde 4, geen doel op zich.
+
+**Autonomie heeft een prijs, en de squad betaalt hem zelf.** Randvoorwaarde 3 geeft vrijheid binnen het eigen deelsysteem. Wat daar tegenover staat is strengheid op de rand: het contract naleven, de gate accepteren, en rood meteen oppakken. Dat is de wissel — geen afstemming vooraf met andere squads, wel discipline op de eigen grens. Wie het eerste wil zonder het tweede te betalen, houdt geen autonomie over maar losse eindjes.
+
+**Rood repareren is geen onderbreking van het sprintwerk maar de voorwaarde ervoor.** Zolang de pipeline of de omgeving rood staat, komt er niets van de squad naar buiten en is er dus geen resultaat om op te leveren. Het gaat er niet om dat de tribe voorgaat op de sprint: er ís geen sprintresultaat zolang het rood is. Dat de keten blijft werken is daarmee geen last van buiten, maar precies wat de eigen vrijheid draagt — omdat de grenzen zijn aangetoond, hoeft niemand met een andere squad een deployvolgorde af te spreken.
 
 ### De opbouw
 
@@ -126,7 +131,7 @@ Er zijn vier deelsystemen. Order en Payment dragen de grens uit hoofdstuk 1. Not
 
 Losstaand te draaien is daarmee elke genummerde map, mits de deelsystemen die hij samenstelt gebouwd zijn.
 
-**Testgereedschap wordt hergebruikt, niet per hoofdstuk opnieuw ingericht.** Playwright staat op de hoofdmap in `playwright/` — niet onder een naam als `e2e`, want hij bedient meerdere lagen. Eén smoke-spec wordt op een base-URL geparametriseerd: dezelfde spec draait in de CI-omgeving tegen de stub, op Test tegen de echte buur en op Acceptatie tegen de samenstelling. `ci/smoke.sh <base-url>` is het enige aanroeppunt. Playwright is in dit soort omgevingen doorgaans al in gebruik voor de e2e van een deelsysteem; de showcase sluit daarop aan in plaats van er een tweede werkwijze naast te zetten. Showcasespecifieke specs — bijvoorbeeld die van de UI in hoofdstuk 8 — staan in de hoofdstukmap zelf.
+**Testgereedschap wordt hergebruikt, niet per hoofdstuk opnieuw ingericht.** Playwright staat op de hoofdmap in `playwright/` — niet onder een naam als `e2e`, want hij bedient meerdere lagen. Eén smoke-spec wordt op een base-URL geparametriseerd, met `ci/smoke.sh <base-url>` als enige aanroeppunt. Hij draait op Test en toont dat de keten loopt. Op de CI-omgeving draait geen smoke maar de volledige contractverificatie, en op Acceptatie de gebruikersflow; de drie lagen doen elk hun eigen werk en herhalen elkaar niet. Playwright is in dit soort omgevingen doorgaans al in gebruik voor de e2e van een deelsysteem; de showcase sluit daarop aan in plaats van er een tweede werkwijze naast te zetten. Showcasespecifieke specs — bijvoorbeeld die van de UI in hoofdstuk 8 — staan in de hoofdstukmap zelf.
 
 **De smoke gaat niet over inhoud.** De gedeelde smoke-spec assert uitsluitend op HTTP-status en op het doorlopen van de keten — geen veldwaarden, geen businessregels. Anders draait hij groen tegen de stub en rood tegen de echte buur om een reden die niets met de grens te maken heeft, en verhuist bovendien werk van een goedkope laag naar een dure.
 
@@ -154,9 +159,10 @@ Dit is de standaard. Wijkt een hoofdstuk hiervan af, dan is dat een bevinding en
 | Scripts | `get-contract` en `publish-contract` zijn in alle showcases hetzelfde script |
 | Versiebeheer | expliciete versie, immutable, consumer pint, geen "latest" |
 | Publicatie | via de diff-gate; de gate hoort bij de contractwijziging, niet bij een pipeline |
-| Pipelines | twee, één per team, volledig onafhankelijk van elkaar |
-| Omgevingen | CI-omgeving per deelsysteem met stubs; Test met echte buren |
-| Testlagen | unit, integratie, contractverificatie, e2e smoke test |
+| Pipelines | één per deelsysteem, volledig onafhankelijk van elkaar |
+| Omgevingen | CI met stubs; Test met de echte deelsystemen en zonder buitenwereld; Acceptatie mét buitenwereld |
+| Deploy | per deelsysteem, één tegelijk; de gate is de vorige omgeving groen |
+| Testlagen | unit, integratie, e2e — contractverificatie is integratie met de spec als norm |
 | Stub | gegenereerd uit de spec, gevalideerd bij het maken, nooit gecommit |
 | Scenario's | de contractlevenscyclus uit hoofdstuk 2 tot en met 5 geldt voor elke grens |
 
@@ -312,13 +318,19 @@ Twee deelsystemen, één grens: Order (consumer) → Payment (provider), REST, s
 
 **Eén contract, twee kanten.** De provider bezit en publiceert het contract. Beide kanten verifiëren hun eigen conformiteit tegen diezelfde gepubliceerde spec. Geen consumer-expectations, geen n×m-verificatie, geen tweede contractstore.
 
-**De contractversie is het synchronisatiepunt, niet de deployvolgorde.** Twee pipelines die elkaar nooit zien, komen via één contract tot hetzelfde oordeel. Daarom is er geen release train en is `can-i-deploy` niet nodig: compatibiliteit is al vastgesteld op Build, niet opgevraagd bij de deploy.
+**De contractversie is het synchronisatiepunt, niet de deployvolgorde.** Twee pipelines die elkaar nooit zien, komen via één contract tot hetzelfde oordeel. Daarom is er geen release train: compatibiliteit is vastgesteld op Build, niet afgestemd bij de deploy.
 
-**Contract is geen testlaag maar een norm.** Op de bestaande lagen van de piramide verandert niet de laag maar de bron van de waarheid: bij unit en integratie ligt de norm in de test, bij contractverificatie ligt hij buiten de test in een artefact dat elders wordt beheerd.
+**Voorspellen is een verwachting, waarnemen is een feit.** Een `can-i-deploy`-vraag bevraagt vastgelegde verificatieresultaten en zegt daarmee dat de contracten zijn geverifieerd — niet dat het werkt. Configuratie, data en alles wat buiten het contract valt, ziet hij niet, en dat moet je alsnog met een correctie opvangen. Die capaciteit heb je dus hoe dan ook nodig. Daarom deployt hier één deelsysteem tegelijk en is een rode controle op de omgeving het signaal.
+
+Dat werkt op één voorwaarde: de controles moeten de fout kunnen zien. De smoke gaat niet over inhoud en herkent geen verkeerde versiecombinatie — de versieconformiteitscheck doet dat, en die draagt daarmee deze keuze. Extra zekerheid is goedkoop: draai de controle nog een keer. Waarnemen mag je herhalen, een voorspelling wordt er niet beter van.
+
+**Contract is geen testlaag maar een norm.** De piramide houdt drie lagen — unit, integratie, e2e. Wat verandert is niet de laag maar de bron van de waarheid: bij unit en integratie ligt de norm in de test, bij contractverificatie ligt hij buiten de test, in een artefact dat elders wordt beheerd. Contractverificatie is daarmee integratie: één deelsysteem, buren gestubd.
 
 **Spec-first minimaliseert geen breuken maar verplaatst ze.** Een noodzakelijke breuk blijft noodzakelijk. Wat verandert is het moment: bij spec-first is de breuk een besluit vóórdat er code ligt, bij code-first een ontdekking als terugdraaien al duur is. De drift-check is wat die belofte afdwingt.
 
-**Twee omgevingen, twee bewijzen.** In de CI-omgeving toont het team aan dat zijn deelsysteem werkt zónder zijn buur. Op Test wordt aangetoond dat de samenstelling die op dat moment draait, klopt en loopt.
+**Drie omgevingen, drie vragen.** In de CI-omgeving wordt aangetoond dat een deelsysteem volledig werkt zónder zijn buren. Op Test dat de samenstelling die op dat moment draait, klopt en loopt. Op Acceptatie dat de keten doet wat een gebruiker verwacht, mét de koppelingen naar buiten.
+
+**Transparantie is een deel van het mechanisme, geen bijproduct.** De uitkomst van de controles is per deelsysteem zichtbaar op één dashboard, groen of rood. Zonder dat beeld is "waarnemen in plaats van voorspellen" een belofte die niemand kan controleren, en blijft rood staan omdat niemand hem ziet.
 
 **Het register is de distributievorm, niet de randvoorwaarde.** De showcase gebruikt Apicurio omdat dat het eindbeeld is. Het contracttesten hangt er niet van af: een provider die zijn spec als getagd build-artefact publiceert en consumers die daarop pinnen, levert dezelfde verificatie op. Alleen `get-contract` verandert dan.
 
@@ -350,15 +362,24 @@ De drempel van 500,00 is willekeurig maar vast. Ze levert twee scenario's op die
 
 ---
 
-### 1.3 Twee omgevingen
+### 1.3 Drie omgevingen
 
-| | CI-omgeving | Test |
-|---|---|---|
-| Compose | `docker-compose.ci-<deelsysteem>.yml` | `docker-compose.test.yml` |
-| Buren | WireMock-stub uit de spec | echte deelsystemen |
-| Scope | één deelsysteem in isolatie | de samenstelling |
-| Toont aan | deployment werkt, buur niet nodig | de combinatie klopt en loopt |
-| Eigenaar | het team | gezamenlijk |
+| | CI-omgeving | Test | Acceptatie |
+|---|---|---|---|
+| Compose | `deelsystemen/<naam>/docker-compose.ci.yml` | `compose/docker-compose.test.yml` | `compose/docker-compose.acceptatie.yml` |
+| Inhoud | één deelsysteem in isolatie | alle deelsystemen, RC-versie | alle deelsystemen, RC-versie |
+| Buren | WireMock-stub uit de spec | de echte deelsystemen | de echte deelsystemen |
+| Buitenwereld | — | **geen** koppeling; externe partijen staan als stub | **wel** koppeling |
+| Deploy | het deelsysteem uit deze pipeline | één deelsysteem tegelijk | één deelsysteem tegelijk |
+| Gate | de eigen tests staan groen | de controles op Test staan groen voor dat deelsysteem | — |
+| Testlaag | integratie | e2e | e2e |
+| Toont aan | het deelsysteem werkt volledig, buur niet nodig | de samenstelling klopt en loopt | de keten doet wat een gebruiker verwacht |
+
+**De eenheid van deploy is het deelsysteem.** Bouwen en testen gebeurt per service — `payment-api` en `payment-mf` zijn elk een eigen image — maar wat een omgeving in gaat, is het deelsysteem als geheel.
+
+**Er is geen moment waarop alles tegelijk verhuist.** Elk deelsysteem schuift op zijn eigen tempo op en de gate is telkens de vorige omgeving die groen staat. Dat is randvoorwaarde 4 in de praktijk.
+
+**Acceptatie is de enige omgeving met koppelingen naar buiten**, en dat is wat hem onderscheidt van Test. Op Test staat een externe partij als stub — voor hoofdstuk 7, waar de buur een externe betaalprovider is, betekent dat concreet dat "echte buren" geldt voor de eigen deelsystemen en niet daarbuiten.
 
 ---
 
@@ -366,18 +387,21 @@ De drempel van 500,00 is willekeurig maar vast. Ze levert twee scenario's op die
 
 | # | Stap | Laag | Tegen | Norm |
 |---|---|---|---|---|
-| 1 | build | — | code | — |
+| 1 | build per service | — | code | — |
 | 2 | unit (`-Dgroups=unit`) | unit | code | test |
 | 3 | integratie (`-Dgroups=integratie`) | integratie | code + eigen DB | test |
 | 4 | `get-contract v1` uit register | — | register | — |
-| 5 | contractverificatie (`-Dgroups=contract`) | integratie | code | **spec** |
-| 6 | drift: runtime-spec vs gepubliceerde spec | geen | artefact | **spec** |
-| 7 | docker build + label contractversie | — | — | — |
-| 8 | up `docker-compose.ci-payment.yml` | — | draaiend | — |
-| 9 | healthcheck | — | draaiend | — |
-| 10 | smoke | e2e smoke test | draaiend | test |
+| 5 | drift: runtime-spec vs gepubliceerde spec | geen | artefact | **spec** |
+| 6 | docker build per service + label contractversie | — | — | — |
+| 7 | up `docker-compose.ci.yml` van het deelsysteem | — | draaiend | — |
+| 8 | healthcheck | — | draaiend | — |
+| 9 | contractverificatie (`-Dgroups=contract`) | integratie | **draaiend deelsysteem** | **spec** |
 
 Payment heeft binnen deze scope geen buren; zijn CI-omgeving bevat daarom geen stubs.
+
+**Stap 9 is volledig, niet een steekproef:** elke operatie uit de spec, elke responsecode, happy en unhappy, als regressie. Dat is de plek waar de diepte zit — daar staat het deelsysteem alleen, zijn de scenario's beheersbaar en is een run goedkoop. Wat op Test en Acceptatie draait, mag daardoor klein blijven.
+
+**Waarom na de deploy en niet tegen de code.** Een contract is een belofte van een draaiend systeem. Configuratie, serialisatie en foutafhandeling in de echte container horen erbij, en die vallen buiten beeld als je alleen de broncode toetst. De prijs is een trager signaal dan een unittest; daarom staan unit en integratie eronder en vangen die af wat ze goedkoop kunnen vangen.
 
 ---
 
@@ -385,26 +409,29 @@ Payment heeft binnen deze scope geen buren; zijn CI-omgeving bevat daarom geen s
 
 | # | Stap | Laag | Tegen | Norm |
 |---|---|---|---|---|
-| 1 | build | — | code | — |
+| 1 | build per service | — | code | — |
 | 2 | unit (`-Dgroups=unit`) | unit | code | test |
 | 3 | integratie (`-Dgroups=integratie`) | integratie | code + eigen DB | test |
 | 4 | `get-contract <pin>` uit register | — | register | — |
 | 5 | stub genereren + valideren | — | artefact | **spec** |
-| 6 | contractverificatie (`-Dgroups=contract`) | integratie | code + in-process stub | **spec, beide richtingen** |
-| 7 | docker build + label contractversie | — | — | — |
-| 8 | up `docker-compose.ci-order.yml` (stub, geen Payment) | — | draaiend | — |
-| 9 | healthcheck | — | draaiend | — |
-| 10 | smoke tegen stub | e2e smoke test | draaiend | test |
+| 6 | docker build per service + label contractversie | — | — | — |
+| 7 | up `docker-compose.ci.yml` van het deelsysteem (stub, geen Payment) | — | draaiend | — |
+| 8 | healthcheck | — | draaiend | — |
+| 9 | contractverificatie (`-Dgroups=contract`) | integratie | **draaiend deelsysteem + stub** | **spec, beide richtingen** |
 
 De consumer heeft geen drift-stap: hij bezit het contract niet, dus er valt aan zijn kant niets van af te wijken.
 
-Er is één stub, gegenereerd uit de spec uit het register, gevalideerd bij het maken en daarna gebruikt in stap 6, 8 en 10. De mappings worden nooit gecommit.
+**Beide richtingen** betekent bij de consumer twee dingen tegelijk: wat Order naar de stub stuurt voldoet aan de spec, én wat Order doet met de responses die de stub uit die spec teruggeeft, klopt. De eerste richting is wat een provider-driven opzet toevoegt aan een gewone integratietest met een mock — die mock zou je zelf verzinnen, deze stub komt uit het contract.
+
+Er is één stub, gegenereerd uit de spec uit het register, gevalideerd bij het maken en daarna gebruikt in stap 7 en 9. De mappings worden nooit gecommit.
 
 ---
 
 ### 1.6 Stubgeneratie
 
-De stub bestaat uitsluitend op Build, wordt elke run opnieuw gegenereerd uit de spec uit het register en wordt nooit gecommit.
+De stub wordt elke run opnieuw gegenereerd uit de spec uit het register en wordt nooit gecommit. Hij draait mee in de CI-omgeving, als de buur die daar niet staat.
+
+Op Test en Acceptatie staan de eigen deelsystemen echt. Eén uitzondering: partijen buiten de organisatie draaien op Test als stub, want die omgeving heeft geen koppeling naar buiten. Dat raakt hoofdstuk 7 en verder niets in hoofdstuk 1.
 
 | # | Stap | Uitvoer |
 |---|---|---|
@@ -427,19 +454,31 @@ De stub bestaat uitsluitend op Build, wordt elke run opnieuw gegenereerd uit de 
 
 ---
 
-### 1.7 Test-omgeving
+### 1.7 Test en Acceptatie
 
-Geen pipelinestap. Draait na **elke** deploy naar Test, ongeacht welk deelsysteem is gedeployd.
+Geen van beide is een pipelinestap. De controles draaien na **elke** deploy, ongeacht welk deelsysteem is gedeployd.
+
+**Test — loopt de samenstelling?**
 
 | Controle | Toont aan |
 |---|---|
-| healthcheck | deelsystemen komen omhoog |
+| healthcheck | de deelsystemen komen omhoog |
 | versieconformiteit | welke contractversies draaien samen |
-| smoke over de echte keten | technische integratie werkt |
+| smoke over de echte keten | de technische integratie werkt |
 
 Elk deelsysteem meldt zijn contractversie op zijn info-endpoint (provider: gepubliceerde versie, consumer: zijn pin). De versieconformiteitscheck vergelijkt die samenstelling met de verwachte.
 
-**Rollback.** Trigger is een van de drie controles rood. Doel is een draaiende T-omgeving, niet schuldtoewijzing: de laatste deploy draait terug. Bij een afwijkende versiesamenstelling kan roll-forward de juiste beweging zijn — het ontbrekende deelsysteem alsnog deployen in plaats van het geslaagde terugtrekken. Rollback geldt voor deployments; het register kent geen rollback, daar is alleen een nieuwe versie.
+Die check is niet zomaar een van de drie. Hij is degene die het afzien van een `can-i-deploy`-gate verdedigbaar maakt: de smoke gaat niet over inhoud en komt groen door een verkeerde versiecombinatie heen, de versieconformiteitscheck niet.
+
+**Acceptatie — doet de keten wat een gebruiker verwacht?**
+
+Dezelfde deelsystemen, dezelfde RC-versies, plus de koppelingen naar buiten. Eén volledige gebruikersflow; de structuur van de grenzen is al aangetoond op de CI-omgeving en hoeft hier niet nog eens.
+
+**Transparantie.** De uitkomst per deelsysteem staat op één dashboard, groen of rood. Dat is geen rapportage achteraf maar onderdeel van het mechanisme: waarnemen in plaats van voorspellen werkt alleen als de waarneming zichtbaar is. Een rood vlak dat niemand ziet, is geen signaal.
+
+**Rood: eerst weer draaiend, dan pas de vraag hoe het kwam.** Op Test en Acceptatie draaien release candidates, en dan is vooruit meestal sneller dan terug: een kapotte RC is een signaal om snel een nieuwe te leveren. Rollback is het antwoord wanneer vooruit niet snel kan. Bij een afwijkende versiesamenstelling is roll-forward vrijwel altijd juist — het ontbrekende deelsysteem alsnog deployen in plaats van het geslaagde terugtrekken. Rollback geldt voor deployments; het register kent geen rollback, daar is alleen een nieuwe versie.
+
+Voordat een controle een correctie in gang zet, mag hij nog een keer draaien. Herhalen is goedkoop en scheidt een echte fout van een toevallige — dat is de winst van waarnemen boven voorspellen.
 
 Een gedwongen deployvolgorde is geen normale gang van zaken maar een signaal: de provider serveerde niet twee versies naast elkaar.
 
@@ -447,13 +486,40 @@ Een gedwongen deployvolgorde is geen normale gang van zaken maar een signaal: de
 
 ### 1.8 Testlagen en normen
 
-| | tegen code | tegen draaiend deelsysteem |
+De piramide houdt drie lagen. Contracttesten voegt er geen vierde aan toe.
+
+```
+        ╱╲          e2e          Test: smoke  ·  Acceptatie: gebruikersflow
+       ╱  ╲
+      ╱────╲        integratie   eigen database        → norm = de test
+     ╱      ╲                    contractverificatie   → norm = de spec
+    ╱────────╲      unit         semantiek             → norm = de test
+   ╱__________╲
+
+   ernaast: diff-gate · drift · stubvalidatie   (artefacten, geen runtime)
+```
+
+| | tegen code | tegen een draaiend deelsysteem |
 |---|---|---|
 | **unit** | unit tests — norm in de test | — |
-| **integratie** | integratietest (eigen DB) — norm in de test<br>contractverificatie, consumertest tegen stub — norm = **spec** | healthcheck |
-| **e2e smoke test** | — | smoke |
+| **integratie** | integratietest met eigen DB — norm in de test | healthcheck<br>contractverificatie op de CI-omgeving — norm = **spec** |
+| **e2e** | — | smoke op Test · gebruikersflow op Acceptatie |
 
-Buiten de piramide: drift-check en stubvalidatie. Dat zijn vergelijkingen van artefacten, geen runtime-gedrag — dezelfde familie als een linter.
+**De as is scope, niet snelheid.** Contractverificatie draait tegen een gedeployde container en is daarmee trager dan de smoke op Test, die een handvol aanroepen doet — en staat er toch onder. Wat de lagen ordent is hoeveel er tegelijk in beeld is: één klasse, één deelsysteem, de hele keten.
+
+**De integratielaag draagt twee ongelijksoortige dingen.** Snelle tests in hetzelfde proces tegen de eigen database, en contractverificatie tegen een gedeployd deelsysteem met stubs. Zelfde scope, andere orde van grootte in doorlooptijd. De tag `contract` houdt ze uit elkaar in de pipeline-uitvoer, zodat een rode build meteen zegt welke van de twee viel.
+
+**Wat contracttesten per laag verandert:**
+
+| Laag | Zonder | Met |
+|---|---|---|
+| unit | semantiek die geen schema dekt | ongewijzigd |
+| integratie | eigen database; de buur nagebootst met een zelfbedachte mock | de norm ligt buiten de test, in de spec uit het register; de stub wordt eruit gegenereerd in plaats van bedacht; volledig doorlopen |
+| e2e | veel scenario's, want de structuur van elke grens moet hier blijken | weinig scenario's: smoke toont dat het loopt, één gebruikersflow toont de betekenis |
+
+Daar zit het hele argument. Contracttesten maakt de middenlaag niet dikker maar strenger, en maakt de top kleiner omdat de structuur eronder al is aangetoond.
+
+Buiten de piramide: diff-gate, drift-check en stubvalidatie. Dat zijn vergelijkingen van artefacten, geen runtime-gedrag — dezelfde familie als een linter.
 
 Teamautonomie geldt voor unit en integratie. De gezamenlijke standaard geldt voor contractverificatie.
 
@@ -503,9 +569,9 @@ De basisdemo toont uitsluitend het mechanisme: contract uit het register, stub e
 | # | Scène | Zichtbaar |
 |---|---|---|
 | 1 | Order's pipeline draait volledig groen terwijl Payment nergens draait | onafhankelijkheid van de consumer |
-| 2 | Payment's pipeline draait groen | conformiteit van de provider |
-| 3 | Test omhoog, versieconformiteit | welke contractversies samen draaien |
-| 4 | dezelfde smoke groen tegen de echte keten | de samenstelling werkt |
+| 2 | Payment's pipeline draait groen, met de volledige contractverificatie op zijn CI-omgeving | conformiteit van de provider |
+| 3 | Test omhoog, versieconformiteit, dashboard groen | welke contractversies samen draaien |
+| 4 | smoke groen tegen de echte keten | de samenstelling loopt |
 
 Scène 1 en 2 zijn in willekeurige volgorde te draaien; begin bewust met Payment, omdat het publiek verwacht dat de consumer als laatste moet.
 
@@ -518,7 +584,8 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 | Onderdeel | Waar |
 |---|---|
 | Contractwijziging, breaking change, deprecation | hoofdstuk 2, 3 en 5 |
-| Acceptatie als tweede omgeving, rollback | hoofdstuk 4 |
+| De gebruikersflow en de koppelingen naar buiten op Acceptatie | hoofdstuk 4 |
+| Het dashboard bouwen; hier alleen beschreven | hoofdstuk 4 of 5; zie O11 |
 | Async, SOAP, derde deelsysteem | hoofdstuk 6 en 7 |
 | Angular UI | hoofdstuk 8 |
 | Publicatie vanuit een pipeline | hier handmatig; O5 |
@@ -540,6 +607,7 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 | O8 | Pins op info-endpoints als surrogaat voor monitoring (F4): tijdelijk voor de showcase of blijvend naast monitoring |
 | O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
 | O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
+| O11 | Waar het dashboard uit 1.7 gebouwd wordt en waaruit hij zijn gegevens haalt. De info-endpoints leveren de contractversies (zie O8); health en de laatste smoke-uitslag komen ergens anders vandaan |
 
 ---
 
@@ -591,7 +659,8 @@ Scenario B. Een grens breekt niet: een breuk wordt een nieuwe major náást de b
 
 | | |
 |---|---|
-| Toevoeging | de e2e gebruikersflow over de keten, op Acceptatie, met echte buren |
+| Toevoeging | de e2e gebruikersflow over de keten, op Acceptatie |
+| Onderscheid | de enige omgeving mét koppelingen naar buiten; op Test staan externe partijen als stub |
 | Vraag | doet de keten wat een gebruiker verwacht |
 
 Contractverificatie dekt de structuur van een grens: velden, typen, statuscodes, foutmodellen. Wat het niet dekt is betekenis — een veld dat blijft bestaan maar iets anders gaat betekenen, of een uitkomst die per deelsysteem klopt en samen toch niet. Dat is de residue waarvoor de gebruikersflow bestaat.
@@ -692,6 +761,7 @@ De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, 
 
 | Versie | Wijziging |
 |---|---|
+| 0.6.0 | Testopzet uitgeschreven. Drie omgevingen in plaats van twee: CI, Test zonder koppeling naar buiten, Acceptatie mét. Deploy per deelsysteem, gate is telkens de vorige omgeving groen. Contractverificatie draait na de deploy op de CI-omgeving en is daar volledig — elke operatie, happy en unhappy. De piramide houdt drie lagen: contracttesten voegt er geen toe maar verlegt de norm in de integratielaag en verkleint de top. `can-i-deploy` vervangen door waarnemen boven voorspellen, gedragen door de versieconformiteitscheck. Randvoorwaarde 6 erbij: rood is eerste prioriteit. Dashboard als onderdeel van het mechanisme. Geen patch, want de opzet verandert wezenlijk. |
 | 0.5.6 | O10 toegevoegd: wat de micro-frontend van Notification laat zien. Hij is nodig als remote voor hoofdstuk 9, maar hoofdstuk 6 heeft geen UI nodig, dus zijn inhoud is nergens belegd. |
 | 0.5.5 | Micro-frontends in het repositoryoverzicht: Order, Payment en Notification krijgen er elk een. Vastgelegd dat de portal samenstelt maar niet bezit — de remotes blijven bij hun eigen deelsysteem staan, anders wisselt er bij shell ↔ remote geen eigenaarschap meer en heeft hoofdstuk 9 geen grens meer te tonen. O9 gaat daarmee over welke micro-frontend hoofdstuk 8 uitwerkt, niet over welke bestaat. |
 | 0.5.4 | Wat 0.5.3 een *component* noemde heet nu een **service**; er is één woord voor het ding onder een deelsysteem. Notification en Portal vastgelegd als de derde en vierde deelsysteem, met hun services in het repositoryoverzicht. |
