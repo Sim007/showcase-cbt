@@ -9,7 +9,8 @@ Wie zo wil gaan testen, richt dat zelf in, in eigen deelsystemen en eigen pipeli
 een map bruikbaar is als startpunt, is een prettig gevolg en geen belofte.
 
 Licentie: [MIT](LICENSE). De volledige beschrijving staat in
-[docs/showcase-cbt.md](docs/showcase-cbt.md).
+[docs/showcase-cbt.md](docs/showcase-cbt.md); beveiligingsbevindingen en de besluiten
+daarover in [docs/security.md](docs/security.md).
 
 ## Structuur
 
