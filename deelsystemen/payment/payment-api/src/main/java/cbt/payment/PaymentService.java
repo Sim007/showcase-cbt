@@ -16,6 +16,13 @@ public class PaymentService {
     /** Willekeurig maar vast. Levert twee scenario's op die niet uit de spec volgen. */
     static final BigDecimal DECLINE_DREMPEL = new BigDecimal("500.00");
 
+    /**
+     * Gelijk aan de maximum uit het contract. Zonder deze grens neemt Payment een bedrag
+     * aan dat hij niet kan opslaan, en dat werd een 500 op een verzoek dat volgens de spec
+     * geldig was — gevonden door de contractverificatie, niet door een eigen test.
+     */
+    static final BigDecimal MAX_BEDRAG = new BigDecimal("999999999.99");
+
     private final PaymentRepository repository;
     private final AtomicLong teller = new AtomicLong();
 
@@ -24,8 +31,17 @@ public class PaymentService {
     }
 
     public PaymentEntity create(PaymentRequest verzoek) {
+        // Het contract zegt required en type: string. JSON-null voldoet aan het eerste en
+        // niet aan het tweede — en zonder deze controle lift hij mee tot in de response,
+        // die daarmee zijn eigen schema schendt.
+        if (verzoek.orderId() == null) {
+            throw new PaymentRuleException("INVALID_REQUEST", "orderId must be a string");
+        }
         if (verzoek.amount() == null || verzoek.amount().signum() <= 0) {
             throw new PaymentRuleException("INVALID_AMOUNT", "amount must be greater than zero");
+        }
+        if (verzoek.amount().compareTo(MAX_BEDRAG) > 0) {
+            throw new PaymentRuleException("INVALID_AMOUNT", "amount exceeds the maximum of " + MAX_BEDRAG);
         }
         if (!bestaandeValuta(verzoek.currency())) {
             throw new PaymentRuleException("UNKNOWN_CURRENCY", "unknown currency " + verzoek.currency());

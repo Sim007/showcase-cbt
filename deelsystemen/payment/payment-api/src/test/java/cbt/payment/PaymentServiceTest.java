@@ -38,6 +38,25 @@ class PaymentServiceTest {
                 .hasFieldOrPropertyWithValue("code", "INVALID_AMOUNT");
     }
 
+    /**
+     * JSON-null voldoet aan required maar niet aan type: string. Wordt hij doorgelaten,
+     * dan schendt ook de response zijn eigen schema.
+     */
+    @Test
+    void orderId_null_is_een_contractschending() {
+        assertThatThrownBy(() -> service.create(new PaymentRequest(null, new BigDecimal("10.00"), "EUR")))
+                .isInstanceOf(PaymentRuleException.class)
+                .hasFieldOrPropertyWithValue("code", "INVALID_REQUEST");
+    }
+
+    /** Het contract belooft niet meer aan te nemen dan hier past. */
+    @Test
+    void bedrag_boven_het_maximum_is_een_contractschending() {
+        assertThatThrownBy(() -> service.create(verzoek("1000000000.00", "EUR")))
+                .isInstanceOf(PaymentRuleException.class)
+                .hasFieldOrPropertyWithValue("code", "INVALID_AMOUNT");
+    }
+
     @Test
     void onbekende_valutacode_is_een_contractschending() {
         assertThatThrownBy(() -> service.create(verzoek("10.00", "XYZ")))

@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.ErrorResponseException;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
+import jakarta.servlet.ServletException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -42,15 +42,29 @@ public class ApiExceptionHandler {
     /**
      * Fouten die Spring zelf al op een status heeft afgebeeld: onbekend pad, verkeerde
      * methode, niet-ondersteund mediatype. Die status blijft staan — zonder deze handler
-     * vangt het vangnet hieronder ze op en wordt een 404 een 500.
+     * vangt het vangnet hieronder ze op en wordt een 404 of een 405 een 500.
+     *
+     * ServletException dekt die hele familie in één keer; ze implementeren allemaal
+     * ErrorResponse en dragen dus hun eigen status. Los opsommen betekent dat je bij de
+     * volgende soort opnieuw een 500 uitdeelt.
      */
-    @ExceptionHandler({ErrorResponseException.class, NoResourceFoundException.class})
+    @ExceptionHandler({ErrorResponseException.class, ServletException.class})
     public ResponseEntity<ErrorResponse> afgebeeld(Exception fout) {
-        HttpStatusCode status = fout instanceof org.springframework.web.ErrorResponse afgebeeld
-                ? afgebeeld.getStatusCode()
-                : HttpStatus.INTERNAL_SERVER_ERROR;
-        String code = status.value() == 404 ? "RESOURCE_NOT_FOUND" : "INVALID_REQUEST";
-        return ResponseEntity.status(status).body(new ErrorResponse(code, "request cannot be served"));
+        if (!(fout instanceof org.springframework.web.ErrorResponse afgebeeld)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("INTERNAL_ERROR", "unexpected error"));
+        }
+        HttpStatusCode status = afgebeeld.getStatusCode();
+        String code = switch (status.value()) {
+            case 404 -> "RESOURCE_NOT_FOUND";
+            case 405 -> "METHOD_NOT_ALLOWED";
+            case 415 -> "UNSUPPORTED_MEDIA_TYPE";
+            default -> status.is4xxClientError() ? "INVALID_REQUEST" : "INTERNAL_ERROR";
+        };
+        // De headers gaan mee: bij een 405 zit daar de Allow-header in die RFC 9110 eist,
+        // en die is van Spring afkomstig. Zelf samenstellen zou hem laten verouderen.
+        return ResponseEntity.status(status).headers(afgebeeld.getHeaders())
+                .body(new ErrorResponse(code, "request cannot be served"));
     }
 
     @ExceptionHandler(Exception.class)
