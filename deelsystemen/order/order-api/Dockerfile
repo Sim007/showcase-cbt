@@ -6,12 +6,14 @@ COPY pom.xml .
 RUN mvn -B -q dependency:go-offline
 COPY src ./src
 RUN mvn -B -q package -DskipTests
+# Geen versienummer in het pad: dat staat in de pom en beweegt bij elke release.
+RUN cp target/*.jar app.jar
 
 FROM eclipse-temurin:21.0.11_10-jre-alpine
 # Non-root: de container heeft geen enkele reden om als root te draaien.
 RUN addgroup -S cbt && adduser -S -G cbt cbt
 USER cbt
 WORKDIR /app
-COPY --from=build /build/target/order-api-1.0.0.jar app.jar
+COPY --from=build /build/app.jar app.jar
 EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
