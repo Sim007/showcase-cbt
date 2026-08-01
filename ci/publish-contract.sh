@@ -75,8 +75,17 @@ else
   OUD_REL="${VORIGE_SPEC#"${CBT_ROOT}/"}"
   NIEUW_REL="${SPECPAD#"${CBT_ROOT}/"}"
 
+  # oasdiff onderscheidt in zijn exitcode een gevonden breuk (1) van een tool die zijn
+  # werk niet kon doen (alles daarboven, bijvoorbeeld 102 bij een onleesbare spec). Dat
+  # verschil moet blijven staan: een gate die "breaking wijziging" meldt terwijl hij in
+  # werkelijkheid niets heeft kunnen vergelijken, blokkeert bij toeval en laat bij toeval
+  # door.
   BREKEND=0
-  oasdiff breaking "${OUD_REL}" "${NIEUW_REL}" --fail-on ERR || BREKEND=1
+  oasdiff breaking "${OUD_REL}" "${NIEUW_REL}" --fail-on ERR || BREKEND=$?
+
+  if [ "${BREKEND}" -gt 1 ]; then
+    fout "oasdiff kon de vergelijking niet uitvoeren (exitcode ${BREKEND}). Er is niets getoetst"
+  fi
 
   if [ "${BREKEND}" -eq 1 ]; then
     if [ "$(major "${VERSIE}")" = "$(major "${VORIGE}")" ]; then
