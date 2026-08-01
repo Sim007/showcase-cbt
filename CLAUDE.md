@@ -41,6 +41,13 @@ Nederlands voor de kernbegrippen, Engels voor techniek.
 
 De piramide heeft drie lagen: `unit`, `integratie` en `e2e`. Contracttesten voegt er geen vierde aan toe — contractverificatie ís integratie, met de spec als norm in plaats van de test.
 
+Een contracttest heet naar het **contract** en de **rol**, niet naar het deelsysteem:
+`PaymentApiProviderContractTest` in payment-api, `PaymentApiConsumerContractTest` in
+order-api. `payment-api` is de artifactnaam in het register, dus de testnaam wijst naar
+waar de norm staat. Dat is nodig omdat een rol bij een grens hoort en niet bij een
+deelsysteem: Payment is provider op Order → Payment, en in hoofdstuk 7 consumer van een
+externe partij.
+
 De JUnit-tags zijn `unit`, `integratie` en `contract`. Die derde tag bestaat omdat de pipeline hem op een ander moment draait, na de deploy op de CI-omgeving, en niet omdat het een aparte laag is. Gebruik die woorden overal hetzelfde: in scriptnamen, tags en pipeline-uitvoer.
 
 ## Veiligheid
