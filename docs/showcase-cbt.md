@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.6.6
+Versie 0.6.7
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -430,6 +430,19 @@ Payment heeft binnen deze scope geen buren; zijn CI-omgeving bevat daarom geen s
 
 **Stap 9 is volledig, niet een steekproef:** elke operatie uit de spec, elke responsecode, happy en unhappy, als regressie. Dat is de plek waar de diepte zit — daar staat het deelsysteem alleen, zijn de scenario's beheersbaar en is een run goedkoop. Wat op Test en Acceptatie draait, mag daardoor klein blijven.
 
+**Twee stijlen, en de pipeline kiest.** De testgevallen komen uit de spec — gegenereerd — of ze zijn met de hand geschreven. De showcase houdt ze allebei, omdat het verschil ertoe doet en zichtbaar hoort te zijn.
+
+| | Gegenereerd | Geschreven |
+|---|---|---|
+| Herkomst | uit de spec, geen code | met de hand, JUnit met tag `contract` |
+| Dekking | wat het contract toestaat | wat de schrijver bedacht |
+| Norm | de spec | de spec, via een validator — niet de verwachting in de test |
+| Leesbaar | een rapport | testnamen naast unit en integratie |
+
+De handgeschreven variant is niet de mindere: hij is leesbaar, staat in dezelfde toolchain en documenteert de paden die ertoe doen. Maar hij dekt per definitie wat iemand heeft bedacht. In hoofdstuk 1 vond de gegenereerde variant zes gebreken in een implementatie met vijftien groene tests — zie `besluiten.md`. Dat verschil is geen detail maar het argument om te genereren waar dat kan.
+
+Voor unit en integratie speelt die keuze niet: daar ligt de norm in de test, en dan is met de hand schrijven het enige dat betekenis heeft.
+
 **Waarom na de deploy en niet tegen de code.** Een contract is een belofte van een draaiend systeem. Configuratie, serialisatie en foutafhandeling in de echte container horen erbij, en die vallen buiten beeld als je alleen de broncode toetst. De prijs is een trager signaal dan een unittest; daarom staan unit en integratie eronder en vangen die af wat ze goedkoop kunnen vangen.
 
 ---
@@ -814,6 +827,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.6.7 | In 1.4 vastgelegd dat contractverificatie in twee stijlen bestaat: gegenereerd uit de spec en met de hand geschreven. De showcase houdt allebei, een pipeline kiest er een. Met de reden erbij: geschreven tests dekken wat de schrijver bedacht, en dat is meetbaar minder. Voor unit en integratie speelt de keuze niet, want daar ligt de norm in de test. |
 | 0.6.6 | `currency` van een `pattern` naar een `enum` van EUR, USD en GBP, en `maximum` op `amount`. Daarmee staat elke geldigheidsregel in het contract en blijft als semantiek alleen de drempel van 500,00 over — een businessuitkomst, geen invoercontrole. Gemeten met oasdiff: een valuta toevoegen is niet breaking (scenario A), een valuta weghalen wel. De implementatie volgt de enum en accepteert niet meer dan de spec belooft. |
 | 0.6.5 | Semantiek naar het schema waar het schema hem kan dragen: `minimum: 0` met `exclusiveMinimum: true` op `amount`, en een `pattern` op `currency`. Gevonden doordat Schemathesis meldde dat een schema-geldig verzoek werd geweigerd — het schema liet toe wat de implementatie verbood. Correctie op de baseline, want v1.0.0 was nog niet uitgeleverd; na release was `pattern` toevoegen breaking geweest. Wat overblijft is echte semantiek: dat een valutacode bestaat, en de drempel van 500,00. |
 | 0.6.4 | Inleiding verwijst naar `besluiten.md` en `security.md`, zodat de onderbouwing van een keuze vindbaar is vanaf de plek waar de keuze staat. |
