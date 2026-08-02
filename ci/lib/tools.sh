@@ -11,6 +11,7 @@ MAVEN_IMAGE="maven:3.9.16-eclipse-temurin-21"
 YQ_IMAGE="mikefarah/yq:4.53.3"
 NODE_IMAGE="node:22.23.2-alpine"
 AJV_VERSIE="5.0.0"
+PLAYWRIGHT_VERSIE="1.62.1"
 
 # Alles draait als de aanroepende gebruiker en zonder netwerk: deze tools lezen
 # uitsluitend bestanden uit de werkmap.
@@ -70,6 +71,36 @@ ajv() {
     --volume "${CBT_ROOT}/build/node:/n" \
     --workdir /work \
     "$NODE_IMAGE" node /n/node_modules/ajv-cli/dist/index.js "$@"
+}
+
+# playwright <netwerk> <base-url> <argumenten...>
+#
+# Draait de gedeelde smoke uit playwright/. Geen browserimage: de smoke praat HTTP, en de
+# officiële Playwright-image is ruim twee gigabyte. Laptopbudget is een ontwerpeis.
+# Hoofdstuk 8 heeft browsers wel nodig; dan komt daar een eigen image bij.
+#
+# Zelfde patroon als ajv: installatie in build/node/, HOME naar een schrijfbare map.
+playwright() {
+  _netwerk="$1"
+  _base_url="$2"
+  shift 2
+  mkdir -p "${CBT_ROOT}/build/node"
+  if [ ! -d "${CBT_ROOT}/build/node/node_modules/@playwright/test" ]; then
+    docker run --rm --user "$(id -u):$(id -g)" \
+      --volume "${CBT_ROOT}/build/node:/n" --workdir /n --env HOME=/n \
+      --env PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+      "$NODE_IMAGE" npm install --no-fund --no-audit "@playwright/test@${PLAYWRIGHT_VERSIE}"
+  fi
+  docker run --rm --interactive \
+    --network "${_netwerk}" \
+    --user "$(id -u):$(id -g)" \
+    --volume "${CBT_ROOT}:/work" \
+    --volume "${CBT_ROOT}/build/node/node_modules:/work/playwright/node_modules" \
+    --workdir /work/playwright \
+    --env HOME=/tmp \
+    --env CI=1 \
+    --env SMOKE_BASE_URL="${_base_url}" \
+    "$NODE_IMAGE" npx playwright test "$@"
 }
 
 # mvn <werkmap-relatief-aan-de-hoofdmap> <argumenten...>
