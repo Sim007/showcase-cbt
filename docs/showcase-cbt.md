@@ -24,6 +24,14 @@ Wat overblijft is een opzet van losse open-source-onderdelen: een registry voor 
 
 Wat de showcase aantoont is één ding: **hetzelfde mechanisme werkt over vier contractvormen** — REST, async, SOAP en een frontend-grens — en over de volledige levenscyclus van een contract, van eerste publicatie tot het uitfaseren van een oude versie.
 
+### Waarom contracttesten
+
+**Een breuk kost het meest als hij laat blijkt.** Zonder contract komt een breaking change aan het licht op de omgeving waar twee deelsystemen elkaar voor het eerst tegenkomen, of bij een consumer die de wijziging niet zag aankomen. Op dat moment ligt er code, staat er een release klaar en is terugdraaien duur. Een gepubliceerd contract met een gate ervoor verschuift dat moment naar de wijziging zelf: nog voordat er een regel code is geschreven, staat vast of dit breekt en wat het kost. Dat is de winst — niet dat er minder breuken zijn, maar dat ze eerder en goedkoper blijken.
+
+**En het maakt ketentesten kleiner.** Een e2e-suite groeit doordat hij de enige plek is waar blijkt of twee deelsystemen op elkaar passen. Wordt dat elders en goedkoper aangetoond, dan mag hij terug naar waar hij voor bedoeld is: doet de keten wat een gebruiker verwacht. Minder scenario's, sneller, en ze falen om een reden die te lezen is.
+
+**Waar het naartoe werkt: releasen op testbewijs.** Een squad hoeft niet te vragen of het mag en hoeft met niemand een deployvolgorde af te spreken. Hij heeft bewijs dat zijn kant van elke grens klopt, vastgesteld op een artefact en niet op een gevoel. Dat is wat zelfstandig releasen mogelijk maakt, en alles wat hieronder staat is daar een middel voor.
+
 ### De startsituatie
 
 **Deze showcase begint niet bij nul.** Hij veronderstelt een werkende uitgangssituatie: deelsystemen die gebouwd en gedeployd worden, pipelines die draaien, omgevingen die er staan, en een testpiramide die zijn werk doet. Contract-based testing komt daar bovenop en vervangt niets. Zonder die aanname leest de rest als een opdracht om alles opnieuw in te richten, en dat is niet wat er staat.
@@ -34,7 +42,7 @@ Die uitgangssituatie hoort bij het fictieve systeem: hij is een gegeven van de s
 
 | | |
 |---|---|
-| Eigenaarschap | een deelsysteem heeft één eigenaar, die zelfstandig releaset |
+| Eigenaarschap | een deelsysteem heeft één eigenaar, die zelfstandig kan releasen |
 | Pipelines | per microservice bouwen en testen, per deelsysteem deployen |
 | Omgevingen | een efemere CI-omgeving, en Test en Acceptatie die blijven staan |
 | Testpiramide | unit, integratie, een e2e smoke op Test, een gebruikersflow op Acceptatie |
