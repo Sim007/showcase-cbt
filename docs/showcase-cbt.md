@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.6.8
+Versie 0.7.0
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -27,6 +27,45 @@ Het **bidirectionele** model — waarin een providerspecificatie en consumerverw
 Wat overblijft is een opzet van losse open-source-onderdelen: een registry voor de contracten, een diff-tool voor compatibiliteit, en validators aan beide kanten van de grens.
 
 Wat de showcase aantoont is één ding: **hetzelfde mechanisme werkt over vier contractvormen** — REST, async, SOAP en een frontend-grens — en over de volledige levenscyclus van een contract, van eerste publicatie tot het uitfaseren van een oude versie.
+
+### De startsituatie
+
+**Deze showcase begint niet bij nul.** Hij begint waar een organisatie staat die al levert: met squads, met pipelines, met omgevingen en met tests die werken. Contract-based testing is daar een toevoeging aan, geen vervanging van. Wie dat niet expliciet maakt, laat de lezer denken dat hij alles opnieuw moet inrichten — en dat is niet zo.
+
+Wat hieronder staat is een gangbare uitgangssituatie, geen beschrijving van één specifieke organisatie. Herkent een lezer er het zijne in, dan is de vergelijking te maken die deze showcase mogelijk wil maken.
+
+**Wat er al is.**
+
+| | |
+|---|---|
+| Organisatie | squads die elk een deelsysteem bezitten en zelfstandig releasen |
+| Pipelines | per microservice bouwen en testen, per deelsysteem deployen |
+| Omgevingen | een efemere CI-omgeving, en Test en Acceptatie die blijven staan |
+| Testpiramide | unit, integratie, een e2e smoke op Test, een gebruikersflow op Acceptatie |
+| Grenzen | beschreven, vaak in een OpenAPI-bestand, maar niet afgedwongen |
+
+Die piramide staat en is niet het probleem. Wat ontbreekt is dat er iets is dat een grens **bindt**: de spec is documentatie, niet een norm waar een build op valt.
+
+**Wat contracttesten toevoegt.**
+
+| Toevoeging | Waar het gaat zitten |
+|---|---|
+| Een register waarin de spec gepubliceerd staat, immutable en per versie | naast de bestaande artefactopslag |
+| Een diff-gate bij publicatie | bij de contractwijziging, niet in een pipeline |
+| Een stub die uit de spec wordt gegenereerd | in de CI-omgeving, waar nu een handgeschreven mock staat |
+| Contractverificatie aan beide kanten van de grens | in de integratielaag, met de spec als norm |
+| Drift-check en versieconformiteit | naast de piramide, als artefact- en omgevingscontrole |
+
+**Wat contracttesten wegneemt.** Dit is de rij die de rekening laat kloppen, want de vorige kost werk.
+
+| Verdwijnt | Waarom |
+|---|---|
+| E2e-tests die de structuur van een grens aantonen | die structuur is al bewezen op een goedkopere laag; de gebruikersflow mag terug naar wat een gebruiker doet |
+| Afstemming over deployvolgorde | de contractversie is het synchronisatiepunt; elk deelsysteem schuift op zijn eigen tempo op |
+| Handgeschreven mocks van de buur | een mock die de schrijver bedacht, bevestigt wat de schrijver dacht. De stub komt uit het contract |
+| De vraag "durven we te releasen" | vervangen door een oordeel dat op een artefact is vastgesteld |
+
+**Elk hoofdstuk toont een delta, geen systeem.** De vraag die de showcase beantwoordt is niet *hoe bouw je dit* maar *wat verandert er bij ons*. Daarom bouwt hij de bestaande praktijk niet na maar veronderstelt hem, en laat hij per hoofdstuk zien wat erbij komt en wat eraf kan.
 
 ### Waarom deze showcase
 
@@ -829,6 +868,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.7.0 | Startsituatie toegevoegd: de showcase begint brownfield, bij een organisatie die al levert. Drie rijen — wat er al is, wat contracttesten toevoegt, en wat het wegneemt. Die laatste ontbrak en is nu juist de rij die de rekening laat kloppen. Gevolg voor de rest: elk hoofdstuk toont een delta en bouwt de bestaande praktijk niet na. Geen patch, want het verandert waar de showcase over gaat. |
 | 0.6.8 | Verwijzing bovenaan hoofdstuk 1 naar `01-basis/README.md`. Dit document houdt het wat en waarom; het hoe staat in de README van elk hoofdstuk, naast de code die het beschrijft. |
 | 0.6.7 | In 1.4 vastgelegd dat contractverificatie in twee stijlen bestaat: gegenereerd uit de spec en met de hand geschreven. De showcase houdt allebei, een pipeline kiest er een. Met de reden erbij: geschreven tests dekken wat de schrijver bedacht, en dat is meetbaar minder. Voor unit en integratie speelt de keuze niet, want daar ligt de norm in de test. |
 | 0.6.6 | `currency` van een `pattern` naar een `enum` van EUR, USD en GBP, en `maximum` op `amount`. Daarmee staat elke geldigheidsregel in het contract en blijft als semantiek alleen de drempel van 500,00 over — een businessuitkomst, geen invoercontrole. Gemeten met oasdiff: een valuta toevoegen is niet breaking (scenario A), een valuta weghalen wel. De implementatie volgt de enum en accepteert niet meer dan de spec belooft. |
