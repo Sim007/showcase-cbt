@@ -11,8 +11,8 @@ opzet die de andere showcases alleen nog aanvullen.
 draait.
 
 > **In aanbouw.** De pipelinescripts en het demoscript bestaan nog niet, dus hieronder
-> staat de handmatige route. Zodra `ci/pipeline-provider.sh` en `ci/pipeline-consumer.sh`
-> er zijn, vervangen die de stappen 3 tot en met 6.
+> staat de handmatige route. Zodra de pipelinescripts uit `ci/` er zijn, vervangen die de
+> stappen 2 tot en met 5.
 
 ---
 

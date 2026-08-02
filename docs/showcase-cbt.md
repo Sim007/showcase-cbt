@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.7.0
+Versie 0.7.1
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -188,7 +188,7 @@ Losstaand te draaien is daarmee elke genummerde map, mits de deelsystemen die hi
 
 **Draaien.** Docker en een shell zijn de enige vereisten; op Windows via WSL2, niet via Git Bash. Extern gereedschap zoals oasdiff draait als container achter een functie in `ci/lib/tools.sh`, zodat de versie op een laptop en op een runner identiek is.
 
-**CI.** Er zijn twee wrappers — GitLab CI en GitHub Actions — die uitsluitend `ci/pipeline-provider.sh` en `ci/pipeline-consumer.sh` aanroepen. Geen stap of conditie mag in één van de twee bestanden staan en in het andere niet. De standaard zit in de scripts, niet in het CI-platform; dat is ook het argument voor een team dat ooit naar een ander platform migreert.
+**CI.** Er zijn twee wrappers — GitLab CI en GitHub Actions — die uitsluitend de scripts uit `ci/` aanroepen: `pipeline-microservice.sh`, `pipeline-ci.sh`, `pipeline-test.sh` en `pipeline-acceptatie.sh`. Geen stap of conditie mag in één van de twee bestanden staan en in het andere niet. De standaard zit in de scripts, niet in het CI-platform; dat is ook het argument voor een team dat ooit naar een ander platform migreert.
 
 ---
 
@@ -453,25 +453,73 @@ Wat per omgeving verschilt, staat niet in een tweede servicedefinitie maar in en
 
 ---
 
-### 1.4 Pipeline Payment (provider)
+### 1.4 Vier pipelines
 
-| # | Stap | Laag | Tegen | Norm |
-|---|---|---|---|---|
-| 1 | build per service | — | code | — |
-| 2 | unit (`-Dgroups=unit`) | unit | code | test |
-| 3 | integratie (`-Dgroups=integratie`) | integratie | code + eigen DB | test |
-| 4 | `get-contract v1` uit register | — | register | — |
-| 5 | drift: runtime-spec vs gepubliceerde spec | geen | artefact | **spec** |
-| 6 | docker build per service; image krijgt zijn eigen versie en een label met de contractversies die hij serveert | — | — | — |
-| 7 | up: het deelsysteem, zonder stubs | — | draaiend | — |
-| 8 | healthcheck | — | draaiend | — |
-| 9 | contractverificatie (`-Dgroups=contract`) | integratie | **draaiend deelsysteem** | **spec** |
+Bouwen gebeurt per microservice, deployen per deelsysteem. Dat levert vier soorten
+pipeline op — vier scripts, meer instanties: de eerste draait per microservice, de andere
+drie per deelsysteem.
 
-Payment heeft binnen deze scope geen buren; zijn CI-omgeving bevat daarom geen stubs.
+| # | Pipeline | Per | Stappen |
+|---|---|---|---|
+| 1 | microservice | microservice | build · `unit` · `integratie` · image met eigen versie en een label voor de contractversies |
+| 2 | deelsysteem → CI | deelsysteem | efemere omgeving neerzetten · healthcheck · contractverificatie · opruimen |
+| 3 | deelsysteem → Test | deelsysteem | deploy · healthcheck · smoke van dat deelsysteem |
+| 4 | deelsysteem → Acceptatie | deelsysteem | deploy · gebruikersflow met het label van dat deelsysteem |
 
-**Stap 9 is volledig, niet een steekproef:** elke operatie uit de spec, elke responsecode, happy en unhappy, als regressie. Dat is de plek waar de diepte zit — daar staat het deelsysteem alleen, zijn de scenario's beheersbaar en is een run goedkoop. Wat op Test en Acceptatie draait, mag daardoor klein blijven.
+**De gate is telkens de vorige omgeving groen.** Pipeline 2 draait als de microservices van
+het deelsysteem groen zijn, 3 als 2 groen is, 4 als 3 groen is. Er is geen moment waarop
+alles tegelijk verhuist; elk deelsysteem schuift op zijn eigen tempo op.
 
-**Twee stijlen, en de pipeline kiest.** De testgevallen komen uit de spec — gegenereerd — of ze zijn met de hand geschreven. De showcase houdt ze allebei, omdat het verschil ertoe doet en zichtbaar hoort te zijn.
+**Wat op Test en Acceptatie draait, mag klein blijven.** De diepte zit in pipeline 2: daar
+staat het deelsysteem alleen, met stubs waar zijn buren horen, en daar is een run goedkoop.
+Op Test volstaat dat het loopt, op Acceptatie dat de keten doet wat een gebruiker
+verwacht. Geen smoke op Acceptatie — de laag eronder heeft dat al aangetoond, en herhalen
+verplaatst werk naar de duurste plek.
+
+**De smoke over álle grenzen hangt niet aan een deploy.** Die gaat over de samenstelling,
+en die verandert ook als er niets wordt gedeployd. Hij draait daarom gepland en is van de
+tribe, niet van een squad.
+
+---
+
+### 1.5 Wat de rol bepaalt
+
+Pipeline 2 doet niet overal hetzelfde, en dat verschil volgt uit de **grens** en niet uit
+het deelsysteem. Een deelsysteem kan contracten serveren, contracten pinnen, of allebei —
+Payment doet in hoofdstuk 1 het eerste, in hoofdstuk 6 het eerste tweemaal, en in
+hoofdstuk 7 ook het tweede. Daarom is de rol een eigenschap die de pipeline afleidt, en
+geen parameter die je meegeeft.
+
+**Serveert het deelsysteem een contract?** Dan hoort daarbij:
+
+| Stap | Laag | Tegen | Norm |
+|---|---|---|---|
+| `get-contract` van elke versie die hij serveert | — | register | — |
+| drift: runtime-spec vs gepubliceerde spec | geen | artefact | **spec** |
+| contractverificatie | integratie | **draaiend deelsysteem** | **spec** |
+
+Die verificatie is volledig, geen steekproef: elke operatie uit de spec, elke responsecode,
+happy en unhappy, als regressie.
+
+**Pint het deelsysteem een contract?** Dan hoort daarbij:
+
+| Stap | Laag | Tegen | Norm |
+|---|---|---|---|
+| `get-contract <pin>` | — | register | — |
+| stub genereren en valideren | geen | artefact | **spec** |
+| contractverificatie | integratie | **draaiend deelsysteem + stub** | **spec, beide richtingen** |
+
+**Beide richtingen** betekent twee dingen tegelijk: wat de consumer verstuurt voldoet aan de
+spec, én wat hij doet met de responses die uit die spec komen klopt. De eerste richting is
+wat een provider-driven opzet toevoegt aan een integratietest met een mock — die mock zou
+je zelf verzinnen, deze stub komt uit het contract.
+
+Een consumer heeft geen drift-stap: hij bezit het contract niet, dus er valt aan zijn kant
+niets van af te wijken.
+
+**Twee stijlen voor de providerkant, en de pipeline kiest.** De testgevallen komen uit de
+spec — gegenereerd — of ze zijn met de hand geschreven. De showcase houdt ze allebei,
+omdat het verschil ertoe doet en zichtbaar hoort te zijn.
 
 | | Gegenereerd | Geschreven |
 |---|---|---|
@@ -480,33 +528,24 @@ Payment heeft binnen deze scope geen buren; zijn CI-omgeving bevat daarom geen s
 | Norm | de spec | de spec, via een validator — niet de verwachting in de test |
 | Leesbaar | een rapport | testnamen naast unit en integratie |
 
-De handgeschreven variant is niet de mindere: hij is leesbaar, staat in dezelfde toolchain en documenteert de paden die ertoe doen. Maar hij dekt per definitie wat iemand heeft bedacht. In hoofdstuk 1 vond de gegenereerde variant zes gebreken in een implementatie met vijftien groene tests — zie `besluiten.md`. Dat verschil is geen detail maar het argument om te genereren waar dat kan.
+De handgeschreven variant is niet de mindere: hij is leesbaar, staat in dezelfde toolchain
+en documenteert de paden die ertoe doen. Maar hij dekt per definitie wat iemand heeft
+bedacht. In hoofdstuk 1 vond de gegenereerde variant zes gebreken in een implementatie met
+vijftien groene tests — zie `besluiten.md`. Dat verschil is het argument om te genereren
+waar dat kan.
 
-Voor unit en integratie speelt die keuze niet: daar ligt de norm in de test, en dan is met de hand schrijven het enige dat betekenis heeft.
+De consumerkant kent die keuze niet. Een generator toetst een server aan zijn spec; er is
+niets vergelijkbaars dat een cliënt uitoefent. Wat een consumer verstuurt is alleen te zien
+door hem te laten draaien en achteraf in het journaal van de stub te kijken.
 
-**Waarom na de deploy en niet tegen de code.** Een contract is een belofte van een draaiend systeem. Configuratie, serialisatie en foutafhandeling in de echte container horen erbij, en die vallen buiten beeld als je alleen de broncode toetst. De prijs is een trager signaal dan een unittest; daarom staan unit en integratie eronder en vangen die af wat ze goedkoop kunnen vangen.
+Voor unit en integratie speelt de keuze evenmin: daar ligt de norm in de test, en dan is
+met de hand schrijven het enige dat betekenis heeft.
 
----
-
-### 1.5 Pipeline Order (consumer)
-
-| # | Stap | Laag | Tegen | Norm |
-|---|---|---|---|---|
-| 1 | build per service | — | code | — |
-| 2 | unit (`-Dgroups=unit`) | unit | code | test |
-| 3 | integratie (`-Dgroups=integratie`) | integratie | code + eigen DB | test |
-| 4 | `get-contract <pin>` uit register | — | register | — |
-| 5 | stub genereren + valideren | — | artefact | **spec** |
-| 6 | docker build per service; image krijgt zijn eigen versie en een label met de contractversie waarop hij pint | — | — | — |
-| 7 | up: het deelsysteem + `stub.yml`, geen Payment | — | draaiend | — |
-| 8 | healthcheck | — | draaiend | — |
-| 9 | contractverificatie (`-Dgroups=contract`) | integratie | **draaiend deelsysteem + stub** | **spec, beide richtingen** |
-
-De consumer heeft geen drift-stap: hij bezit het contract niet, dus er valt aan zijn kant niets van af te wijken.
-
-**Beide richtingen** betekent bij de consumer twee dingen tegelijk: wat Order naar de stub stuurt voldoet aan de spec, én wat Order doet met de responses die de stub uit die spec teruggeeft, klopt. De eerste richting is wat een provider-driven opzet toevoegt aan een gewone integratietest met een mock — die mock zou je zelf verzinnen, deze stub komt uit het contract.
-
-Er is één stub, gegenereerd uit de spec uit het register, gevalideerd bij het maken en daarna gebruikt in stap 7 en 9. De mappings worden nooit gecommit.
+**Waarom contractverificatie na de deploy en niet tegen de code.** Een contract is een
+belofte van een draaiend systeem. Configuratie, serialisatie en foutafhandeling in de echte
+container horen erbij, en die vallen buiten beeld als je alleen de broncode toetst. De prijs
+is een trager signaal dan een unittest; daarom staan unit en integratie eronder en vangen
+die af wat ze goedkoop kunnen vangen.
 
 ---
 
@@ -686,6 +725,10 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 
 **Besloten.** De naamgeving van de testlagen volgt één begrippenlijst en wijkt daar nergens van af; waar dit document "contractverificatie" schrijft, geldt die term consequent in scriptnamen, JUnit-tags en pipeline-uitvoer. Betekenisvolle `example`-waarden zijn een norm voor elke spec: zonder example faalt de stubgeneratie (zie 1.6).
 
+**Dit document is de spec en de code de implementatie** (O12, gesloten). Wat hier staat gaat vooruit op wat er gebouwd wordt, en loopt de bouw ergens tegen iets aan, dan gaat dat eerst terug hierheen — niet stilzwijgend het andere pad op. Dat is dezelfde regel die de showcase op contracten toepast: spec-first, en een drift-check die afdwingt dat de belofte en de werkelijkheid niet uit elkaar lopen.
+
+De wijzigingslog is daarmee ook de driftlog: elke regel is een moment waarop de bouw het ontwerp weersprak en het ontwerp is bijgesteld.
+
 De stub wordt zelf gegenereerd en draait op WireMock (O7, gesloten). Prism van Stoplight is geprobeerd en doet padtemplates, `example`-waarden en requestvalidatie native, maar kan geen response kiezen op basis van de requestinhoud — en dat heeft het scenario uit 1.2 nodig. De reden staat in 1.6.
 
 De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het contract. Het schema legt vast dat er een `code` en een `message` zijn; welke codes voorkomen niet. Een consumer reageert op de HTTP-status, niet op een codestring — anders wordt elke nieuwe foutsituatie bij de provider een contractwijziging. De implementatie gebruikt daardoor ook codes die niet in de spec als voorbeeld staan, zoals `INVALID_REQUEST` bij een niet-gedeclareerd veld.
@@ -700,7 +743,6 @@ De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het cont
 | O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
 | O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
 | O11 | Waar het dashboard uit 1.7 gebouwd wordt en waaruit hij zijn gegevens haalt. De info-endpoints leveren de contractversies (zie O8); health en de laatste smoke-uitslag komen ergens anders vandaan |
-| O12 | Hoe wat tijdens het bouwen wordt gewijzigd of ontdekt, terugkomt in dit document. Nu gebeurt dat per geval en met de hand; het moet een vaste stap worden, anders loopt de showcase stilzwijgend voor op zijn eigen ontwerp |
 
 ---
 
@@ -868,6 +910,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.7.1 | 1.4 en 1.5 herschreven naar de vier pipelines: bouwen per microservice, deployen per deelsysteem, en per omgeving een eigen pipeline met de vorige omgeving als gate. De oude opzet beschreef één pipeline per deelsysteem die alles deed, met provider en consumer als scriptnaam — maar een rol hoort bij een grens en niet bij een deelsysteem, dus leidt de pipeline hem af. O12 gesloten: dit document is de spec, de code de implementatie, en de wijzigingslog is de driftlog. |
 | 0.7.0 | Startsituatie toegevoegd: de showcase begint brownfield, bij een organisatie die al levert. Drie rijen — wat er al is, wat contracttesten toevoegt, en wat het wegneemt. Die laatste ontbrak en is nu juist de rij die de rekening laat kloppen. Gevolg voor de rest: elk hoofdstuk toont een delta en bouwt de bestaande praktijk niet na. Geen patch, want het verandert waar de showcase over gaat. |
 | 0.6.8 | Verwijzing bovenaan hoofdstuk 1 naar `01-basis/README.md`. Dit document houdt het wat en waarom; het hoe staat in de README van elk hoofdstuk, naast de code die het beschrijft. |
 | 0.6.7 | In 1.4 vastgelegd dat contractverificatie in twee stijlen bestaat: gegenereerd uit de spec en met de hand geschreven. De showcase houdt allebei, een pipeline kiest er een. Met de reden erbij: geschreven tests dekken wat de schrijver bedacht, en dat is meetbaar minder. Voor unit en integratie speelt de keuze niet, want daar ligt de norm in de test. |
