@@ -29,7 +29,7 @@ VERSIE="$2"
 . "${CBT_ROOT}/ci/lib/tools.sh"
 
 echo "== ${DEELSYSTEEM} ${VERSIE} naar Acceptatie =="
-rapport_start
+rapport_start "${DEELSYSTEEM} ${VERSIE} → Acceptatie"
 
 stap "deploy op Acceptatie" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" acceptatie
 
@@ -37,14 +37,17 @@ stap "deploy op Acceptatie" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSI
 # deelsystemen — de flow spant er dus overheen. Ontbreekt er een, dan valt hij om, en dan
 # hoort de melding dáárover te gaan en niet over een rode test.
 . "${CBT_ROOT}/omgevingen/acceptatie.env"
-if ! curl -fsS -o /dev/null --max-time 5 "http://localhost:${ORDER_API_POORT}/actuator/health" 2>/dev/null; then
-  fout "de gebruikersflow heeft de hele keten nodig en Order draait niet op Acceptatie. Deploy eerst alle deelsystemen; daarna schuift elk op zijn eigen tempo op"
-fi
+for _ander in "${CBT_ROOT}"/deelsystemen/*/; do
+  _naam="$(basename "${_ander}")"
+  _poortvar="$(echo "${_naam}" | tr '[:lower:]' '[:upper:]')_API_POORT"
+  _poort="$(eval echo "\${${_poortvar}:-}")"
+  [ -n "${_poort}" ] || continue
+  curl -fsS -o /dev/null --max-time 5 "http://localhost:${_poort}/actuator/health" 2>/dev/null \
+    || fout "de gebruikersflow heeft de hele keten nodig en ${_naam} draait niet op Acceptatie. Deploy eerst alle deelsystemen; daarna schuift elk op zijn eigen tempo op"
+done
 
 stap "gebruikersflow @${DEELSYSTEEM}" "${CBT_ROOT}/ci/gebruikersflow.sh" "${DEELSYSTEEM}" http://order-api:8082 cbt-acceptatie
 bijzonderheid "$(grep -oE '[0-9]+ passed' "${STAP_LOG}" | tail -1)"
 
-rapport_klaar "${CBT_ROOT}/build/rapport/acceptatie-${DEELSYSTEEM}-${VERSIE}.md" \
-  "${DEELSYSTEEM} ${VERSIE} op Acceptatie" \
-  "Oordeel: groen. De gebruikersflow over de keten doet wat een gebruiker verwacht."
+rapport_oordeel "Oordeel: groen. De gebruikersflow over de keten doet wat een gebruiker verwacht."
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} draait op Acceptatie"

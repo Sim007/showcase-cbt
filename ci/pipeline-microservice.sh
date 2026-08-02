@@ -31,7 +31,7 @@ VERSIE="$(yq -p=xml -o=yaml -r '.project.version' "${MODULE}/pom.xml" 2>/dev/nul
 [ -n "${VERSIE}" ] && [ "${VERSIE}" != "null" ] || fout "kon de versie niet uit ${MODULE}/pom.xml lezen"
 
 echo "== ${MICROSERVICE} ${VERSIE} =="
-rapport_start
+rapport_start "${MICROSERVICE} ${VERSIE}"
 
 stap "unit" mvn "${MODULE}" test -Dgroups=unit
 bijzonderheid "$(grep -oE 'Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+' "${STAP_LOG}" | tail -1)"
@@ -42,7 +42,5 @@ bijzonderheid "$(grep -oE 'Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+' 
 stap "jar bouwen" mvn "${MODULE}" -q package -DskipTests
 stap "image bouwen" docker build -q -t "cbt/${MICROSERVICE}:${VERSIE}" "${CBT_ROOT}/${MODULE}"
 
-rapport_klaar "${CBT_ROOT}/build/rapport/microservice-${MICROSERVICE}-${VERSIE}.md" \
-  "${MICROSERVICE} ${VERSIE}" \
-  "Oordeel: groen. De microservice is gebouwd en getoetst tegen zijn eigen tests."
+rapport_oordeel "Oordeel: groen. De microservice is gebouwd en getoetst tegen zijn eigen tests."
 echo "klaar: cbt/${MICROSERVICE}:${VERSIE}"

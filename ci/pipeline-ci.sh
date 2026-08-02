@@ -42,7 +42,7 @@ opruimen() {
 trap opruimen EXIT
 
 echo "== ${DEELSYSTEEM} ${VERSIE} op een efemere CI-omgeving =="
-rapport_start
+rapport_start "${DEELSYSTEEM} ${VERSIE} → CI"
 
 # --- pint hij een contract? dan eerst de stub, want die moet er staan vóór de deploy ----
 
@@ -81,7 +81,5 @@ if [ -n "${PINT:-}" ]; then
 fi
 
 CONTRACTEN="${SERVEERT:-}${SERVEERT:+ (geserveerd)}${PINT:+${SERVEERT:+, }}${PINT:-}${PINT:+ (gepind)}"
-rapport_klaar "${CBT_ROOT}/build/rapport/ci-${DEELSYSTEEM}-${VERSIE}.md" \
-  "${DEELSYSTEEM} ${VERSIE} op de CI-omgeving" \
-  "Oordeel: groen. ${DEELSYSTEEM} ${VERSIE} voldoet aan ${CONTRACTEN}. Dit is het bewijs waarop naar Test gedeployd mag worden."
+rapport_oordeel "Oordeel: groen. ${DEELSYSTEEM} ${VERSIE} voldoet aan ${CONTRACTEN}. Dit is het bewijs waarop naar Test gedeployd mag worden."
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} voldoet aan zijn contracten"

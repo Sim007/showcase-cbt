@@ -113,33 +113,32 @@ een, dan zegt de pipeline dat met zoveel woorden.
 
 ## Het testbewijs
 
-Elke pipeline laat een leesbaar rapport achter in `build/rapport/`, één per deelsysteem en
-versie:
-
-```
-build/rapport/
-  microservice-payment-api-1.0.0.md    unit en integratie
-  ci-payment-1.0.0.md                  drift en contractverificatie
-  test-payment-1.0.0.md                deploy en smoke
-  acceptatie-payment-1.0.0.md          deploy en gebruikersflow
-```
+Elke stap van elke pipeline komt in één rapport: `build/rapport/rapport-cbt-01.md`.
+Chronologisch, met een tijdstip erbij.
 
 ```markdown
-# Testbewijs — payment 1.0.0 op de CI-omgeving
-
-| Stap                          | Uitkomst | Bijzonderheden                     |
-|-------------------------------|----------|------------------------------------|
-| deploy op ci-payment          | groen    |                                    |
-| drift                         | groen    | 2 operaties, contract en runtime    |
-| contractverificatie, provider | groen    | 1632 generated, 1632 passed        |
-
-**Oordeel: groen. payment 1.0.0 voldoet aan order-payment payment-api 1.0.0
-(geserveerd). Dit is het bewijs waarop naar Test gedeployd mag worden.**
+| Tijd     | Onderdeel          | Stap                          | Uitkomst | Bijzonderheden              |
+|----------|--------------------|-------------------------------|----------|-----------------------------|
+| 19:30:22 | payment-api 1.0.0  | unit                          | groen    | Tests run: 9                |
+| 19:30:43 | payment 1.0.0 → CI | drift                         | groen    | 2 operaties komen overeen   |
+| 19:30:57 | payment 1.0.0 → CI | contractverificatie, provider | groen    | 1632 generated, 1632 passed |
+| 19:30:57 | payment 1.0.0 → CI | —                             | oordeel  | voldoet aan payment-api 1.0.0 |
 ```
 
-Dat is wat "releasen op testbewijs" concreet maakt: een squad hoeft niet te vragen of het
-mag, maar kan laten zien wat er is aangetoond en tegen welke contractversie. De
-machineleesbare kant staat ernaast — JUnit XML in `build/contract-rapport/` en
+Dat is wat "releasen op testbewijs" concreet maakt: niet dát het groen was, maar wát er
+wanneer is aangetoond en tegen welke contractversie.
+
+Het rapport staat in `build/` en gaat dus **nooit mee naar de repository** — een
+testbewijs hoort bij een run en niet bij de broncode. De demo begint met een schone lei,
+dus je houdt het rapport van de laatste run.
+
+Een ander hoofdstuk schrijft naar een eigen bestand met `CBT_RAPPORT`:
+
+```sh
+CBT_RAPPORT="$PWD/build/rapport/rapport-cbt-02.md" ci/pipeline-ci.sh payment 1.1.0
+```
+
+De machineleesbare kant staat ernaast: JUnit XML in `build/contract-rapport/` en
 `build/smoke-rapport/`, plus Surefire per module.
 
 ---
