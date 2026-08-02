@@ -1,8 +1,0 @@
-{
-  "name": "showcase-cbt-playwright",
-  "private": true,
-  "description": "Gedeelde smoke, één exemplaar voor alle omgevingen en alle hoofdstukken",
-  "devDependencies": {
-    "@playwright/test": "1.62.1"
-  }
-}

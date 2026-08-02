@@ -30,9 +30,20 @@ hoofdstuk. De afwegingen achter de keuzes staan in
 ## Vereisten
 
 Docker en bash. Op Windows via WSL2, niet via Git Bash. `curl` gebruiken de scripts van
-de host; extern gereedschap — oasdiff, jq, yq, ajv, Maven, WireMock, Schemathesis — draait
-als container op een vastgepinde tag via [ci/lib/tools.sh](ci/lib/tools.sh). Er is dus
-geen JDK of Maven op de machine nodig.
+de host; extern gereedschap — oasdiff, jq, yq, ajv, Maven, Playwright, WireMock,
+Schemathesis — draait als container op een vastgepinde tag via
+[ci/lib/tools.sh](ci/lib/tools.sh). Er is dus geen JDK, Maven of Node op de machine nodig.
+
+**Optioneel, alleen voor je editor.** Omdat er niets lokaal geïnstalleerd is, kan je IDE
+`@playwright/test` niet vinden en onderstreept hij de imports in de smoke-specs. De runs
+hebben er geen last van; wil je die kringels weg, haal de types dan lokaal binnen:
+
+```sh
+. ci/lib/tools.sh && npm install --no-save "@playwright/test@${PLAYWRIGHT_VERSIE}"
+```
+
+De versie komt uit `ci/lib/tools.sh`, zodat er maar één plek is die hem vastlegt.
+`node_modules/` staat in `.gitignore`.
 
 ## Beginnen
 
