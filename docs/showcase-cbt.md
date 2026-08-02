@@ -1,12 +1,8 @@
 # Showcase CBT
 
-Versie 0.7.6
-
-Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
-
 Een showcase die contract-based testing aantoonbaar maakt. Het contexthoofdstuk beschrijft wat overal gelijk is; elk hoofdstuk daarna is los te lezen.
 
-**Dit document beschrijft wat er is en waarom.** Twee andere bestanden in deze map dragen wat hier niet in past. `besluiten.md` bevat de afwegingen achter de keuzes: wat er is geprobeerd, wat eruit kwam, wat het kost en wanneer het herzien moet worden. `security.md` doet hetzelfde voor beveiligingsbevindingen. Beide zijn gedateerd, want een afweging is houdbaar zolang de omstandigheden gelijk blijven en niet langer. Wie zich bij een keuze hieronder afvraagt *waarom dan*, vindt het antwoord daar.
+**Dit document beschrijft wat er is en waarom** — de opzet zoals hij nu staat, zonder versiegeschiedenis: git houdt bij wat er is veranderd. Twee andere bestanden in deze map dragen wat hier niet in past. `besluiten.md` bevat de afwegingen achter de keuzes: wat er is geprobeerd, wat eruit kwam, wat het kost en wanneer het herzien moet worden. `security.md` doet hetzelfde voor beveiligingsbevindingen. Beide zijn gedateerd, want een afweging is houdbaar zolang de omstandigheden gelijk blijven en niet langer. Wie zich bij een keuze hieronder afvraagt *waarom dan*, vindt het antwoord daar.
 
 ---
 
@@ -476,6 +472,11 @@ Op Test volstaat dat het loopt, op Acceptatie dat de keten doet wat een gebruike
 verwacht. Geen smoke op Acceptatie — de laag eronder heeft dat al aangetoond, en herhalen
 verplaatst werk naar de duurste plek.
 
+**Een gebruikersflow spant over deelsystemen heen.** Pipeline 4 van het ene deelsysteem
+heeft daarom de andere nodig op die omgeving. Dat is geen uitzondering maar wat een
+gebruikersflow ís: hij volgt wat een gebruiker doet, en die merkt niets van de indeling in
+deelsystemen. Staat de omgeving nog niet compleet, dan valt de flow terecht om.
+
 **De smoke over álle grenzen hangt niet aan een deploy.** Die gaat over de samenstelling,
 en die verandert ook als er niets wordt gedeployd. Hij draait daarom gepland en is van de
 tribe, niet van een squad.
@@ -924,32 +925,3 @@ Wat er dan overblijft is niet-technisch: mensen willen er met eigen ogen naar ki
 
 Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen dat hij onbesproken blijft. Een concessie die niemand benoemt, wordt vanzelf een uitgangspunt.
 
----
-
-## Wijzigingslog
-
-| Versie | Wijziging |
-|---|---|
-| 0.7.6 | Drie regels in deze log herschreven: ze citeerden de formuleringen die in 0.7.4 en 0.7.5 juist waren weggehaald. Een wijzigingslog die reproduceert wat hij zegt te hebben verwijderd, doet het werk over. |
-| 0.7.5 | Twee formuleringen in het contexthoofdstuk en in bijlage A neutraal gemaakt: ze waren te lezen als verwijzing naar een bepaalde organisatie. De argumenten zijn ongewijzigd. |
-| 0.7.4 | De startsituatie geformuleerd als aanname van de showcase in plaats van als weergave van een bestaande inrichting. Hij hoort bij het fictieve systeem: een gegeven. |
-| 0.7.3 | Correctie op 0.7.2: daar stond dat contractverificatie een ongedocumenteerde operatie principieel niet kan zien. Dat is te sterk. Gemeten: een nieuwe methode op een bekend pad ziet de gegenereerde verificatie wél, een heel nieuw pad niet. Alleen dat tweede is van drift alleen. |
-| 0.7.2 | De drift-check vergelijkt operaties en niet de hele spec. Gemeten met springdoc: zes verschillen die alle uit zijn afleiding kwamen en niet uit een misdragende implementatie. Wat drift wél toevoegt naast contractverificatie is het zien van een operatie die de service aanbiedt en de spec niet noemt. Onderbouwing in `besluiten.md`. |
-| 0.7.1 | 1.4 en 1.5 herschreven naar de vier pipelines: bouwen per microservice, deployen per deelsysteem, en per omgeving een eigen pipeline met de vorige omgeving als gate. De oude opzet beschreef één pipeline per deelsysteem die alles deed, met provider en consumer als scriptnaam — maar een rol hoort bij een grens en niet bij een deelsysteem, dus leidt de pipeline hem af. O12 gesloten: dit document is de spec, de code de implementatie, en de wijzigingslog is de driftlog. |
-| 0.7.0 | Startsituatie toegevoegd: de showcase begint niet bij nul maar veronderstelt een werkende uitgangssituatie. Drie rijen — wat verondersteld wordt, wat contracttesten toevoegt, en wat het wegneemt. Die laatste ontbrak en is nu juist de rij die de rekening laat kloppen. Gevolg voor de rest: elk hoofdstuk toont een delta en bouwt de veronderstelde praktijk niet na. Geen patch, want het verandert waar de showcase over gaat. |
-| 0.6.8 | Verwijzing bovenaan hoofdstuk 1 naar `01-basis/README.md`. Dit document houdt het wat en waarom; het hoe staat in de README van elk hoofdstuk, naast de code die het beschrijft. |
-| 0.6.7 | In 1.4 vastgelegd dat contractverificatie in twee stijlen bestaat: gegenereerd uit de spec en met de hand geschreven. De showcase houdt allebei, een pipeline kiest er een. Met de reden erbij: geschreven tests dekken wat de schrijver bedacht, en dat is meetbaar minder. Voor unit en integratie speelt de keuze niet, want daar ligt de norm in de test. |
-| 0.6.6 | `currency` van een `pattern` naar een `enum` van EUR, USD en GBP, en `maximum` op `amount`. Daarmee staat elke geldigheidsregel in het contract en blijft als semantiek alleen de drempel van 500,00 over — een businessuitkomst, geen invoercontrole. Gemeten met oasdiff: een valuta toevoegen is niet breaking (scenario A), een valuta weghalen wel. De implementatie volgt de enum en accepteert niet meer dan de spec belooft. |
-| 0.6.5 | Semantiek naar het schema waar het schema hem kan dragen: `minimum: 0` met `exclusiveMinimum: true` op `amount`, en een `pattern` op `currency`. Gevonden doordat Schemathesis meldde dat een schema-geldig verzoek werd geweigerd — het schema liet toe wat de implementatie verbood. Correctie op de baseline, want v1.0.0 was nog niet uitgeleverd; na release was `pattern` toevoegen breaking geweest. Wat overblijft is echte semantiek: dat een valutacode bestaat, en de drempel van 500,00. |
-| 0.6.4 | Inleiding verwijst naar `besluiten.md` en `security.md`, zodat de onderbouwing van een keuze vindbaar is vanaf de plek waar de keuze staat. |
-| 0.6.3 | O7 gesloten door het te proberen in plaats van te vergelijken: de stub wordt zelf gegenereerd en draait op WireMock. Prism doet padtemplates, examples en requestvalidatie native, maar kiest per status altijd hetzelfde voorbeeld en kan de afgewezen betaling uit 1.2 dus niet opleveren. Reden opgenomen in 1.6, inclusief wat de opzet daarmee laat liggen. |
-| 0.6.2 | Eén compose per deelsysteem, in alle drie de omgevingen dezelfde; een omgeving is een samenstelling van die bestanden en geen eigen beschrijving. Anders staat een deelsysteem drie keer beschreven en lopen die drie uit elkaar. Twee versies uit elkaar gehaald: die van het contract en die van de service, met beide op het info-endpoint. Onveranderlijkheid uitgebreid naar images: geen hertagging, geen `-rc`-achtervoegsel, RC is een status en geen naam. In 1.1 vastgelegd dat productie het enige is dat telt, als de harde reden achter randvoorwaarde 6. Bijlage A toegevoegd over Acceptatie als concessie. O12 erbij. |
-| 0.6.1 | Vastgelegd in 1.13 dat de waarden van `code` in het `Error`-schema geen onderdeel van het contract zijn: het schema legt de structuur vast, niet de verzameling codes. Anders wordt elke nieuwe foutsituatie bij de provider een contractwijziging. |
-| 0.6.0 | Testopzet uitgeschreven. Drie omgevingen in plaats van twee: CI, Test zonder koppeling naar buiten, Acceptatie mét. Deploy per deelsysteem, gate is telkens de vorige omgeving groen. Contractverificatie draait na de deploy op de CI-omgeving en is daar volledig — elke operatie, happy en unhappy. De piramide houdt drie lagen: contracttesten voegt er geen toe maar verlegt de norm in de integratielaag en verkleint de top. `can-i-deploy` vervangen door waarnemen boven voorspellen, gedragen door de versieconformiteitscheck. Randvoorwaarde 6 erbij: rood is eerste prioriteit. Dashboard als onderdeel van het mechanisme. Geen patch, want de opzet verandert wezenlijk. |
-| 0.5.6 | O10 toegevoegd: wat de micro-frontend van Notification laat zien. Hij is nodig als remote voor hoofdstuk 9, maar hoofdstuk 6 heeft geen UI nodig, dus zijn inhoud is nergens belegd. |
-| 0.5.5 | Micro-frontends in het repositoryoverzicht: Order, Payment en Notification krijgen er elk een. Vastgelegd dat de portal samenstelt maar niet bezit — de remotes blijven bij hun eigen deelsysteem staan, anders wisselt er bij shell ↔ remote geen eigenaarschap meer en heeft hoofdstuk 9 geen grens meer te tonen. O9 gaat daarmee over welke micro-frontend hoofdstuk 8 uitwerkt, niet over welke bestaat. |
-| 0.5.4 | Wat 0.5.3 een *component* noemde heet nu een **service**; er is één woord voor het ding onder een deelsysteem. Notification en Portal vastgelegd als de derde en vierde deelsysteem, met hun services in het repositoryoverzicht. |
-| 0.5.3 | Een deelsysteem bestaat uit microservices: de deelsysteemmap is een houder, elke microservice en micro-frontend staat eronder als eigen component. De frontend van hoofdstuk 8 komt daarmee in `deelsystemen/<naam>/<naam>-mf/` en niet in de hoofdstukmap; de portal-shell van hoofdstuk 9 wordt een eigen deelsysteem. O9 toegevoegd: welk deelsysteem de UI van hoofdstuk 8 krijgt. |
-| 0.5.2 | Kolom *Vereist* voor hoofdstuk 6 en 7 noemt nu `ci/` en `deelsystemen/payment/` in plaats van "de scripts uit hoofdstuk 1". Die formulering hoorde bij de oude indeling, waarin Payment onder `01-basis/` stond. |
-| 0.5.1 | Services verplaatst naar `deelsystemen/` op de hoofdmap; genummerde mappen bevatten alleen nog tests. Tegenvoorbeeld bij scenario A vervangen: `merchantId` verplicht toevoegen in plaats van `currency` uit de required-lijst halen. Dat laatste is geen breaking wijziging — een verzoek wordt er minder streng van — en werd door gate noch register geweigerd. Contractpad naar `contracts/order-payment/v1.0.0/`. In 1.9 vastgelegd dat het tweede net in Apicurio 3.3.1 ook voor OPENAPI werkt, en wat de gate niet ziet. |
-| 0.5.0 | Startversie |

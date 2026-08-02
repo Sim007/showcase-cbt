@@ -13,7 +13,7 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 - Een genummerde map bevat alleen tests: demoscript, hoofdstukspecifieke specs, README.
 - Eén compose per deelsysteem: `deelsystemen/<naam>/docker-compose.yml`, met alle services van dat deelsysteem. Dat bestand is in CI, Test en Acceptatie hetzelfde. Een omgeving is een samenstelling van die bestanden (`-f` per deelsysteem), nooit een eigen beschrijving van een deelsysteem. Op de hoofdmap staat wat van geen enkel deelsysteem is: `compose/registry.yml`, `compose/stub.yml`, `compose/extern.yml`.
 - Onveranderlijkheid geldt voor elk artefact. Eén build is één versie, en die image gaat ongewijzigd door alle omgevingen. Geen hertagging, geen `-rc`-achtervoegsel: release candidate is een status, geen naam.
-- Twee versies, niet door elkaar halen: de contractversie is van de grens en staat in het register, de serviceversie is van het deelsysteem en komt uit de build. Beide staan op het info-endpoint, uit elkaar te houden.
+- Drie versies, niet door elkaar halen. De **contractversie** is van de grens en staat in het register. De **microserviceversie** komt uit de pom en zit in de image. De **deelsysteemversie** staat in `deelsystemen/<naam>/releases/<versie>.env` en pint welke microserviceversies er samen in gaan. Alle drie staan op het info-endpoint, uit elkaar te houden.
 - De spec wordt nooit van schijf gelezen. Alles gaat via `ci/get-contract.sh`.
 - Geen logica in yaml. Pipelinebestanden roepen uitsluitend scripts uit `ci/` aan.
 - Nooit committen wat gegenereerd is: stubmappings, `build/`, `node_modules/`, `.env`.
@@ -22,7 +22,8 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 ## Werkwijze
 
 - Begin elke opdracht met een plan en wacht op akkoord. Bouw daarna in kleine commits, één onderwerp per commit.
-- Elke commit die `docs/showcase-cbt.md` raakt, bumpt de versieregel en krijgt een regel in de wijzigingslog. Eén commit is één versie: nooit twee wijzigingen onder hetzelfde nummer, want dan valt er niet meer naar terug te vallen.
+- `docs/showcase-cbt.md` beschrijft de opzet zoals hij nu is, zonder versienummer en zonder wijzigingslog — git houdt de geschiedenis bij. Verandert een keuze, dan gaat de afweging naar `docs/besluiten.md` met een datum, en beveiligingsbevindingen naar `docs/security.md`.
+- Ontwerp gaat vóór implementatie. Loopt de bouw tegen iets aan dat het document tegenspreekt, dan wordt eerst het document bijgesteld. Dat is spec-first toegepast op onszelf.
 - Kom je iets tegen dat niet klopt met het document of dat niet werkt zoals verwacht: meld het en stop. Niet stilzwijgend een alternatief kiezen.
 - Voeg geen library toe zonder één regel in de commit waarom hij nodig is. Zo min mogelijk dependencies.
 - Vereenvoudigingen die bewust voor de demo zijn gemaakt — register zonder authenticatie, opslag in memory — krijgen een commentaarregel op de plek zelf en komen in de README onder "Vereenvoudigingen".
