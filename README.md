@@ -90,7 +90,7 @@ voor een blauwdruk.
 | `publish-contract.sh` wordt met de hand aangeroepen | `ci/publish-contract.sh` | vanuit een pipeline; dat verandert wie het script start, niet wat het doet |
 | Beide deelsystemen gebruiken H2 in memory en zijn leeg na een herstart | `application.yml` van elke service | een eigen database per deelsysteem; gedeelde opslag blijft uitgesloten |
 | Identificaties lopen op vanaf 1 per proces (`pay-000001`) | `PaymentService`, `OrderService` | een UUID of een sequence. Hier bewust deterministisch: een demo mag niet van toeval of van de tijd afhangen |
-| De toegestane valuta's staan zowel in de spec als in de code | `PaymentService` | afgedwongen door de drift-check; met de hand gelijk houden is een risico dat je moet zien |
+| De toegestane valuta's staan zowel in de spec als in de code | `PaymentService` | gegenereerde code, of één bron voor beide. Nu vangt de contractverificatie alleen de kant waarop de code te weinig accepteert |
 
 ## Bevindingen
 
@@ -105,6 +105,7 @@ staat in [docs/besluiten.md](docs/besluiten.md).
 | Prism 5.15.10 | Start niet — `TypeError: Cannot read properties of undefined`. 5.14.2 draait wel. |
 | Diff-gate | oasdiff kent de gevolgen van `additionalProperties: false` niet: een veld uit een requestschema halen levert een warning op en geen error. |
 | Diff-gate | oasdiff onderscheidt in zijn exitcode een gevonden breuk (1) van een mislukte vergelijking (102). Wie dat niet doet, meldt "breaking wijziging" terwijl er niets is getoetst. |
-| Compose | Eén gedeeld netwerk laat de stub en het echte deelsysteem dezelfde servicenaam dragen. Dan is het toeval wie antwoordt, en meet een contractverificatie niets. Nu een netwerk per compose-project. |
+| Compose | Eén gedeeld netwerk laat de stub en het echte deelsysteem dezelfde servicenaam dragen. Dan is het toeval wie antwoordt, en meet een contractverificatie niets. Nu is de omgeving het netwerk en is elk deelsysteem daarin een eigen project. |
+| Drift versus contractverificatie | Een generator probeert methoden uit op paden die hij uit de spec kent, en ziet dus een ongedocumenteerde `GET` op een bekend pad. Een pad dat nergens in de spec staat, kan hij niet raden — dat ziet alleen de drift-check. |
 | Contractverificatie | Zes gebreken gevonden in een implementatie met vijftien groene tests, waaronder een response die zijn eigen schema schond. |
 | Stub versus echte buur | WireMock accepteert standaard een h2c-upgrade, Tomcat niet. De JDK-HttpClient vraagt die aan, dus Order werkte tegen het echte Payment en niet tegen de stub. Een stub die méér kan dan wat hij vervangt, is net zo fout als een die minder kan. |

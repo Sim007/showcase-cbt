@@ -40,6 +40,14 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
+    <!-- Levert de spec die deze implementatie op zijn runtime aanbiedt. Nodig voor de
+         drift-check: zonder een spec uit de draaiende code valt er niets te vergelijken
+         met wat er gepubliceerd is. -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+      <version>2.9.0</version>
+    </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>

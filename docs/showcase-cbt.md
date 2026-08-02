@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.7.1
+Versie 0.7.3
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -335,7 +335,7 @@ components:
 
 **Het schema draagt zoveel semantiek als het kan.** Dat een bedrag groter dan nul moet zijn en onder een grens moet blijven, kan JSON Schema uitdrukken: `minimum`, `exclusiveMinimum`, `maximum`. Welke valuta's worden aangenomen ook: een `enum`. Wat in de spec staat, kan een consumer controleren voordat hij verstuurt — een unittest bij de provider kan dat niet.
 
-De implementatie houdt dezelfde regels aan en accepteert niet meer dan hij belooft. Zou Payment elke ISO 4217-code aannemen terwijl de spec er drie noemt, dan is de spec een onwaarheid over wat er gebeurt en weet een consumer die erop afgaat minder dan hij denkt. Dat die twee met de hand gelijk blijven, is precies waarvoor de drift-check bestaat.
+De implementatie houdt dezelfde regels aan en accepteert niet meer dan hij belooft. Zou Payment elke ISO 4217-code aannemen terwijl de spec er drie noemt, dan is de spec een onwaarheid over wat er gebeurt en weet een consumer die erop afgaat minder dan hij denkt. Dat die twee met de hand gelijk blijven, wordt maar half afgedwongen: accepteert de code mínder dan de spec belooft, dan valt de contractverificatie erover — die stuurt immers alles wat het contract toestaat. Accepteert hij méér, dan ziet niemand het, want niemand stuurt wat de spec verbiedt. Die kant blijft ontwerpwerk.
 
 **Wat er dan aan semantiek overblijft** is één ding: dat een bedrag boven 500,00 wordt afgewezen. En dat is geen invoercontrole maar een businessuitkomst — 201 met `DECLINED`, geen 400. Daarmee staat het onderscheid uit 1.2 er scherper: alles wat over de *geldigheid* van een verzoek gaat, staat in het contract; wat over de *uitkomst* gaat, niet.
 
@@ -379,7 +379,7 @@ Dat werkt op één voorwaarde: de controles moeten de fout kunnen zien. De smoke
 
 **Contract is geen testlaag maar een norm.** De piramide houdt drie lagen — unit, integratie, e2e. Wat verandert is niet de laag maar de bron van de waarheid: bij unit en integratie ligt de norm in de test, bij contractverificatie ligt hij buiten de test, in een artefact dat elders wordt beheerd. Contractverificatie is daarmee integratie: één deelsysteem, buren gestubd.
 
-**Spec-first minimaliseert geen breuken maar verplaatst ze.** Een noodzakelijke breuk blijft noodzakelijk. Wat verandert is het moment: bij spec-first is de breuk een besluit vóórdat er code ligt, bij code-first een ontdekking als terugdraaien al duur is. De drift-check is wat die belofte afdwingt.
+**Spec-first minimaliseert geen breuken maar verplaatst ze.** Een noodzakelijke breuk blijft noodzakelijk. Wat verandert is het moment: bij spec-first is de breuk een besluit vóórdat er code ligt, bij code-first een ontdekking als terugdraaien al duur is. De contractverificatie dwingt die belofte af; de drift-check vult het ene gat dat zij niet kan zien.
 
 **Drie omgevingen, drie vragen.** In de CI-omgeving wordt aangetoond dat een deelsysteem volledig werkt zónder zijn buren. Op Test dat de samenstelling die op dat moment draait, klopt en loopt. Op Acceptatie dat de keten doet wat een gebruiker verwacht, mét de koppelingen naar buiten.
 
@@ -495,11 +495,31 @@ geen parameter die je meegeeft.
 | Stap | Laag | Tegen | Norm |
 |---|---|---|---|
 | `get-contract` van elke versie die hij serveert | — | register | — |
-| drift: runtime-spec vs gepubliceerde spec | geen | artefact | **spec** |
+| drift: welke operaties biedt hij aan | geen | artefact | **spec** |
 | contractverificatie | integratie | **draaiend deelsysteem** | **spec** |
 
 Die verificatie is volledig, geen steekproef: elke operatie uit de spec, elke responsecode,
 happy en unhappy, als regressie.
+
+**De drift-check vergelijkt operaties, niet schema's.** Hij houdt de paden en methoden die
+de draaiende service aanbiedt tegen die van het contract. Dat is smal met opzet: de
+contractverificatie dekt de inhoud al en doet dat beter, want die toetst gedrag in plaats
+van een beschrijving.
+
+Wat drift toevoegt is het zien van een **schaduw-API**: een operatie die de service
+aanbiedt en die het contract niet noemt. Een debug-endpoint dat bleef staan, een interne
+route voor een migratie. Het gevaar is niet dat hij bestaat maar dat hij buiten het
+mechanisme valt — geen versie, geen gate, geen consumer die erop pint.
+
+De grens tussen de twee controles ligt preciezer dan je zou denken, en is gemeten:
+
+| Schaduw | Drift | Contractverificatie |
+|---|---|---|
+| een nieuwe **methode** op een pad dat het contract kent | ziet het | ziet het ook — een generator probeert methoden uit die de spec niet noemt en verwacht 405 |
+| een **pad** dat nergens in de spec staat | ziet het | ziet het niet — er is geen aanknopingspunt om dat pad te raden |
+
+Alleen die tweede rij is van drift alleen. Dat is genoeg reden om hem te hebben, en te
+weinig om hem breder te maken; waarom niet, staat in `besluiten.md`.
 
 **Pint het deelsysteem een contract?** Dan hoort daarbij:
 
@@ -910,6 +930,8 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.7.3 | Correctie op 0.7.2: daar stond dat contractverificatie een ongedocumenteerde operatie principieel niet kan zien. Dat is te sterk. Gemeten: een nieuwe methode op een bekend pad ziet de gegenereerde verificatie wél, een heel nieuw pad niet. Alleen dat tweede is van drift alleen. |
+| 0.7.2 | De drift-check vergelijkt operaties en niet de hele spec. Gemeten met springdoc: zes verschillen die alle uit zijn afleiding kwamen en niet uit een misdragende implementatie. Wat drift wél toevoegt naast contractverificatie is het zien van een operatie die de service aanbiedt en de spec niet noemt. Onderbouwing in `besluiten.md`. |
 | 0.7.1 | 1.4 en 1.5 herschreven naar de vier pipelines: bouwen per microservice, deployen per deelsysteem, en per omgeving een eigen pipeline met de vorige omgeving als gate. De oude opzet beschreef één pipeline per deelsysteem die alles deed, met provider en consumer als scriptnaam — maar een rol hoort bij een grens en niet bij een deelsysteem, dus leidt de pipeline hem af. O12 gesloten: dit document is de spec, de code de implementatie, en de wijzigingslog is de driftlog. |
 | 0.7.0 | Startsituatie toegevoegd: de showcase begint brownfield, bij een organisatie die al levert. Drie rijen — wat er al is, wat contracttesten toevoegt, en wat het wegneemt. Die laatste ontbrak en is nu juist de rij die de rekening laat kloppen. Gevolg voor de rest: elk hoofdstuk toont een delta en bouwt de bestaande praktijk niet na. Geen patch, want het verandert waar de showcase over gaat. |
 | 0.6.8 | Verwijzing bovenaan hoofdstuk 1 naar `01-basis/README.md`. Dit document houdt het wat en waarom; het hoe staat in de README van elk hoofdstuk, naast de code die het beschrijft. |

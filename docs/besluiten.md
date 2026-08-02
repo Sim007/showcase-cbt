@@ -9,6 +9,62 @@ voorkeur, en dan gaat iemand hem over een half jaar opnieuw voeren.
 
 ---
 
+## 2026-08-02 — Wat de drift-check vergelijkt
+
+**De vraag.** Hoofdstuk 1 schreef "drift: runtime-spec vs gepubliceerde spec". De vraag was
+wat dat in de praktijk oplevert, en of het naast de contractverificatie iets toevoegt.
+
+**De meting.** springdoc-openapi 2.9.0 in payment-api, en zijn `/v3/api-docs` met oasdiff
+tegen de gepubliceerde v1.0.0 gehouden. Zes verschillen in de ene richting, zeven in de
+andere:
+
+| Wat de runtime-spec zegt | Wat het contract zegt |
+|---|---|
+| `responses: [200]` | 201 en 400 |
+| `currency: {type: string}` | `enum [EUR, USD, GBP]` |
+| `amount: {type: number}` | `double`, met `minimum` en `maximum` |
+
+**En geen ervan was een misdragende implementatie.** De contractverificatie stond groen; de
+service geeft echt 201 terug met het juiste schema. Wat afweek was de *zelfbeschrijving*:
+springdoc leidt af uit Javatypes, en `String currency` kan geen enum uitdrukken,
+`BigDecimal amount` geen minimum, en `ResponseEntity<PaymentResponse>` geen 201 naast een
+400.
+
+**Wat drift dan wél toevoegt.** Een schaduw-API: een operatie die de service aanbiedt en
+die de spec niet noemt. Hoeveel dat precies is, blijkt kleiner dan bij het opschrijven
+werd aangenomen — gemeten door twee soorten schaduw in te bouwen en beide controles erop
+los te laten:
+
+| Schaduw | Drift | Contractverificatie (gegenereerd) |
+|---|---|---|
+| `GET /v1/payments` — nieuwe methode op een bekend pad | rood | **rood**: *Unsupported method GET returned 200, expected 405* |
+| `GET /v1/payments/../intern/alles` — een nieuw pad | rood | **groen** |
+
+Schemathesis probeert methoden uit op paden die hij uit de spec kent; een pad dat daar niet
+in staat, kan hij niet raden. Alleen die tweede rij is dus van drift alleen.
+
+Terzijde, en het versterkt een eerder besluit: de geschreven contractverificatie ziet ook
+de eerste rij niet. Handgeschreven tests proberen geen methoden uit die niemand heeft
+bedacht.
+
+**Het besluit.** De drift-check vergelijkt de **operaties**: welke paden en methoden biedt
+de draaiende service aan, en komt dat overeen met wat het contract belooft. Niet de
+schema's, niet de statuscodes, niet de voorbeelden.
+
+**Wat we daarmee niet doen, en waarom.** De implementatie annoteren tot springdoc het
+contract reproduceert — `@ApiResponse`, `@Schema(allowableValues = …)` — zou de vergelijking
+volledig maken. De prijs is dat het contract dan tweemaal geschreven staat: één keer in
+YAML en één keer in annotaties, die uit elkaar kunnen lopen. Dat is code-first dat een
+spec-first-opzet binnensluipt, en de valutalijst zou in drie plekken staan in plaats van
+twee. Een bredere gate die altijd rood staat om redenen die niets met drift te maken
+hebben, is geen gate.
+
+**Wanneer herzien.** Als de implementatie zijn contract wél uit zichzelf kan uitdrukken —
+bijvoorbeeld doordat de code uit de spec wordt gegenereerd in plaats van ernaast
+geschreven. Dan verdwijnt de duplicatie en kan de vergelijking breder.
+
+---
+
 ## 2026-08-02 — Contractverificatie: gegenereerd of geschreven
 
 **De vraag.** De providerkant moet volledig worden getoetst aan de spec: elke operatie,
@@ -79,8 +135,8 @@ stonden op één vast netwerk, en de stub neemt daar de servicenaam van de buur 
 bedoeld op de CI-omgeving, maar met het echte deelsysteem erbij verwees `payment-api` naar
 twee containers en was het toeval wie antwoordde.
 
-Sindsdien maakt compose een netwerk per project, en **dat project is de omgeving**. Wie
-deze opzet nabouwt, loopt tegen dezelfde val aan.
+Sindsdien is **de omgeving het netwerk** en is elk deelsysteem daarin een eigen
+compose-project. Wie deze opzet nabouwt, loopt tegen dezelfde val aan.
 
 ---
 
