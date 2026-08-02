@@ -6,3 +6,6 @@ node_modules/
 # Stubmappings worden elke run opnieuw gegenereerd uit de spec uit het register.
 **/stub/mappings/
 playwright/test-results/
+
+# Testbewijs hoort bij een run, niet bij de broncode.
+*/rapport/

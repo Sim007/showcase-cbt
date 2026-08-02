@@ -167,11 +167,14 @@ stap() {
 # "releasen op testbewijs" op neerkomt: niet dát het groen was, maar wat er wanneer is
 # aangetoond en tegen welke contractversie.
 #
-# Het bestand staat in build/ en gaat dus nooit mee naar de repository. Een testbewijs
-# hoort bij een run en niet bij de broncode.
+# Het rapport staat bij het hoofdstuk waar het over gaat, in <hoofdstuk>/rapport/. Die map
+# staat in .gitignore: een testbewijs hoort bij een run en niet bij de broncode.
+#
+# De standaard wijst naar hoofdstuk 1. Een ander hoofdstuk gebruikt dezelfde pipelines en
+# zet CBT_RAPPORT naar zijn eigen bestand.
 rapport_start() {
   RAPPORT_ONDERDEEL="$1"
-  RAPPORT_BESTAND="${CBT_RAPPORT:-${CBT_ROOT}/build/rapport/rapport-cbt-01.md}"
+  RAPPORT_BESTAND="${CBT_RAPPORT:-${CBT_ROOT}/01-basis/rapport/rapport-cbt-01.md}"
   export RAPPORT_ONDERDEEL RAPPORT_BESTAND
   mkdir -p "$(dirname "${RAPPORT_BESTAND}")"
   [ -f "${RAPPORT_BESTAND}" ] && return 0

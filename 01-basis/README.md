@@ -113,32 +113,40 @@ een, dan zegt de pipeline dat met zoveel woorden.
 
 ## Het testbewijs
 
-Elke stap van elke pipeline komt in één rapport: `build/rapport/rapport-cbt-01.md`.
-Chronologisch, met een tijdstip erbij.
+Elke stap van elke pipeline komt in één rapport, bij het hoofdstuk waar het over gaat:
 
-```markdown
-| Tijd     | Onderdeel          | Stap                          | Uitkomst | Bijzonderheden              |
-|----------|--------------------|-------------------------------|----------|-----------------------------|
-| 19:30:22 | payment-api 1.0.0  | unit                          | groen    | Tests run: 9                |
-| 19:30:43 | payment 1.0.0 → CI | drift                         | groen    | 2 operaties komen overeen   |
-| 19:30:57 | payment 1.0.0 → CI | contractverificatie, provider | groen    | 1632 generated, 1632 passed |
-| 19:30:57 | payment 1.0.0 → CI | —                             | oordeel  | voldoet aan payment-api 1.0.0 |
 ```
+01-basis/rapport/rapport-cbt-01.md      chronologisch, met een tijdstip per stap
+01-basis/rapport/rapport-cbt-01.html    dezelfde inhoud, om te laten zien
+```
+
+De demo maakt de HTML aan het eind; los kan ook met `ci/rapport-html.sh`. Die pagina is
+zelfstandig — alle opmaak zit erin, dus doorsturen werkt. Openen is genoeg:
+
+```sh
+open 01-basis/rapport/rapport-cbt-01.html      # macOS
+xdg-open 01-basis/rapport/rapport-cbt-01.html  # Linux
+```
+
+| Tijd | Onderdeel | Stap | Uitkomst | Bijzonderheden |
+|---|---|---|---|---|
+| 19:30:22 | payment-api 1.0.0 | unit | groen | Tests run: 9 |
+| 19:30:43 | payment 1.0.0 → CI | drift | groen | 2 operaties komen overeen |
+| 19:30:57 | payment 1.0.0 → CI | contractverificatie, provider | groen | 1632 generated, 1632 passed |
+| 19:30:57 | payment 1.0.0 → CI | — | oordeel | voldoet aan payment-api 1.0.0 |
 
 Dat is wat "releasen op testbewijs" concreet maakt: niet dát het groen was, maar wát er
 wanneer is aangetoond en tegen welke contractversie.
 
-Het rapport staat in `build/` en gaat dus **nooit mee naar de repository** — een
-testbewijs hoort bij een run en niet bij de broncode. De demo begint met een schone lei,
-dus je houdt het rapport van de laatste run.
-
-Een ander hoofdstuk schrijft naar een eigen bestand met `CBT_RAPPORT`:
+De map `*/rapport/` staat in `.gitignore` — een testbewijs hoort bij een run en niet bij de
+broncode. Een ander hoofdstuk schrijft naar zijn eigen bestand:
 
 ```sh
-CBT_RAPPORT="$PWD/build/rapport/rapport-cbt-02.md" ci/pipeline-ci.sh payment 1.1.0
+CBT_RAPPORT="$PWD/02-wijziging-zonder-breuk/rapport/rapport-cbt-02.md" \
+  ci/pipeline-ci.sh payment 1.1.0
 ```
 
-De machineleesbare kant staat ernaast: JUnit XML in `build/contract-rapport/` en
+De machineleesbare kant staat er los van: JUnit XML in `build/contract-rapport/` en
 `build/smoke-rapport/`, plus Surefire per module.
 
 ---

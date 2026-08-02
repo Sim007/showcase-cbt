@@ -107,6 +107,9 @@ opmerking "Payment. Zou hij per omgeving verschillen, dan bewees groen op de ene
 opmerking "over de andere."
 
 echo
+ci/rapport-html.sh
+
+echo
 echo "─────────────────────────────────────────────────────────────────────"
 echo "  Klaar. Test blijft staan om naar te kijken."
 echo "  Opnieuw draaien kan meteen: de demo ruimt zelf op voordat hij begint."

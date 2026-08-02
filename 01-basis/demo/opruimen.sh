@@ -15,6 +15,7 @@ done
 # Het register is in memory: herstarten is leegmaken.
 docker compose -f "${CBT_ROOT}/compose/registry.yml" restart registry >/dev/null 2>&1 || true
 rm -rf "${CBT_ROOT}/build/stub" "${CBT_ROOT}/build/contracts" "${CBT_ROOT}/build/drift" \
-       "${CBT_ROOT}/build/rapport" "${CBT_ROOT}/build/contract-rapport" "${CBT_ROOT}/build/smoke-rapport"
+       "${CBT_ROOT}/build/contract-rapport" "${CBT_ROOT}/build/smoke-rapport" \
+       "${CBT_ROOT}/01-basis/rapport"
 
 echo "uitgangssituatie hersteld"
