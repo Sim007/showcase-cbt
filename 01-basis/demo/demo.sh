@@ -17,6 +17,29 @@ cd "${CBT_ROOT}"
 
 STAP="${1:-}"
 
+# De pagina bouwt zich tijdens de run op, zodat je ziet wat er gebeurt in plaats van het
+# achteraf te lezen. Met CBT_LIVE=0 blijft alleen de terminal over.
+case "${CBT_LIVE:-1}" in
+  0|nee|off) CBT_LIVE="" ;;
+  *)         CBT_LIVE=1 ;;
+esac
+export CBT_LIVE
+
+RAPPORT="${CBT_ROOT}/01-basis/rapport/rapport-cbt-01.html"
+
+toon_pagina() {
+  [ -n "${CBT_LIVE}" ] || return 0
+  # Een leeg rapport aanmaken en tonen, zodat de pagina er staat voordat de eerste stap
+  # begint. Daarna vult hij zichzelf.
+  . "${CBT_ROOT}/ci/lib/tools.sh"
+  rapport_start "demo"
+  ci/rapport-html.sh >/dev/null 2>&1 || true
+  if command -v open >/dev/null 2>&1; then open "${RAPPORT}"
+  elif command -v xdg-open >/dev/null 2>&1; then xdg-open "${RAPPORT}" >/dev/null 2>&1
+  else echo "  open in je browser: ${RAPPORT}"
+  fi
+}
+
 scene() {
   echo
   echo "─────────────────────────────────────────────────────────────────────"
@@ -40,6 +63,8 @@ scene "Opzet: schone lei, het register omhoog en het contract erin"
 
 docker compose -f compose/registry.yml up -d >/dev/null
 ci/wacht-op-gezond.sh registry compose/registry.yml >/dev/null 2>&1 || sleep 10
+toon_pagina
+
 ci/publish-contract.sh order-payment payment-api 1.0.0 contracts/order-payment/v1.0.0/openapi.yaml
 
 echo
@@ -123,7 +148,7 @@ opmerking "CI-omgeving; wat hier overblijft is of de keten doet wat een gebruike
 opmerking "verwacht. Dat is wat contracttesten aan een ketentest verandert."
 
 echo
-ci/rapport-html.sh
+CBT_LIVE= ci/rapport-html.sh
 
 echo
 echo "─────────────────────────────────────────────────────────────────────"

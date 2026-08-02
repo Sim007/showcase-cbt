@@ -20,6 +20,13 @@ draait.
 01-basis/demo/opruimen.sh      # alles weg, ook Test en Acceptatie
 ```
 
+De demo opent het rapport in je browser en **vult het tijdens de run**: elke stap komt
+erbij, de tellers lopen op, en zolang hij bezig is ververst de pagina zichzelf. Aan het
+eind stopt dat vanzelf en staat het eindrapport er. Zet je een terminal naast de browser,
+dan zie je het deelsysteem door de gang lopen en bij elke gate een oordeel krijgen.
+
+Alleen de terminal is ook goed: `CBT_LIVE=0 01-basis/demo/demo.sh`.
+
 De demo loopt de hele gang af, van contract tot gebruikersflow op Acceptatie, en eindigt
 met het rapport. Hij ruimt zelf op voordat hij begint, dus je kunt hem meteen opnieuw
 draaien. Achteraf blijven Test en Acceptatie staan om naar te kijken; `opruimen.sh` haalt

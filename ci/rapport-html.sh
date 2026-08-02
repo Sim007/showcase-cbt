@@ -47,6 +47,15 @@ else
   STEMPEL="<span class=\"stempel rood\">${ROOD} rood</span>"
 fi
 
+# Tijdens een run ververst de pagina zichzelf, zodat je het bewijs ziet opbouwen in plaats
+# van pas achteraf te lezen. De laatste render gebeurt zonder CBT_LIVE en zet hem stil.
+VERVERS=""
+BEZIG=""
+if [ -n "${CBT_LIVE:-}" ]; then
+  VERVERS='<meta http-equiv="refresh" content="2">'
+  BEZIG=' &middot; <span class="stempel bezig">bezig<span class="stip"></span></span>'
+fi
+
 {
 cat <<HTML
 <!doctype html>
@@ -54,6 +63,7 @@ cat <<HTML
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${VERVERS}
 <title>$(ontsnap "${TITEL}")</title>
 <style>
   :root {
@@ -86,6 +96,12 @@ cat <<HTML
              font-size:.8rem; font-weight:600; letter-spacing:.02em; }
   .stempel.groen { color:var(--groen); background:var(--groenvlak); }
   .stempel.rood  { color:var(--rood);  background:var(--roodvlak); }
+  .stempel.bezig { color:var(--zacht); background:var(--vlak); }
+  .stip { display:inline-block; width:.4rem; height:.4rem; margin-left:.35rem;
+          border-radius:50%; background:currentColor; animation:klop 1s ease-in-out infinite; }
+  @keyframes klop { 0%,100% { opacity:.25 } 50% { opacity:1 } }
+  tbody tr:last-child { animation:aan .4s ease-out; }
+  @keyframes aan { from { background:var(--groenvlak) } }
   .cijfers { display:flex; gap:2.5rem; flex-wrap:wrap; margin:0 0 2rem;
              padding:1rem 1.25rem; background:var(--vlak);
              border:1px solid var(--rand); border-radius:.5rem; }
@@ -112,7 +128,7 @@ cat <<HTML
 <body>
 <main>
 <h1>$(ontsnap "${TITEL}")</h1>
-<p class="meta">$(ontsnap "${BEGONNEN}") &middot; ${STEMPEL}</p>
+<p class="meta">$(ontsnap "${BEGONNEN}") &middot; ${STEMPEL}${BEZIG}</p>
 
 <div class="cijfers">
   <div><div class="getal">${GROEN}</div><div class="label">stappen groen</div></div>
@@ -156,4 +172,4 @@ Dit is het testbewijs van één run en hoort daarom niet in de repository.
 HTML
 } > "${DOEL}"
 
-echo "rapport: ${DOEL#"${CBT_ROOT}/"}"
+[ -n "${CBT_LIVE:-}" ] || echo "rapport: ${DOEL#"${CBT_ROOT}/"}"

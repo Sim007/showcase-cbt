@@ -192,6 +192,15 @@ _rapport_regel() {
   [ -n "${RAPPORT_BESTAND:-}" ] || return 0
   printf '| %s | %s | %s | %s | |\n' \
     "$(date -u '+%H:%M:%S')" "${RAPPORT_ONDERDEEL}" "$1" "$2" >> "${RAPPORT_BESTAND}"
+  _live
+}
+
+# Met CBT_LIVE=1 ververst de pagina na elke stap, zodat je tijdens een demo ziet wat er
+# gebeurt in plaats van het achteraf te lezen. Zonder die vlag verandert er niets — een
+# pipeline op een runner heeft geen browser.
+_live() {
+  [ -n "${CBT_LIVE:-}" ] || return 0
+  "${CBT_ROOT}/ci/rapport-html.sh" "${RAPPORT_BESTAND}" >/dev/null 2>&1 || true
 }
 
 # Hangt een detail aan de vorige regel: hoeveel tests, welke uitkomst.
@@ -203,11 +212,13 @@ bijzonderheid() {
   sed '$ d' "${RAPPORT_BESTAND}" > "${RAPPORT_BESTAND}.tmp"
   printf '%s\n' "${_regel% |} $1 |" >> "${RAPPORT_BESTAND}.tmp"
   mv "${RAPPORT_BESTAND}.tmp" "${RAPPORT_BESTAND}"
+  _live
 }
 
 rapport_oordeel() {
   [ -n "${RAPPORT_BESTAND:-}" ] || return 0
   printf '| %s | %s | — | **oordeel** | %s |\n' \
     "$(date -u '+%H:%M:%S')" "${RAPPORT_ONDERDEEL}" "$1" >> "${RAPPORT_BESTAND}"
-  echo "rapport: ${RAPPORT_BESTAND#"${CBT_ROOT}/"}"
+  _live
+  [ -n "${CBT_LIVE:-}" ] || echo "rapport: ${RAPPORT_BESTAND#"${CBT_ROOT}/"}"
 }
