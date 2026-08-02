@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.7.4
+Versie 0.7.5
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -65,7 +65,7 @@ Die piramide staat en is niet het probleem. Wat ontbreekt is dat er iets is dat 
 | Handgeschreven mocks van de buur | een mock die de schrijver bedacht, bevestigt wat de schrijver dacht. De stub komt uit het contract |
 | De vraag "durven we te releasen" | vervangen door een oordeel dat op een artefact is vastgesteld |
 
-**Elk hoofdstuk toont een delta, geen systeem.** De vraag die de showcase beantwoordt is niet *hoe bouw je dit* maar *wat verandert er bij ons*. Daarom bouwt hij de bestaande praktijk niet na maar veronderstelt hem, en laat hij per hoofdstuk zien wat erbij komt en wat eraf kan.
+**Elk hoofdstuk toont een delta, geen systeem.** De vraag die de showcase beantwoordt is niet *hoe bouw je dit* maar *wat verandert er in de opzet*. Daarom bouwt hij de bestaande praktijk niet na maar veronderstelt hem, en laat hij per hoofdstuk zien wat erbij komt en wat eraf kan.
 
 ### Waarom deze showcase
 
@@ -916,7 +916,7 @@ De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, 
 
 Er is één ding dat telt en dat is productie. Elke omgeving daarvoor is een plaatsvervanger: hij kost doorlooptijd, hij loopt uit de pas met productie, en hij geeft een zekerheid die alleen productie echt kan geven. Twee omgevingen is al een keuze die verantwoording vraagt; drie vraagt een goed verhaal.
 
-Acceptatie staat in deze showcase omdat de business en de tribe een stabiele plek willen om de gebruikersflow te doorlopen, en omdat het vertrouwen dat die flow ook automatisch en gepland kan draaien er nog niet is. Dat is een organisatorische stand van zaken, geen technische noodzaak.
+Acceptatie staat in deze showcase omdat er behoefte is aan een stabiele plek om de gebruikersflow te doorlopen, en omdat het vertrouwen dat die flow ook automatisch en gepland kan draaien er nog niet is. Dat is een organisatorische stand van zaken, geen technische noodzaak.
 
 De showcase neemt hem daarom op zoals hij is, en laat tegelijk zien wat hem overbodig zou maken. **Hoofdstuk 4 draait de gebruikersflow geautomatiseerd** — dat is precies de reden dat Acceptatie bestaat, en meteen het bewijs dat het gepland kan. **Hoofdstuk 7 legt de externe grens onder een contract** — dat is de tweede reden, en die valt daarmee grotendeels weg. Wie beide heeft staan, houdt van de technische onderbouwing van een derde omgeving weinig over.
 
@@ -930,6 +930,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.7.5 | Twee formuleringen die naar een bepaalde organisatie konden wijzen, neutraal gemaakt: "wat verandert er bij ons" en de reden waarom Acceptatie bestaat. Het argument blijft hetzelfde; alleen de aanwijzing is weg. |
 | 0.7.4 | De startsituatie geformuleerd als aanname van de showcase in plaats van als beschrijving van een organisatie die al levert. Hij hoort bij het fictieve systeem: een gegeven, geen weergave. |
 | 0.7.3 | Correctie op 0.7.2: daar stond dat contractverificatie een ongedocumenteerde operatie principieel niet kan zien. Dat is te sterk. Gemeten: een nieuwe methode op een bekend pad ziet de gegenereerde verificatie wél, een heel nieuw pad niet. Alleen dat tweede is van drift alleen. |
 | 0.7.2 | De drift-check vergelijkt operaties en niet de hele spec. Gemeten met springdoc: zes verschillen die alle uit zijn afleiding kwamen en niet uit een misdragende implementatie. Wat drift wél toevoegt naast contractverificatie is het zien van een operatie die de service aanbiedt en de spec niet noemt. Onderbouwing in `besluiten.md`. |
