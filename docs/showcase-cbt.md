@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.7.3
+Versie 0.7.4
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -30,15 +30,15 @@ Wat de showcase aantoont is één ding: **hetzelfde mechanisme werkt over vier c
 
 ### De startsituatie
 
-**Deze showcase begint niet bij nul.** Hij begint waar een organisatie staat die al levert: met squads, met pipelines, met omgevingen en met tests die werken. Contract-based testing is daar een toevoeging aan, geen vervanging van. Wie dat niet expliciet maakt, laat de lezer denken dat hij alles opnieuw moet inrichten — en dat is niet zo.
+**Deze showcase begint niet bij nul.** Hij veronderstelt een werkende uitgangssituatie: deelsystemen die gebouwd en gedeployd worden, pipelines die draaien, omgevingen die er staan, en een testpiramide die zijn werk doet. Contract-based testing komt daar bovenop en vervangt niets. Zonder die aanname leest de rest als een opdracht om alles opnieuw in te richten, en dat is niet wat er staat.
 
-Wat hieronder staat is een gangbare uitgangssituatie, geen beschrijving van één specifieke organisatie. Herkent een lezer er het zijne in, dan is de vergelijking te maken die deze showcase mogelijk wil maken.
+Die uitgangssituatie hoort bij het fictieve systeem: hij is een gegeven van de showcase en geen weergave van hoe het ergens werkt. Wie er iets in herkent kan de vergelijking maken waar deze showcase voor bedoeld is; wie het anders heeft ingericht, verschuift de startlijn en leest verder.
 
-**Wat er al is.**
+**Wat verondersteld wordt.**
 
 | | |
 |---|---|
-| Organisatie | squads die elk een deelsysteem bezitten en zelfstandig releasen |
+| Eigenaarschap | een deelsysteem heeft één eigenaar, die zelfstandig releaset |
 | Pipelines | per microservice bouwen en testen, per deelsysteem deployen |
 | Omgevingen | een efemere CI-omgeving, en Test en Acceptatie die blijven staan |
 | Testpiramide | unit, integratie, een e2e smoke op Test, een gebruikersflow op Acceptatie |
@@ -930,6 +930,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.7.4 | De startsituatie geformuleerd als aanname van de showcase in plaats van als beschrijving van een organisatie die al levert. Hij hoort bij het fictieve systeem: een gegeven, geen weergave. |
 | 0.7.3 | Correctie op 0.7.2: daar stond dat contractverificatie een ongedocumenteerde operatie principieel niet kan zien. Dat is te sterk. Gemeten: een nieuwe methode op een bekend pad ziet de gegenereerde verificatie wél, een heel nieuw pad niet. Alleen dat tweede is van drift alleen. |
 | 0.7.2 | De drift-check vergelijkt operaties en niet de hele spec. Gemeten met springdoc: zes verschillen die alle uit zijn afleiding kwamen en niet uit een misdragende implementatie. Wat drift wél toevoegt naast contractverificatie is het zien van een operatie die de service aanbiedt en de spec niet noemt. Onderbouwing in `besluiten.md`. |
 | 0.7.1 | 1.4 en 1.5 herschreven naar de vier pipelines: bouwen per microservice, deployen per deelsysteem, en per omgeving een eigen pipeline met de vorige omgeving als gate. De oude opzet beschreef één pipeline per deelsysteem die alles deed, met provider en consumer als scriptnaam — maar een rol hoort bij een grens en niet bij een deelsysteem, dus leidt de pipeline hem af. O12 gesloten: dit document is de spec, de code de implementatie, en de wijzigingslog is de driftlog. |
