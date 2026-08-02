@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.7.5
+Versie 0.7.6
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -930,12 +930,13 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
-| 0.7.5 | Twee formuleringen die naar een bepaalde organisatie konden wijzen, neutraal gemaakt: "wat verandert er bij ons" en de reden waarom Acceptatie bestaat. Het argument blijft hetzelfde; alleen de aanwijzing is weg. |
-| 0.7.4 | De startsituatie geformuleerd als aanname van de showcase in plaats van als beschrijving van een organisatie die al levert. Hij hoort bij het fictieve systeem: een gegeven, geen weergave. |
+| 0.7.6 | Drie regels in deze log herschreven: ze citeerden de formuleringen die in 0.7.4 en 0.7.5 juist waren weggehaald. Een wijzigingslog die reproduceert wat hij zegt te hebben verwijderd, doet het werk over. |
+| 0.7.5 | Twee formuleringen in het contexthoofdstuk en in bijlage A neutraal gemaakt: ze waren te lezen als verwijzing naar een bepaalde organisatie. De argumenten zijn ongewijzigd. |
+| 0.7.4 | De startsituatie geformuleerd als aanname van de showcase in plaats van als weergave van een bestaande inrichting. Hij hoort bij het fictieve systeem: een gegeven. |
 | 0.7.3 | Correctie op 0.7.2: daar stond dat contractverificatie een ongedocumenteerde operatie principieel niet kan zien. Dat is te sterk. Gemeten: een nieuwe methode op een bekend pad ziet de gegenereerde verificatie wél, een heel nieuw pad niet. Alleen dat tweede is van drift alleen. |
 | 0.7.2 | De drift-check vergelijkt operaties en niet de hele spec. Gemeten met springdoc: zes verschillen die alle uit zijn afleiding kwamen en niet uit een misdragende implementatie. Wat drift wél toevoegt naast contractverificatie is het zien van een operatie die de service aanbiedt en de spec niet noemt. Onderbouwing in `besluiten.md`. |
 | 0.7.1 | 1.4 en 1.5 herschreven naar de vier pipelines: bouwen per microservice, deployen per deelsysteem, en per omgeving een eigen pipeline met de vorige omgeving als gate. De oude opzet beschreef één pipeline per deelsysteem die alles deed, met provider en consumer als scriptnaam — maar een rol hoort bij een grens en niet bij een deelsysteem, dus leidt de pipeline hem af. O12 gesloten: dit document is de spec, de code de implementatie, en de wijzigingslog is de driftlog. |
-| 0.7.0 | Startsituatie toegevoegd: de showcase begint brownfield, bij een organisatie die al levert. Drie rijen — wat er al is, wat contracttesten toevoegt, en wat het wegneemt. Die laatste ontbrak en is nu juist de rij die de rekening laat kloppen. Gevolg voor de rest: elk hoofdstuk toont een delta en bouwt de bestaande praktijk niet na. Geen patch, want het verandert waar de showcase over gaat. |
+| 0.7.0 | Startsituatie toegevoegd: de showcase begint niet bij nul maar veronderstelt een werkende uitgangssituatie. Drie rijen — wat verondersteld wordt, wat contracttesten toevoegt, en wat het wegneemt. Die laatste ontbrak en is nu juist de rij die de rekening laat kloppen. Gevolg voor de rest: elk hoofdstuk toont een delta en bouwt de veronderstelde praktijk niet na. Geen patch, want het verandert waar de showcase over gaat. |
 | 0.6.8 | Verwijzing bovenaan hoofdstuk 1 naar `01-basis/README.md`. Dit document houdt het wat en waarom; het hoe staat in de README van elk hoofdstuk, naast de code die het beschrijft. |
 | 0.6.7 | In 1.4 vastgelegd dat contractverificatie in twee stijlen bestaat: gegenereerd uit de spec en met de hand geschreven. De showcase houdt allebei, een pipeline kiest er een. Met de reden erbij: geschreven tests dekken wat de schrijver bedacht, en dat is meetbaar minder. Voor unit en integratie speelt de keuze niet, want daar ligt de norm in de test. |
 | 0.6.6 | `currency` van een `pattern` naar een `enum` van EUR, USD en GBP, en `maximum` op `amount`. Daarmee staat elke geldigheidsregel in het contract en blijft als semantiek alleen de drempel van 500,00 over — een businessuitkomst, geen invoercontrole. Gemeten met oasdiff: een valuta toevoegen is niet breaking (scenario A), een valuta weghalen wel. De implementatie volgt de enum en accepteert niet meer dan de spec belooft. |
