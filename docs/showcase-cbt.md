@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Versie 0.6.7
+Versie 0.6.8
 
 Dit is een werkdocument: elke wijziging is een patchbump, zodat er altijd naar een vorige versie terug te vallen is. De aard van de wijziging staat in de wijzigingslog, niet in het versienummer.
 
@@ -325,6 +325,8 @@ Niemand leest negen hoofdstukken. Vijf leespaden:
 ## 1. Basis (API)
 
 Twee deelsystemen, één grens: Order (consumer) → Payment (provider), REST, spec-first, contract in Apicurio. Dit hoofdstuk is de referentie-implementatie: het beschrijft de opzet die de andere showcases alleen nog aanvullen.
+
+> Hieronder staat wat er is en waarom. **Hoe je het draait** staat in `01-basis/README.md`.
 
 ### 1.1 Rationale
 
@@ -827,6 +829,7 @@ Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen 
 
 | Versie | Wijziging |
 |---|---|
+| 0.6.8 | Verwijzing bovenaan hoofdstuk 1 naar `01-basis/README.md`. Dit document houdt het wat en waarom; het hoe staat in de README van elk hoofdstuk, naast de code die het beschrijft. |
 | 0.6.7 | In 1.4 vastgelegd dat contractverificatie in twee stijlen bestaat: gegenereerd uit de spec en met de hand geschreven. De showcase houdt allebei, een pipeline kiest er een. Met de reden erbij: geschreven tests dekken wat de schrijver bedacht, en dat is meetbaar minder. Voor unit en integratie speelt de keuze niet, want daar ligt de norm in de test. |
 | 0.6.6 | `currency` van een `pattern` naar een `enum` van EUR, USD en GBP, en `maximum` op `amount`. Daarmee staat elke geldigheidsregel in het contract en blijft als semantiek alleen de drempel van 500,00 over — een businessuitkomst, geen invoercontrole. Gemeten met oasdiff: een valuta toevoegen is niet breaking (scenario A), een valuta weghalen wel. De implementatie volgt de enum en accepteert niet meer dan de spec belooft. |
 | 0.6.5 | Semantiek naar het schema waar het schema hem kan dragen: `minimum: 0` met `exclusiveMinimum: true` op `amount`, en een `pattern` op `currency`. Gevonden doordat Schemathesis meldde dat een schema-geldig verzoek werd geweigerd — het schema liet toe wat de implementatie verbood. Correctie op de baseline, want v1.0.0 was nog niet uitgeleverd; na release was `pattern` toevoegen breaking geweest. Wat overblijft is echte semantiek: dat een valutacode bestaat, en de drempel van 500,00. |

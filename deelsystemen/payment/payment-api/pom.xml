@@ -21,6 +21,10 @@
 
   <properties>
     <java.version>21</java.version>
+    <!-- De contractlaag draait pas na de deploy, tegen een draaiend deelsysteem. Zonder
+         deze uitsluiting faalt een gewone `mvn test` op een omgeving die er nog niet is.
+         ci/verify-contract.sh schakelt hem weer in met -DexcludedGroups= -->
+    <excludedGroups>contract</excludedGroups>
   </properties>
 
   <dependencies>

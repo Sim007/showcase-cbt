@@ -26,7 +26,17 @@ services:
           - payment-api
     security_opt:
       - no-new-privileges:true
-    command: ["--global-response-templating", "--disable-banner", "--port", "8081"]
+    # --disable-http2-plain: WireMock accepteert standaard een h2c-upgrade, Tomcat niet.
+    # De JDK-HttpClient in Order vraagt die upgrade aan; tegen de echte buur wordt hij
+    # genegeerd en tegen de stub liep de body verloren. Een stub die méér kan dan wat hij
+    # vervangt, is net zo fout als een die minder kan — dan test je iets wat op Test niet
+    # gebeurt.
+    command:
+      - "--global-response-templating"
+      - "--disable-banner"
+      - "--disable-http2-plain"
+      - "--port"
+      - "8081"
     volumes:
       - ${STUB_MAPPINGS:-./build/stub}/mappings:/home/wiremock/mappings:ro
     ports:

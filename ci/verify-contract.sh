@@ -62,8 +62,10 @@ gegenereerd() {
 
 geschreven() {
   echo "contract: geschreven, tegen ${BASIS_URL}"
+  # -DexcludedGroups= heft de uitsluiting in de pom op: daar staat contract standaard uit,
+  # omdat die laag een gedeployd deelsysteem nodig heeft.
   CBT_NETWERK="${NETWERK}" mvn "deelsystemen/payment/payment-api" test \
-    -Dgroups=contract -Dcontract.base-url="${BASIS_URL}" \
+    -Dgroups=contract -DexcludedGroups= -Dcontract.base-url="${BASIS_URL}" \
     || fout "contractverificatie (geschreven) rood"
 }
 

@@ -1,5 +1,7 @@
 package cbt.payment;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(PaymentRuleException.class)
     public ResponseEntity<ErrorResponse> regel(PaymentRuleException fout) {
@@ -69,6 +73,9 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> onverwacht(Exception fout) {
+        // Naar buiten niets, in het log alles. Een 500 zonder spoor is niet te
+        // onderzoeken, en dat merk je pas als je hem hebt.
+        LOG.error("onverwachte fout", fout);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("INTERNAL_ERROR", "unexpected error"));
     }
