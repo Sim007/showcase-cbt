@@ -30,8 +30,15 @@ management:
     env:
       enabled: true
 
+# Twee versies met twee betekenissen. build.version komt uit de pom en is die van het
+# deelsysteem; contract.serveert is die van de grens en komt uit het register. Ze bewegen
+# los van elkaar, en vanaf hoofdstuk 3 serveert één service twee majors naast elkaar —
+# vandaar een lijst.
 info:
   contract:
     groep: order-payment
     artifact: payment-api
-    versie: 1.0.0
+    # Komma-gescheiden en geen lijst: een YAML-lijst komt via het info-endpoint naar
+    # buiten als {"0": "1.0.0"}, en dat is voor de versieconformiteitscheck lastiger te
+    # lezen dan het waard is.
+    serveert: 1.0.0

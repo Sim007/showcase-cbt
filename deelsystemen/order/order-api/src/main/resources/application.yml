@@ -28,9 +28,12 @@ management:
     env:
       enabled: true
 
+# Twee versies met twee betekenissen. build.version komt uit de pom en is die van het
+# deelsysteem; contract.pin is de contractversie waarop deze consumer zich vastlegt.
 info:
   contract:
     groep: order-payment
     artifact: payment-api
-    # De pin van de consumer: hij volgt geen latest.
+    # De pin van de consumer: hij volgt geen latest. Eén waarde, want een consumer pint op
+    # één versie tegelijk.
     pin: 1.0.0

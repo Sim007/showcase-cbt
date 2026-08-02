@@ -66,6 +66,17 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <!-- Schrijft de serviceversie uit deze pom in de image, zodat het
+               info-endpoint hem naast de contractversie kan melden. Twee versies, twee
+               betekenissen: zonder dat onderscheid leest niemand af of 1.1.0 over het
+               deelsysteem of over de grens gaat. -->
+          <execution>
+            <goals>
+              <goal>build-info</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

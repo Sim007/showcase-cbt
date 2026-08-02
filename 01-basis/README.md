@@ -145,9 +145,17 @@ echte Payment (`pay-000001`) in plaats van uit de stub (`pay-88f21c`).
 Elk deelsysteem meldt op zijn info-endpoint wat het draait:
 
 ```sh
-curl http://localhost:8081/actuator/info   # provider: de versie die hij serveert
-curl http://localhost:8082/actuator/info   # consumer: zijn pin
+curl http://localhost:8081/actuator/info
+# {"contract":{...,"serveert":"1.0.0"},"build":{"artifact":"payment-api","version":"1.0.0",...}}
+
+curl http://localhost:8082/actuator/info
+# {"contract":{...,"pin":"1.0.0"},"build":{"artifact":"order-api","version":"1.0.0",...}}
 ```
+
+Twee versies met twee betekenissen. `build.version` is die van het **deelsysteem** en komt
+uit de pom; `contract.serveert` en `contract.pin` gaan over de **grens** en komen uit het
+register. Ze staan nu toevallig allebei op 1.0.0 en bewegen daarna los van elkaar — dat is
+precies wat hoofdstuk 2 laat zien.
 
 ## Opruimen
 
