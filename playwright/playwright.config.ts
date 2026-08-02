@@ -5,8 +5,9 @@ import { defineConfig } from '@playwright/test';
 //
 // Twee projecten, en het verschil is eigenaarschap:
 //
-//   deelsysteem  de smoke van één deelsysteem, in deelsystemen/<naam>/smoke/, van de squad
-//   keten        de smoke over alle grenzen, hier, van de tribe
+//   deelsysteem     de smoke van één deelsysteem, in deelsystemen/<naam>/smoke/, van de squad
+//   keten           de smoke over alle grenzen, hier, van de tribe
+//   gebruikersflow  wat een gebruiker doet, op Acceptatie, met een label per deelsysteem
 //
 // De specs van de squads staan bij hun deelsysteem en worden hier alleen opgehaald — geen
 // kopie. Zo is er één plek om alles te draaien en te zien, staat elke spec bij zijn
@@ -30,6 +31,11 @@ export default defineConfig({
       name: 'deelsysteem',
       testDir: '../deelsystemen',
       testMatch: '*/smoke/*.spec.ts',
+    },
+    {
+      name: 'gebruikersflow',
+      testDir: './gebruikersflow',
+      testMatch: '*.spec.ts',
     },
     {
       name: 'keten',
