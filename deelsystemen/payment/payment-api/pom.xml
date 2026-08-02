@@ -46,6 +46,15 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Houdt een response tegen de gepubliceerde spec. Nodig voor de geschreven
+         contractverificatie: zonder validator zou de test zijn eigen verwachting
+         opschrijven, en dan ligt de norm weer in de test in plaats van in het contract. -->
+    <dependency>
+      <groupId>com.atlassian.oai</groupId>
+      <artifactId>swagger-request-validator-core</artifactId>
+      <version>3.0.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

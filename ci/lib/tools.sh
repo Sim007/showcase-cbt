@@ -84,7 +84,12 @@ mvn() {
   _werkmap="$1"
   shift
   mkdir -p "${CBT_ROOT}/build/m2"
+  # De contracttests praten met een gedeployd deelsysteem; met CBT_NETWERK gezet hangt
+  # Maven aan datzelfde compose-netwerk en bereikt hij de buur op zijn servicenaam.
+  _netwerk=""
+  [ -n "${CBT_NETWERK:-}" ] && _netwerk="--network=${CBT_NETWERK}"
   docker run --rm --interactive \
+    ${_netwerk} \
     --user "$(id -u):$(id -g)" \
     --volume "${CBT_ROOT}:/work" \
     --workdir "/work/${_werkmap}" \
