@@ -17,8 +17,11 @@ draait.
 ```sh
 01-basis/demo/demo.sh          # de vier scènes achter elkaar
 01-basis/demo/demo.sh --stap   # met een pauze ertussen, voor een presentatie
-01-basis/demo/opruimen.sh      # terug naar de uitgangssituatie
+01-basis/demo/opruimen.sh      # alles weg, ook Test
 ```
+
+De demo ruimt zelf op voordat hij begint, dus je kunt hem meteen opnieuw draaien. Achteraf
+blijft Test staan om naar te kijken; `opruimen.sh` haalt ook dat weg.
 
 Het demoscript bedenkt niets zelf: het roept dezelfde pipelines aan die een squad ook
 draait. Wil je begrijpen wat er gebeurt, lees dan hieronder verder — dat zijn precies de

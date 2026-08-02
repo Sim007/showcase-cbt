@@ -9,7 +9,7 @@ set -euo pipefail
 CBT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
 for omgeving in test acceptatie ci-payment ci-order; do
-  "${CBT_ROOT}/ci/opruimen.sh" "${omgeving}" payment order
+  "${CBT_ROOT}/ci/opruimen.sh" "${omgeving}" payment order >/dev/null
 done
 
 # Het register is in memory: herstarten is leegmaken.

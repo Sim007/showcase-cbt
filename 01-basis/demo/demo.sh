@@ -31,7 +31,12 @@ opmerking() {
 
 # --- opzet ---------------------------------------------------------------------------
 
-scene "Opzet: het register omhoog en het contract erin"
+scene "Opzet: schone lei, het register omhoog en het contract erin"
+
+# Eerst opruimen, niet achteraf. Een demo die alleen vanaf een handmatig schoongemaakte
+# machine werkt, valt om op het moment dat er publiek bij zit — en het register weigert
+# terecht een tweede publicatie van dezelfde versie.
+01-basis/demo/opruimen.sh
 
 docker compose -f compose/registry.yml up -d >/dev/null
 ci/wacht-op-gezond.sh registry compose/registry.yml >/dev/null 2>&1 || sleep 10
@@ -103,5 +108,6 @@ opmerking "over de andere."
 
 echo
 echo "─────────────────────────────────────────────────────────────────────"
-echo "  Klaar. Opruimen kan met: 01-basis/demo/opruimen.sh"
+echo "  Klaar. Test blijft staan om naar te kijken."
+echo "  Opnieuw draaien kan meteen: de demo ruimt zelf op voordat hij begint."
 echo "─────────────────────────────────────────────────────────────────────"
