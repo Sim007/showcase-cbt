@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 #
-# De gedeelde smoke, tegen welke omgeving dan ook.
+# De smoke, tegen welke omgeving dan ook.
 #
-#   smoke.sh <base-url> <netwerk>
+#   smoke.sh <deelsysteem|keten> <base-url> <netwerk>
 #
-# Eén spec, één aanroeppunt, elke omgeving. Op Test tegen de echte keten, op Acceptatie
-# tegen dezelfde keten met de buitenwereld eraan, en desgewenst op een CI-omgeving tegen
-# de stub. Wat verschilt is de base-URL en verder niets — zou de spec per omgeving
-# verschillen, dan bewijst groen op de ene niets over de andere.
+# Twee soorten, en het verschil is eigenaarschap:
 #
-# De smoke gaat niet over inhoud: status en het doorlopen van de keten, meer niet.
+#   <deelsysteem>  de smoke van dat deelsysteem, uit deelsystemen/<naam>/smoke/,
+#                  van de squad. Draait na een deploy.
+#   keten          de smoke over alle grenzen, uit playwright/keten/, van de tribe.
+#                  Hangt niet aan een deploy maar draait gepland.
+#
+# Eén spec per doel, één aanroeppunt, elke omgeving. Wat verschilt is de base-URL en
+# verder niets — zou de spec per omgeving verschillen, dan bewijst groen op de ene niets
+# over de andere.
 
 set -euo pipefail
 
@@ -22,13 +26,24 @@ fout() {
   exit 1
 }
 
-[ "$#" -eq 2 ] || fout "gebruik: smoke.sh <base-url> <netwerk>"
+[ "$#" -eq 3 ] || fout "gebruik: smoke.sh <deelsysteem|keten> <base-url> <netwerk>"
 
-BASE_URL="$1"
-NETWERK="$2"
+DOEL="$1"
+BASE_URL="$2"
+NETWERK="$3"
 
 mkdir -p "${CBT_ROOT}/build/smoke-rapport"
 
-echo "smoke: tegen ${BASE_URL}"
-playwright "${NETWERK}" "${BASE_URL}" || fout "smoke rood tegen ${BASE_URL}"
-echo "smoke: groen tegen ${BASE_URL}"
+if [ "${DOEL}" = "keten" ]; then
+  echo "smoke: keten, tegen ${BASE_URL}"
+  playwright "${NETWERK}" "${BASE_URL}" --project=keten \
+    || fout "ketensmoke rood tegen ${BASE_URL}"
+else
+  [ -d "${CBT_ROOT}/deelsystemen/${DOEL}/smoke" ] \
+    || fout "deelsysteem ${DOEL} heeft geen smoke in deelsystemen/${DOEL}/smoke/"
+  echo "smoke: ${DOEL}, tegen ${BASE_URL}"
+  playwright "${NETWERK}" "${BASE_URL}" --project=deelsysteem "${DOEL}/smoke/" \
+    || fout "smoke van ${DOEL} rood tegen ${BASE_URL}"
+fi
+
+echo "smoke: groen"

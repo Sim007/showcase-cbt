@@ -1,9 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * De gedeelde smoke. Eén spec, op een base-URL geparametriseerd, voor elke omgeving:
- * op Test tegen de echte keten, op Acceptatie tegen dezelfde keten met de buitenwereld
- * eraan. Ook een CI-omgeving met een stub erin kan hem draaien.
+ * De smoke van het deelsysteem Order. Van de squad die Order bezit, en daarom hier en niet
+ * in playwright/ — daar staat wat gedeeld is: de runner, de configuratie, en de smoke over
+ * alle grenzen die van geen enkele squad alleen is.
+ *
+ * Draait na een deploy, tegen de base-URL van Order. Dezelfde spec werkt op een
+ * CI-omgeving waar de buur een stub is; dat is het punt van één spec voor elke omgeving.
  *
  * **De smoke gaat niet over inhoud.** Hij toetst uitsluitend HTTP-status en of de keten
  * wordt doorlopen — geen veldwaarden, geen businessregels. Zou hij dat wel doen, dan

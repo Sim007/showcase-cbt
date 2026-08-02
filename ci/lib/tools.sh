@@ -79,6 +79,10 @@ ajv() {
 # officiële Playwright-image is ruim twee gigabyte. Laptopbudget is een ontwerpeis.
 # Hoofdstuk 8 heeft browsers wel nodig; dan komt daar een eigen image bij.
 #
+# node_modules hangt op de hoofdmap en niet in playwright/: de specs staan bij de
+# deelsystemen, en Node zoekt zijn afhankelijkheden omhoog vanaf het bestand. Vanuit
+# deelsystemen/order/smoke/ komt hij dan bij de wortel uit en nergens anders.
+#
 # Zelfde patroon als ajv: installatie in build/node/, HOME naar een schrijfbare map.
 playwright() {
   _netwerk="$1"
@@ -95,7 +99,7 @@ playwright() {
     --network "${_netwerk}" \
     --user "$(id -u):$(id -g)" \
     --volume "${CBT_ROOT}:/work" \
-    --volume "${CBT_ROOT}/build/node/node_modules:/work/playwright/node_modules" \
+    --volume "${CBT_ROOT}/build/node/node_modules:/work/node_modules" \
     --workdir /work/playwright \
     --env HOME=/tmp \
     --env CI=1 \
