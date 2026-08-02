@@ -56,7 +56,7 @@ opmerking() {
 
 scene "Stap 0: de uitgangssituatie — wat er al draait"
 
-01-basis/demo/opruimen.sh
+01-basis/demo/opruimen.sh >/dev/null
 
 # Dit is het gegeven, niet de demo. Twee deelsystemen die gebouwd en gedeployd worden met
 # pipelines die er al zijn. Daarom gaat het stil: het argument begint pas als contracten
@@ -90,28 +90,36 @@ print('    %-9s deelsysteem %-7s microservice %-7s contract %s' % (
 done
 
 echo
-opmerking "Dit draait al. Pipelines, omgevingen, unit- en integratietests, een smoke en"
-opmerking "een gebruikersflow — dat is de uitgangssituatie en niet wat de showcase toevoegt."
+opmerking "Dit draait al: pipelines, omgevingen, unit- en integratietests, een smoke en"
+opmerking "een gebruikersflow. Ook het schema van de grens ligt er — als bestand naast de"
+opmerking "code, met een versienummer erin. Dat is de uitgangssituatie."
 opmerking ""
-opmerking "De grens ís beschreven: er ligt een OpenAPI-bestand en de deelsystemen noemen"
-opmerking "een contractversie. Maar niets dwingt hem af. Er is geen register, dus geen"
-opmerking "gate op een wijziging, geen stub die eruit komt, en geen verificatie die"
-opmerking "aantoont dat beide kanten zich eraan houden. De spec is documentatie."
+opmerking "Twee dingen ontbreken, en die twee zijn de hele showcase:"
+opmerking ""
+opmerking "  het register       de spec staat in een repository, niet gepubliceerd per"
+opmerking "                     versie. Dus geen gate op een wijziging."
+opmerking "  de contracttesten  niets toetst aan die spec. Geen stub die eruit komt, geen"
+opmerking "                     verificatie aan een van beide kanten, geen drift-check."
+opmerking ""
+opmerking "Het schema bindt dus niets. Het is documentatie, geen norm waar een build op valt."
 
 # --- stap 1: contracttesten komt erbij ------------------------------------------------
 
-scene "Stap 1: het contract erbij — vanaf hier doet contracttesten mee"
+scene "Stap 1: het register erbij — en daarna de contracttesten"
 
-docker compose -f compose/registry.yml up -d >/dev/null
+docker compose -f compose/registry.yml up -d >/dev/null 2>&1
 ci/wacht-op-gezond.sh registry compose/registry.yml >/dev/null 2>&1 || sleep 10
 toon_pagina
 
 ci/publish-contract.sh order-payment payment-api 1.0.0 contracts/order-payment/v1.0.0/openapi.yaml
 
 echo
-opmerking "Het contract kwam door de diff-gate. Vanaf hoofdstuk 2 doet die gate werk;"
+opmerking "Hetzelfde schema, nu gepubliceerd als payment-api 1.0.0: één plek, immutable,"
+opmerking "per versie. Het kwam door de diff-gate — vanaf hoofdstuk 2 doet die gate werk,"
 opmerking "hier is er nog niets om mee te vergelijken."
-opmerking "Wat hierna volgt is dezelfde gang als daarnet, maar nu mét contracten."
+opmerking ""
+opmerking "Daarmee is het eerste ontbrekende stuk er. Wat hierna volgt is dezelfde gang als"
+opmerking "daarnet, met dezelfde deelsystemen — maar nu met de contracttesten erbij."
 
 # --- scène 1 -------------------------------------------------------------------------
 

@@ -28,10 +28,11 @@ dan zie je het deelsysteem door de gang lopen en bij elke gate een oordeel krijg
 Alleen de terminal is ook goed: `CBT_LIVE=0 01-basis/demo/demo.sh`.
 
 De demo begint bij de **uitgangssituatie**: Order en Payment draaien al op Test en
-Acceptatie, met pipelines en tests die het al deden. Daarna komt het contract erbij en
-loopt dezelfde gang nog een keer, maar nu mét gate, stub en contractverificatie — zodat je
-ziet wat contracttesten toevoegt in plaats van dat je het moet geloven. Hij eindigt met het
-rapport. Hij ruimt zelf op voordat hij begint, dus je kunt hem meteen opnieuw
+Acceptatie, met pipelines en tests die het al deden, en het schema van de grens ligt als
+bestand naast de code. Wat er níet is, is het register en de contracttesten. Die twee komen
+er in stap 1 bij, waarna dezelfde gang nog een keer loopt — nu met gate, stub en
+verificatie aan beide kanten. Zo zie je wat contracttesten toevoegt in plaats van dat je
+het moet geloven. Hij eindigt met het rapport. Hij ruimt zelf op voordat hij begint, dus je kunt hem meteen opnieuw
 draaien. Achteraf blijven Test en Acceptatie staan om naar te kijken; `opruimen.sh` haalt
 ook die weg.
 

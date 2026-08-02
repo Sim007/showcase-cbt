@@ -48,7 +48,15 @@ Die uitgangssituatie hoort bij het fictieve systeem: hij is een gegeven van de s
 | Testpiramide | unit, integratie, een e2e smoke op Test, een gebruikersflow op Acceptatie |
 | Grenzen | beschreven, vaak in een OpenAPI-bestand, maar niet afgedwongen |
 
-Die piramide staat en is niet het probleem. Wat ontbreekt is dat er iets is dat een grens **bindt**: de spec is documentatie, niet een norm waar een build op valt.
+Die piramide staat en is niet het probleem. **Wat er niet is, is het register en de contracttesten.** Het schema ligt er en de implementaties draaien aan beide kanten — maar de spec staat als bestand in een repository en niet als gepubliceerde versie, en geen enkele test toetst eraan. Daardoor bindt hij niets: hij is documentatie, geen norm waar een build op valt.
+
+| | Er wel | Er niet |
+|---|---|---|
+| De grens | het schema, als bestand naast de code | het register: één plek, immutable, per versie |
+| De implementatie | beide kanten, gebouwd en gedeployd | — |
+| De toetsing | unit, integratie, e2e | de contracttesten: stub uit de spec, verificatie aan beide kanten, drift |
+
+Die twee zijn precies wat de showcase toevoegt, en verder niets.
 
 **Wat contracttesten toevoegt.**
 
