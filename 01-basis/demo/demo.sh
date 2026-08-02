@@ -106,11 +106,27 @@ opmerking "Dezelfde spec draaide in scène 1 tegen de stub en hier tegen het ech
 opmerking "Payment. Zou hij per omgeving verschillen, dan bewees groen op de ene niets"
 opmerking "over de andere."
 
+# --- scène 5 -------------------------------------------------------------------------
+
+scene "Scène 5: Acceptatie, en de gebruikersflow over de keten"
+
+# Een gebruikersflow spant over deelsystemen heen. Op een blijvende omgeving staan ze er
+# allebei al; deze demo begint met een schone lei en moet die eerste vulling dus zelf doen
+# voordat er een flow kan draaien.
+ci/deploy.sh payment 1.0.0 acceptatie >/dev/null
+ci/pipeline-acceptatie.sh order   1.0.0
+ci/pipeline-acceptatie.sh payment 1.0.0
+
+echo
+opmerking "Eén scenario, geen tien. De structuur van de grens is al aangetoond op de"
+opmerking "CI-omgeving; wat hier overblijft is of de keten doet wat een gebruiker"
+opmerking "verwacht. Dat is wat contracttesten aan een ketentest verandert."
+
 echo
 ci/rapport-html.sh
 
 echo
 echo "─────────────────────────────────────────────────────────────────────"
-echo "  Klaar. Test blijft staan om naar te kijken."
+echo "  Klaar. Test en Acceptatie blijven staan om naar te kijken."
 echo "  Opnieuw draaien kan meteen: de demo ruimt zelf op voordat hij begint."
 echo "─────────────────────────────────────────────────────────────────────"

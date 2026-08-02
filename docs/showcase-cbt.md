@@ -721,16 +721,21 @@ Twee dingen die uit dit overzicht volgen. **De meeste maatregelen zijn geen test
 
 ### 1.11 Demo
 
-De basisdemo toont uitsluitend het mechanisme: contract uit het register, stub eruit gegenereerd, beide pipelines groen, Test omhoog. Dit is de demo die het mechanisme in één keer uitlegt; scenariomateriaal blijft er bewust buiten.
+De basisdemo loopt de hele productiegang af: contract uit het register, stub eruit gegenereerd, beide deelsystemen langs de vier pipelines tot en met Acceptatie. Dit is de demo die het mechanisme in één keer uitlegt; scenariomateriaal blijft er bewust buiten.
 
 | # | Scène | Zichtbaar |
 |---|---|---|
 | 1 | Order's pipeline draait volledig groen terwijl Payment nergens draait | onafhankelijkheid van de consumer |
 | 2 | Payment's pipeline draait groen, met de volledige contractverificatie op zijn CI-omgeving | conformiteit van de provider |
-| 3 | Test omhoog, versieconformiteit, dashboard groen | welke contractversies samen draaien |
+| 3 | Test omhoog, drie versieniveaus af te lezen | welke versies samen draaien, en dat ze los bewegen |
 | 4 | smoke groen tegen de echte keten | de samenstelling loopt |
+| 5 | Acceptatie omhoog, de gebruikersflow groen | de keten doet wat een gebruiker verwacht |
 
 Scène 1 en 2 zijn in willekeurige volgorde te draaien; begin bewust met Payment, omdat het publiek verwacht dat de consumer als laatste moet.
+
+**Scène 5 vraagt een volledige omgeving.** Een gebruikersflow spant over deelsystemen heen, dus op een lege Acceptatie moeten eerst beide deelsystemen staan voordat er een flow kan draaien. Op een blijvende omgeving speelt dat niet — daar staan ze al — maar een demo begint met een schone lei en moet die eerste vulling dus zelf doen.
+
+De demo eindigt met een rapport: elke stap met tijdstip en uitkomst, als markdown en als pagina. Dat is hetzelfde testbewijs dat een pipeline oplevert, en niet iets wat voor de demo apart wordt gemaakt.
 
 De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen branches: een branch per scenario moet worden bijgewerkt bij elke wijziging in de basis. Elk script past de wijziging toe, draait de betrokken pipelines en eindigt met een reset naar de uitgangssituatie.
 
