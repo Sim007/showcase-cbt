@@ -133,3 +133,25 @@ mvn() {
     "$MAVEN_IMAGE" \
     mvn -Duser.home=/m2 -Dmaven.repo.local=/m2/repository "$@"
 }
+
+# stap <omschrijving> <commando...>
+#
+# Draait een commando stil en meldt alleen of het lukte. Faalt het, dan komt de uitvoer
+# alsnog volledig naar buiten. Een pipeline waarin de uitvoer verdrinkt toont niets, en
+# een demo waarin je Spring ziet opstarten toont het verkeerde.
+#
+# Het logbestand blijft na afloop staan in ${STAP_LOG}, zodat de aanroeper er nog een
+# samenvatting uit kan halen — het aantal tests bijvoorbeeld.
+stap() {
+  _omschrijving="$1"
+  shift
+  STAP_LOG="$(mktemp)"
+  printf '  %-44s' "${_omschrijving}"
+  if "$@" >"${STAP_LOG}" 2>&1; then
+    echo " ok"
+  else
+    echo " MISLUKT"
+    sed 's/^/    /' "${STAP_LOG}" >&2
+    return 1
+  fi
+}

@@ -27,19 +27,18 @@ MODULE="deelsystemen/${DEELSYSTEEM}/${MICROSERVICE}"
 
 [ -d "${CBT_ROOT}/${MODULE}" ] || fout "geen microservice ${MICROSERVICE} in deelsysteem ${DEELSYSTEEM}"
 
-VERSIE="$(yq -p=xml -r '.project.version' "${MODULE}/pom.xml")"
+VERSIE="$(yq -p=xml -o=yaml -r '.project.version' "${MODULE}/pom.xml" 2>/dev/null)"
 [ -n "${VERSIE}" ] && [ "${VERSIE}" != "null" ] || fout "kon de versie niet uit ${MODULE}/pom.xml lezen"
 
 echo "== ${MICROSERVICE} ${VERSIE} =="
 
-echo "-- unit"
-mvn "${MODULE}" test -Dgroups=unit
+stap "unit" mvn "${MODULE}" test -Dgroups=unit
+grep -oE "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+" "${STAP_LOG}" | tail -1 | sed 's/^/    /'
 
-echo "-- integratie"
-mvn "${MODULE}" test -Dgroups=integratie
+stap "integratie" mvn "${MODULE}" test -Dgroups=integratie
+grep -oE "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+" "${STAP_LOG}" | tail -1 | sed 's/^/    /'
 
-echo "-- image"
-mvn "${MODULE}" -q package -DskipTests
-docker build -q -t "cbt/${MICROSERVICE}:${VERSIE}" "${CBT_ROOT}/${MODULE}" >/dev/null
+stap "jar bouwen" mvn "${MODULE}" -q package -DskipTests
+stap "image bouwen" docker build -q -t "cbt/${MICROSERVICE}:${VERSIE}" "${CBT_ROOT}/${MODULE}"
 
 echo "klaar: cbt/${MICROSERVICE}:${VERSIE}"

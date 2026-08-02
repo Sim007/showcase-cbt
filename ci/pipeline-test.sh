@@ -33,10 +33,11 @@ POORT="$(eval echo "\${${POORT_VAR}}")"
 
 echo "== ${DEELSYSTEEM} ${VERSIE} naar Test =="
 
-echo "-- deploy"
-"${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" test
+# shellcheck source=lib/tools.sh
+. "${CBT_ROOT}/ci/lib/tools.sh"
 
-echo "-- smoke van ${DEELSYSTEEM}"
-"${CBT_ROOT}/ci/smoke.sh" "${DEELSYSTEEM}" "http://${DEELSYSTEEM}-api:${POORT#*:}" cbt-test
+stap "deploy op Test" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" test
+stap "smoke van ${DEELSYSTEEM}" "${CBT_ROOT}/ci/smoke.sh" "${DEELSYSTEEM}" "http://${DEELSYSTEEM}-api:${POORT#*:}" cbt-test
+grep -oE "[0-9]+ passed" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
 
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} draait op Test"

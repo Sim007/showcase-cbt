@@ -27,10 +27,11 @@ VERSIE="$2"
 
 echo "== ${DEELSYSTEEM} ${VERSIE} naar Acceptatie =="
 
-echo "-- deploy"
-"${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" acceptatie
+# shellcheck source=lib/tools.sh
+. "${CBT_ROOT}/ci/lib/tools.sh"
 
-echo "-- gebruikersflow met label ${DEELSYSTEEM}"
-"${CBT_ROOT}/ci/gebruikersflow.sh" "${DEELSYSTEEM}" http://order-api:8082 cbt-acceptatie
+stap "deploy op Acceptatie" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" acceptatie
+stap "gebruikersflow @${DEELSYSTEEM}" "${CBT_ROOT}/ci/gebruikersflow.sh" "${DEELSYSTEEM}" http://order-api:8082 cbt-acceptatie
+grep -oE "[0-9]+ passed" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
 
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} draait op Acceptatie"

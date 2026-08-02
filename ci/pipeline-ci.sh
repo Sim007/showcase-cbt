@@ -47,37 +47,36 @@ echo "== ${DEELSYSTEEM} ${VERSIE} op een efemere CI-omgeving =="
 
 EXTRA=""
 if [ -n "${PINT:-}" ]; then
-  echo "-- stub uit ${PINT}"
   SCENARIOS="deelsystemen/${DEELSYSTEEM}/stub-scenarios"
   [ -d "${CBT_ROOT}/${SCENARIOS}" ] || SCENARIOS=""
   # shellcheck disable=SC2086
-  "${CBT_ROOT}/ci/generate-stub.sh" ${PINT} ${SCENARIOS} >/dev/null
+  stap "stub uit ${PINT}" "${CBT_ROOT}/ci/generate-stub.sh" ${PINT} ${SCENARIOS}
+  grep -E "^stap [0-9]" "${STAP_LOG}" | sed 's/^/    /' || true
   export STUB_MAPPINGS="${CBT_ROOT}/build/stub"
   EXTRA="compose/stub.yml"
 fi
 
-echo "-- deploy"
 # shellcheck disable=SC2086
-"${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" "${OMGEVING}" ${EXTRA}
+stap "deploy op ${OMGEVING}" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" "${OMGEVING}" ${EXTRA}
 
 # --- serveert hij een contract? ---------------------------------------------------------
 
 if [ -n "${SERVEERT:-}" ]; then
-  echo "-- drift"
   # shellcheck disable=SC2086
-  "${CBT_ROOT}/ci/drift.sh" ${SERVEERT} "${RUNTIME_SPEC_URL}"
+  stap "drift" "${CBT_ROOT}/ci/drift.sh" ${SERVEERT} "${RUNTIME_SPEC_URL}"
+  grep "^drift:" "${STAP_LOG}" | sed 's/^/    /' || true
 
-  echo "-- contractverificatie, providerkant"
   # shellcheck disable=SC2086
-  "${CBT_ROOT}/ci/verify-contract.sh" provider ${SERVEERT} "${INTERNE_URL}" "${NETWERK}" "${CONTRACT_STIJL:-gegenereerd}"
+  stap "contractverificatie, provider" "${CBT_ROOT}/ci/verify-contract.sh" provider ${SERVEERT} "${INTERNE_URL}" "${NETWERK}" "${CONTRACT_STIJL:-gegenereerd}"
+  grep -oE "[0-9]+ generated, [0-9]+ passed|Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
 fi
 
 # --- pint hij een contract? -------------------------------------------------------------
 
 if [ -n "${PINT:-}" ]; then
-  echo "-- contractverificatie, consumerkant"
   # shellcheck disable=SC2086
-  "${CBT_ROOT}/ci/verify-contract.sh" consumer ${PINT} "${INTERNE_URL}" "${NETWERK}" "${STUB_ADMIN_URL}"
+  stap "contractverificatie, consumer" "${CBT_ROOT}/ci/verify-contract.sh" consumer ${PINT} "${INTERNE_URL}" "${NETWERK}" "${STUB_ADMIN_URL}"
+  grep -oE "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
 fi
 
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} voldoet aan zijn contracten"
