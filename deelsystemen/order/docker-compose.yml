@@ -11,6 +11,11 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
+      # De release waar deze container deel van uitmaakt. Komt uit het
+      # releasebestand, niet uit de code: een microservice weet niet in welke
+      # deelsysteemversie hij is opgenomen.
+      DEELSYSTEEM: ${DEELSYSTEEM}
+      DEELSYSTEEM_VERSIE: ${DEELSYSTEEM_VERSIE}
       PAYMENT_BASE_URL: ${PAYMENT_BASE_URL:-http://payment-api:8081}
     ports:
       - "${ORDER_API_POORT:-8082}:8082"
@@ -20,3 +25,11 @@ services:
       timeout: 3s
       retries: 20
 
+networks:
+  # De omgeving is het netwerk, niet het compose-project. Elk deelsysteem is een eigen
+  # project en wordt los gedeployd; ze vinden elkaar doordat ze in hetzelfde netwerk
+  # hangen. Zou de omgeving het project zijn, dan haalt een deploy van Order het net
+  # gedeployde Payment weg omdat compose hem als wees ziet.
+  default:
+    name: ${OMGEVING_NETWERK}
+    external: true

@@ -31,6 +31,11 @@ management:
 # Twee versies met twee betekenissen. build.version komt uit de pom en is die van het
 # deelsysteem; contract.pin is de contractversie waarop deze consumer zich vastlegt.
 info:
+  # Het derde versieniveau: van welke deelsysteemrelease deze container deel uitmaakt.
+  # Komt uit de omgeving en niet uit de code — een microservice weet dat zelf niet.
+  deelsysteem:
+    naam: ${DEELSYSTEEM:onbekend}
+    versie: ${DEELSYSTEEM_VERSIE:onbekend}
   contract:
     groep: order-payment
     artifact: payment-api

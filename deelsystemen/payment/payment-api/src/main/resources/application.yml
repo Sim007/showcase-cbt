@@ -35,6 +35,11 @@ management:
 # los van elkaar, en vanaf hoofdstuk 3 serveert één service twee majors naast elkaar —
 # vandaar een lijst.
 info:
+  # Het derde versieniveau: van welke deelsysteemrelease deze container deel uitmaakt.
+  # Komt uit de omgeving en niet uit de code — een microservice weet dat zelf niet.
+  deelsysteem:
+    naam: ${DEELSYSTEEM:onbekend}
+    versie: ${DEELSYSTEEM_VERSIE:onbekend}
   contract:
     groep: order-payment
     artifact: payment-api

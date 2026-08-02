@@ -47,3 +47,11 @@ services:
       timeout: 3s
       retries: 20
 
+networks:
+  # De omgeving is het netwerk, niet het compose-project. Elk deelsysteem is een eigen
+  # project en wordt los gedeployd; ze vinden elkaar doordat ze in hetzelfde netwerk
+  # hangen. Zou de omgeving het project zijn, dan haalt een deploy van Order het net
+  # gedeployde Payment weg omdat compose hem als wees ziet.
+  default:
+    name: ${OMGEVING_NETWERK}
+    external: true
