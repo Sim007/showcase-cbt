@@ -142,6 +142,10 @@ mvn() {
 #
 # Het logbestand blijft na afloop staan in ${STAP_LOG}, zodat de aanroeper er nog een
 # samenvatting uit kan halen — het aantal tests bijvoorbeeld.
+#
+# Staat ${RAPPORT_REGELS} gezet, dan wordt elke stap ook vastgelegd. Daar komt het
+# testbewijs uit: een pipeline die groen is zonder na te laten wát er groen was, levert
+# geen bewijs maar een gevoel.
 stap() {
   _omschrijving="$1"
   shift
@@ -149,9 +153,59 @@ stap() {
   printf '  %-44s' "${_omschrijving}"
   if "$@" >"${STAP_LOG}" 2>&1; then
     echo " ok"
+    [ -n "${RAPPORT_REGELS:-}" ] && printf '%s|groen|\n' "${_omschrijving}" >> "${RAPPORT_REGELS}"
+    return 0
   else
     echo " MISLUKT"
+    [ -n "${RAPPORT_REGELS:-}" ] && printf '%s|ROOD|\n' "${_omschrijving}" >> "${RAPPORT_REGELS}"
     sed 's/^/    /' "${STAP_LOG}" >&2
     return 1
   fi
+}
+
+# bijzonderheid <tekst>
+#
+# Hangt een detail aan de vorige stap: hoeveel tests, welke uitkomst. Wordt afgedrukt én
+# in het rapport gezet.
+bijzonderheid() {
+  [ -n "$1" ] || return 0
+  echo "    $1"
+  if [ -n "${RAPPORT_REGELS:-}" ] && [ -s "${RAPPORT_REGELS}" ]; then
+    _laatste="$(tail -1 "${RAPPORT_REGELS}")"
+    sed "$ d" "${RAPPORT_REGELS}" > "${RAPPORT_REGELS}.tmp"
+    printf '%s%s\n' "${_laatste}" "$1" >> "${RAPPORT_REGELS}.tmp"
+    mv "${RAPPORT_REGELS}.tmp" "${RAPPORT_REGELS}"
+  fi
+}
+
+# rapport_start <titel> / rapport_klaar <bestand> <oordeel>
+#
+# Schrijft het testbewijs weg als markdown: wat er is getoetst, met welke uitkomst, tegen
+# welk contract. Dit is het artefact waar "releasen op testbewijs" op neerkomt.
+rapport_start() {
+  RAPPORT_REGELS="$(mktemp)"
+  export RAPPORT_REGELS
+  : > "${RAPPORT_REGELS}"
+}
+
+rapport_klaar() {
+  _bestand="$1"
+  _titel="$2"
+  _oordeel="$3"
+  mkdir -p "$(dirname "${_bestand}")"
+  {
+    echo "# Testbewijs — ${_titel}"
+    echo
+    echo "Gedraaid op $(date -u '+%Y-%m-%d %H:%M') UTC"
+    echo
+    echo "| Stap | Uitkomst | Bijzonderheden |"
+    echo "|---|---|---|"
+    while IFS='|' read -r _o _u _d; do
+      echo "| ${_o} | ${_u} | ${_d} |"
+    done < "${RAPPORT_REGELS}"
+    echo
+    echo "**${_oordeel}**"
+  } > "${_bestand}"
+  rm -f "${RAPPORT_REGELS}"
+  echo "testbewijs: ${_bestand#"${CBT_ROOT}/"}"
 }

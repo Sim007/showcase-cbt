@@ -111,6 +111,39 @@ een, dan zegt de pipeline dat met zoveel woorden.
 
 ---
 
+## Het testbewijs
+
+Elke pipeline laat een leesbaar rapport achter in `build/rapport/`, één per deelsysteem en
+versie:
+
+```
+build/rapport/
+  microservice-payment-api-1.0.0.md    unit en integratie
+  ci-payment-1.0.0.md                  drift en contractverificatie
+  test-payment-1.0.0.md                deploy en smoke
+  acceptatie-payment-1.0.0.md          deploy en gebruikersflow
+```
+
+```markdown
+# Testbewijs — payment 1.0.0 op de CI-omgeving
+
+| Stap                          | Uitkomst | Bijzonderheden                     |
+|-------------------------------|----------|------------------------------------|
+| deploy op ci-payment          | groen    |                                    |
+| drift                         | groen    | 2 operaties, contract en runtime    |
+| contractverificatie, provider | groen    | 1632 generated, 1632 passed        |
+
+**Oordeel: groen. payment 1.0.0 voldoet aan order-payment payment-api 1.0.0
+(geserveerd). Dit is het bewijs waarop naar Test gedeployd mag worden.**
+```
+
+Dat is wat "releasen op testbewijs" concreet maakt: een squad hoeft niet te vragen of het
+mag, maar kan laten zien wat er is aangetoond en tegen welke contractversie. De
+machineleesbare kant staat ernaast — JUnit XML in `build/contract-rapport/` en
+`build/smoke-rapport/`, plus Surefire per module.
+
+---
+
 ## De losse onderdelen
 
 De pipelines knopen deze scripts aan elkaar. Los aanroepen kan ook, en dat is handig om te

@@ -31,14 +31,18 @@ VERSIE="$(yq -p=xml -o=yaml -r '.project.version' "${MODULE}/pom.xml" 2>/dev/nul
 [ -n "${VERSIE}" ] && [ "${VERSIE}" != "null" ] || fout "kon de versie niet uit ${MODULE}/pom.xml lezen"
 
 echo "== ${MICROSERVICE} ${VERSIE} =="
+rapport_start
 
 stap "unit" mvn "${MODULE}" test -Dgroups=unit
-grep -oE "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+" "${STAP_LOG}" | tail -1 | sed 's/^/    /'
+bijzonderheid "$(grep -oE 'Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+' "${STAP_LOG}" | tail -1)"
 
 stap "integratie" mvn "${MODULE}" test -Dgroups=integratie
-grep -oE "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+" "${STAP_LOG}" | tail -1 | sed 's/^/    /'
+bijzonderheid "$(grep -oE 'Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+' "${STAP_LOG}" | tail -1)"
 
 stap "jar bouwen" mvn "${MODULE}" -q package -DskipTests
 stap "image bouwen" docker build -q -t "cbt/${MICROSERVICE}:${VERSIE}" "${CBT_ROOT}/${MODULE}"
 
+rapport_klaar "${CBT_ROOT}/build/rapport/microservice-${MICROSERVICE}-${VERSIE}.md" \
+  "${MICROSERVICE} ${VERSIE}" \
+  "Oordeel: groen. De microservice is gebouwd en getoetst tegen zijn eigen tests."
 echo "klaar: cbt/${MICROSERVICE}:${VERSIE}"

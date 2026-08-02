@@ -31,13 +31,17 @@ WAARDEN="${CBT_ROOT}/omgevingen/test.env"
 POORT_VAR="$(echo "${DEELSYSTEEM}" | tr '[:lower:]' '[:upper:]')_API_POORT"
 POORT="$(eval echo "\${${POORT_VAR}}")"
 
-echo "== ${DEELSYSTEEM} ${VERSIE} naar Test =="
-
 # shellcheck source=lib/tools.sh
 . "${CBT_ROOT}/ci/lib/tools.sh"
 
+echo "== ${DEELSYSTEEM} ${VERSIE} naar Test =="
+rapport_start
+
 stap "deploy op Test" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" test
 stap "smoke van ${DEELSYSTEEM}" "${CBT_ROOT}/ci/smoke.sh" "${DEELSYSTEEM}" "http://${DEELSYSTEEM}-api:${POORT#*:}" cbt-test
-grep -oE "[0-9]+ passed" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
+bijzonderheid "$(grep -oE '[0-9]+ passed' "${STAP_LOG}" | tail -1)"
 
+rapport_klaar "${CBT_ROOT}/build/rapport/test-${DEELSYSTEEM}-${VERSIE}.md" \
+  "${DEELSYSTEEM} ${VERSIE} op Test" \
+  "Oordeel: groen. Het deelsysteem draait op Test en de keten loopt."
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} draait op Test"

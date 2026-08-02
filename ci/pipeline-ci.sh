@@ -42,6 +42,7 @@ opruimen() {
 trap opruimen EXIT
 
 echo "== ${DEELSYSTEEM} ${VERSIE} op een efemere CI-omgeving =="
+rapport_start
 
 # --- pint hij een contract? dan eerst de stub, want die moet er staan vóór de deploy ----
 
@@ -51,7 +52,7 @@ if [ -n "${PINT:-}" ]; then
   [ -d "${CBT_ROOT}/${SCENARIOS}" ] || SCENARIOS=""
   # shellcheck disable=SC2086
   stap "stub uit ${PINT}" "${CBT_ROOT}/ci/generate-stub.sh" ${PINT} ${SCENARIOS}
-  grep -E "^stap [0-9]" "${STAP_LOG}" | sed 's/^/    /' || true
+  bijzonderheid "$(grep -cE '^stap' "${STAP_LOG}" | tr -d ' ') stappen: mappings, scenario's, schemavalidatie en dekking"
   export STUB_MAPPINGS="${CBT_ROOT}/build/stub"
   EXTRA="compose/stub.yml"
 fi
@@ -64,11 +65,11 @@ stap "deploy op ${OMGEVING}" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERS
 if [ -n "${SERVEERT:-}" ]; then
   # shellcheck disable=SC2086
   stap "drift" "${CBT_ROOT}/ci/drift.sh" ${SERVEERT} "${RUNTIME_SPEC_URL}"
-  grep "^drift:" "${STAP_LOG}" | sed 's/^/    /' || true
+  bijzonderheid "$(grep '^drift:' "${STAP_LOG}" | tail -1)"
 
   # shellcheck disable=SC2086
   stap "contractverificatie, provider" "${CBT_ROOT}/ci/verify-contract.sh" provider ${SERVEERT} "${INTERNE_URL}" "${NETWERK}" "${CONTRACT_STIJL:-gegenereerd}"
-  grep -oE "[0-9]+ generated, [0-9]+ passed|Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
+  bijzonderheid "$(grep -oE '[0-9]+ generated, [0-9]+ passed|Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+' "${STAP_LOG}" | tail -1)"
 fi
 
 # --- pint hij een contract? -------------------------------------------------------------
@@ -76,7 +77,11 @@ fi
 if [ -n "${PINT:-}" ]; then
   # shellcheck disable=SC2086
   stap "contractverificatie, consumer" "${CBT_ROOT}/ci/verify-contract.sh" consumer ${PINT} "${INTERNE_URL}" "${NETWERK}" "${STUB_ADMIN_URL}"
-  grep -oE "Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
+  bijzonderheid "$(grep -oE 'Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+' "${STAP_LOG}" | tail -1)" || true
 fi
 
+CONTRACTEN="${SERVEERT:-}${SERVEERT:+ (geserveerd)}${PINT:+${SERVEERT:+, }}${PINT:-}${PINT:+ (gepind)}"
+rapport_klaar "${CBT_ROOT}/build/rapport/ci-${DEELSYSTEEM}-${VERSIE}.md" \
+  "${DEELSYSTEEM} ${VERSIE} op de CI-omgeving" \
+  "Oordeel: groen. ${DEELSYSTEEM} ${VERSIE} voldoet aan ${CONTRACTEN}. Dit is het bewijs waarop naar Test gedeployd mag worden."
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} voldoet aan zijn contracten"

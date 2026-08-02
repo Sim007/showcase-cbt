@@ -25,10 +25,11 @@ fout() {
 DEELSYSTEEM="$1"
 VERSIE="$2"
 
-echo "== ${DEELSYSTEEM} ${VERSIE} naar Acceptatie =="
-
 # shellcheck source=lib/tools.sh
 . "${CBT_ROOT}/ci/lib/tools.sh"
+
+echo "== ${DEELSYSTEEM} ${VERSIE} naar Acceptatie =="
+rapport_start
 
 stap "deploy op Acceptatie" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" acceptatie
 
@@ -41,6 +42,9 @@ if ! curl -fsS -o /dev/null --max-time 5 "http://localhost:${ORDER_API_POORT}/ac
 fi
 
 stap "gebruikersflow @${DEELSYSTEEM}" "${CBT_ROOT}/ci/gebruikersflow.sh" "${DEELSYSTEEM}" http://order-api:8082 cbt-acceptatie
-grep -oE "[0-9]+ passed" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
+bijzonderheid "$(grep -oE '[0-9]+ passed' "${STAP_LOG}" | tail -1)"
 
+rapport_klaar "${CBT_ROOT}/build/rapport/acceptatie-${DEELSYSTEEM}-${VERSIE}.md" \
+  "${DEELSYSTEEM} ${VERSIE} op Acceptatie" \
+  "Oordeel: groen. De gebruikersflow over de keten doet wat een gebruiker verwacht."
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} draait op Acceptatie"
