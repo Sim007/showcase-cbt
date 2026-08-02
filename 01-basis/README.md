@@ -10,180 +10,134 @@ opzet die de andere showcases alleen nog aanvullen.
 [docs/showcase-cbt.md](../docs/showcase-cbt.md), hoofdstuk 1. Hieronder staat hoe je het
 draait.
 
-> **In aanbouw.** De pipelinescripts en het demoscript bestaan nog niet, dus hieronder
-> staat de handmatige route. Zodra de pipelinescripts uit `ci/` er zijn, vervangen die de
-> stappen 2 tot en met 5.
+---
+
+## De korte weg
+
+```sh
+01-basis/demo/demo.sh          # de vier scènes achter elkaar
+01-basis/demo/demo.sh --stap   # met een pauze ertussen, voor een presentatie
+01-basis/demo/opruimen.sh      # terug naar de uitgangssituatie
+```
+
+Het demoscript bedenkt niets zelf: het roept dezelfde pipelines aan die een squad ook
+draait. Wil je begrijpen wat er gebeurt, lees dan hieronder verder — dat zijn precies de
+commando's die de demo uitvoert.
 
 ---
 
-## 1. Het contract publiceren
+## De vier pipelines
 
-Een contract komt niet in het register omdat iemand het erin zet, maar omdat het door de
-diff-gate is gekomen.
+Bouwen gebeurt per **microservice**, deployen per **deelsysteem**. Dat levert vier soorten
+pipeline op, en de gate is telkens de vorige omgeving groen.
 
-```sh
-ci/publish-contract.sh order-payment payment-api 1.0.0 \
-  contracts/order-payment/v1.0.0/openapi.yaml
-```
-
-Bij een leeg register meldt hij dat er niets te vergelijken valt en publiceert hij. De
-gate doet pas werk vanaf hoofdstuk 2.
-
-Ophalen kan alleen via het script — nooit van schijf, nooit uit de repo van de provider:
+### 1 — de microservice bouwen en testen
 
 ```sh
-ci/get-contract.sh order-payment payment-api 1.0.0
+ci/pipeline-microservice.sh payment payment-api
+ci/pipeline-microservice.sh order   order-api
 ```
 
-## 2. De deelsystemen bouwen
+Unit, integratie, en een image met de versie uit de `pom.xml`. De contractlaag zit hier
+niet in: die vraagt een draaiend deelsysteem.
+
+### 2 — het deelsysteem naar een efemere CI-omgeving
 
 ```sh
-export CBT_ROOT="$PWD" && . ci/lib/tools.sh
-
-mvn deelsystemen/payment/payment-api test
-mvn deelsystemen/order/order-api test
-
-docker build -t cbt/payment-api:1.0.0 deelsystemen/payment/payment-api
-docker build -t cbt/order-api:1.0.0   deelsystemen/order/order-api
+ci/pipeline-ci.sh order   1.0.0
+ci/pipeline-ci.sh payment 1.0.0
 ```
 
-De testlagen zijn los te draaien, zoals de pipeline dat straks doet:
+**Dit is de scène waar de demo om draait.** Order's pipeline draait volledig groen terwijl
+Payment nergens bestaat: wat hij tegenkomt is een stub die uit de spec uit het register is
+gegenereerd.
+
+Wat deze pipeline doet, leidt hij af uit `deelsystemen/<naam>/grenzen.env`:
+
+| | Payment | Order |
+|---|---|---|
+| `SERVEERT` | `order-payment payment-api 1.0.0` | — |
+| `PINT` | — | `order-payment payment-api 1.0.0` |
+
+Serveert een deelsysteem een contract, dan volgen de drift-check en de providerverificatie.
+Pint hij er een, dan een stub en de consumerverificatie in beide richtingen. Payment doet
+nu het eerste, Order het tweede — en in hoofdstuk 6 doet Payment allebei zonder dat er een
+script bij hoeft. Een rol hoort bij een grens, niet bij een deelsysteem.
+
+De omgeving wordt na afloop opgeruimd, ook als er iets faalt.
+
+### 3 — het deelsysteem naar Test
 
 ```sh
-mvn deelsystemen/payment/payment-api test -Dgroups=unit
-mvn deelsystemen/payment/payment-api test -Dgroups=integratie
+ci/pipeline-test.sh payment 1.0.0
+ci/pipeline-test.sh order   1.0.0
 ```
 
-## 3. De CI-omgeving van Order — zonder Payment
+Deploy, healthcheck en de smoke van dát deelsysteem. Geen contractverificatie: die hoort op
+de CI-omgeving, waar het deelsysteem alleen staat en een run goedkoop is.
 
-Dit is de scène waar de demo om draait: **Order werkt terwijl Payment nergens draait.**
-
-Eerst de stub, gegenereerd uit de spec uit het register:
+Elk deelsysteem meldt daarna alle drie de versieniveaus:
 
 ```sh
-ci/generate-stub.sh order-payment payment-api 1.0.0 deelsystemen/order/stub-scenarios
+curl -s http://localhost:8081/actuator/info
 ```
 
-Hij loopt de acht stappen uit §1.6 af en eindigt met twee artefactcontroles: elke
-responsebody tegen zijn schema, en elke operation minstens één mapping. Ontbreekt er een
-`example` in de spec, dan faalt hij — met opzet.
+| Wat | Waarde | Betekenis |
+|---|---|---|
+| `deelsysteem.versie` | 1.0.0 | wat er gedeployd is |
+| `build.version` | 1.0.0 | de microservice, uit de pom |
+| `contract.serveert` | 1.0.0 | de grens, uit het register |
 
-Dan de omgeving. Een omgeving is een **compose-project**: het deelsysteem plus wat het
-daar nodig heeft.
+Ze staan nu toevallig gelijk. Vanaf hoofdstuk 2 lopen ze uit elkaar, en dan is het
+onderscheid het punt.
+
+### 4 — het deelsysteem naar Acceptatie
 
 ```sh
-STUB_MAPPINGS="$PWD/build/stub" \
-docker compose -p ci-order \
-  -f deelsystemen/order/docker-compose.yml \
-  -f compose/stub.yml up -d
+ci/pipeline-acceptatie.sh payment 1.0.0
+ci/pipeline-acceptatie.sh order   1.0.0
 ```
 
-De stub draait onder de servicenaam `payment-api`, dus Order merkt geen verschil met Test.
+Deploy en de gebruikersflow met het label van dat deelsysteem. Geen smoke: die is op Test
+al gedraaid, en herhalen verplaatst werk naar de duurste plek.
 
-```sh
-curl -X POST http://localhost:8082/orders \
-  -H 'Content-Type: application/json' -d '{"amount":49.95,"currency":"EUR"}'
-# {"orderId":"ord-00001","status":"CONFIRMED","paymentId":"pay-88f21c"}
+Een gebruikersflow spant over deelsystemen heen, dus dit werkt pas als de omgeving compleet
+is. De eerste keer dat je een lege Acceptatie vult, deploy je ze dus allebei voordat de
+flow iets kan zeggen; daarna schuift elk deelsysteem op zijn eigen tempo op. Ontbreekt er
+een, dan zegt de pipeline dat met zoveel woorden.
 
-curl -X POST http://localhost:8082/orders \
-  -H 'Content-Type: application/json' -d '{"amount":600.00,"currency":"EUR"}'
-# {"orderId":"ord-00002","status":"CANCELLED","paymentId":"pay-88f21c"}
-```
+---
 
-Die tweede komt uit een scenario-mapping: de spec beschrijft per status één response, en
-een afgewezen betaling volgt niet uit de spec. Zie `deelsystemen/order/stub-scenarios/`.
+## De losse onderdelen
 
-En dan de contractverificatie van de consumer, in beide richtingen: wat Order verstuurt
-voldoet aan de spec, en wat hij met de responses doet klopt.
+De pipelines knopen deze scripts aan elkaar. Los aanroepen kan ook, en dat is handig om te
+zien wat er gebeurt.
 
-```sh
-ci/verify-contract.sh consumer order-payment payment-api 1.0.0 \
-  http://order-api:8082 ci-order_default http://payment-api:8081/__admin
-```
+| Script | Wat het doet |
+|---|---|
+| `ci/publish-contract.sh` | publiceert via de diff-gate; bij een leeg register valt er niets te vergelijken |
+| `ci/get-contract.sh` | haalt de spec op — het enige pad waarlangs iets aan de spec komt |
+| `ci/generate-stub.sh` | de acht stappen uit §1.6, met twee artefactcontroles aan het eind |
+| `ci/verify-contract.sh` | contractverificatie, `provider` of `consumer` |
+| `ci/drift.sh` | biedt de service precies de operaties die het contract belooft? |
+| `ci/smoke.sh` | de smoke van een deelsysteem, of `keten` over alle grenzen |
+| `ci/deploy.sh` | chart + release + omgevingswaarden |
 
-De eerste richting is de reden dat dit meer is dan een integratietest met een mock. Wat
-Order daadwerkelijk verstuurde komt uit het request journal van de stub, en gaat langs de
-spec uit het register — niet langs een verwachting die de test zelf opschrijft.
+---
 
-Wil je zien dat het werkt: laat `HttpPaymentClient` een veld meesturen dat het contract
-niet kent. De stub accepteert het zonder morren en Order blijft groen draaien; alleen deze
-controle ziet het.
+## Zien dat het ook rood wordt
 
-```sh
-docker compose -p ci-order -f deelsystemen/order/docker-compose.yml -f compose/stub.yml down
-```
+Een controle die nooit rood wordt, is geen controle. Vier manieren om dat aan te tonen:
 
-## 4. De CI-omgeving van Payment — en de contractverificatie
+| Breek dit | Wat er rood wordt |
+|---|---|
+| `HttpStatus.CREATED` → `OK` in `PaymentController` | contractverificatie: *Undocumented HTTP status code* |
+| een `example` uit de spec halen en publiceren | de stubgeneratie, met opzet |
+| een endpoint toevoegen dat niet in het contract staat | de drift-check |
+| `HttpPaymentClient` een extra veld laten meesturen | de consumerverificatie |
 
-Payment heeft binnen dit hoofdstuk geen buren, dus zijn CI-omgeving is hijzelf.
-
-```sh
-docker compose -p ci-payment -f deelsystemen/payment/docker-compose.yml up -d
-```
-
-Daarna de toetsing aan de gepubliceerde spec. Twee stijlen; een pipeline kiest er één.
-
-```sh
-# gegenereerd uit de spec, standaard
-ci/verify-contract.sh order-payment payment-api 1.0.0 \
-  http://payment-api:8081 ci-payment_default
-
-# met de hand geschreven, JUnit met tag contract
-ci/verify-contract.sh order-payment payment-api 1.0.0 \
-  http://payment-api:8081 ci-payment_default geschreven
-
-# allebei, voor de demo
-ci/verify-contract.sh order-payment payment-api 1.0.0 \
-  http://payment-api:8081 ci-payment_default beide
-```
-
-Wil je zien dat het ook rood wordt: vervang `HttpStatus.CREATED` door `HttpStatus.OK` in
-`PaymentController`, bouw opnieuw, en draai het weer. Een controle die nooit rood wordt is
-geen controle.
-
-## 5. Test — de echte keten
-
-Beide deelsystemen, echte buren, geen stub. Een omgeving is een samenstelling van
-deelsysteem-bestanden; elk deelsysteem staat maar één keer beschreven.
-
-```sh
-docker compose -p test \
-  -f deelsystemen/payment/docker-compose.yml \
-  -f deelsystemen/order/docker-compose.yml up -d
-
-curl -X POST http://localhost:8082/orders \
-  -H 'Content-Type: application/json' -d '{"amount":49.95,"currency":"EUR"}'
-```
-
-Zelfde aanroep als in stap 3, ander antwoord op één punt: `paymentId` komt nu van het
-echte Payment (`pay-000001`) in plaats van uit de stub (`pay-88f21c`).
-
-Elk deelsysteem meldt op zijn info-endpoint wat het draait:
-
-```sh
-curl http://localhost:8081/actuator/info
-# {"contract":{...,"serveert":"1.0.0"},"build":{"artifact":"payment-api","version":"1.0.0",...}}
-
-curl http://localhost:8082/actuator/info
-# {"contract":{...,"pin":"1.0.0"},"build":{"artifact":"order-api","version":"1.0.0",...}}
-```
-
-Twee versies met twee betekenissen. `build.version` is die van het **deelsysteem** en komt
-uit de pom; `contract.serveert` en `contract.pin` gaan over de **grens** en komen uit het
-register. Ze staan nu toevallig allebei op 1.0.0 en bewegen daarna los van elkaar — dat is
-precies wat hoofdstuk 2 laat zien.
-
-## Opruimen
-
-```sh
-docker compose -p test -f deelsystemen/payment/docker-compose.yml \
-                       -f deelsystemen/order/docker-compose.yml down
-docker compose -p ci-payment -f deelsystemen/payment/docker-compose.yml down
-rm -rf build
-```
-
-Het register laat je staan; die is gedeeld. Wil je hem leeg: herstarten volstaat, want de
-opslag is in memory.
+Die laatste is de leerzaamste: de stub accepteert dat extra veld gewoon en Order blijft
+groen draaien. Alleen de toetsing aan de spec ziet het.
 
 ---
 
@@ -195,5 +149,4 @@ opslag is in memory.
 | De stub komt uit het register, niet uit de test | de norm ligt buiten de test |
 | `600.00` levert `CANCELLED`, geen fout | een afgewezen betaling is geen contractschending |
 | `amount: 0` levert 400 `INVALID_AMOUNT` | dát is er wel een |
-| Contractverificatie wordt rood bij 200 in plaats van 201 | de gate doet echt iets |
-| Een veld dat het contract niet kent, komt langs de stub maar niet langs de consumerverificatie | de stub is geen norm, de spec wel |
+| Drie versies naast elkaar op één endpoint | contract, microservice en deelsysteem bewegen los |

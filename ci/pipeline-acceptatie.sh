@@ -31,6 +31,15 @@ echo "== ${DEELSYSTEEM} ${VERSIE} naar Acceptatie =="
 . "${CBT_ROOT}/ci/lib/tools.sh"
 
 stap "deploy op Acceptatie" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" acceptatie
+
+# Een gebruikersflow volgt wat een gebruiker doet, en die merkt niets van de indeling in
+# deelsystemen — de flow spant er dus overheen. Ontbreekt er een, dan valt hij om, en dan
+# hoort de melding dáárover te gaan en niet over een rode test.
+. "${CBT_ROOT}/omgevingen/acceptatie.env"
+if ! curl -fsS -o /dev/null --max-time 5 "http://localhost:${ORDER_API_POORT}/actuator/health" 2>/dev/null; then
+  fout "de gebruikersflow heeft de hele keten nodig en Order draait niet op Acceptatie. Deploy eerst alle deelsystemen; daarna schuift elk op zijn eigen tempo op"
+fi
+
 stap "gebruikersflow @${DEELSYSTEEM}" "${CBT_ROOT}/ci/gebruikersflow.sh" "${DEELSYSTEEM}" http://order-api:8082 cbt-acceptatie
 grep -oE "[0-9]+ passed" "${STAP_LOG}" | tail -1 | sed 's/^/    /' || true
 

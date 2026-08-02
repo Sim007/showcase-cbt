@@ -66,7 +66,7 @@ Ga daarna naar het hoofdstuk dat je wilt zien.
 
 | # | Hoofdstuk | Waar het over gaat | Staat |
 |---|---|---|---|
-| 1 | [Basis (API)](01-basis/) | Order → Payment, REST, het hele mechanisme | in aanbouw |
+| 1 | [Basis (API)](01-basis/) | Order → Payment, REST, het hele mechanisme | **werkt** |
 | 2 | [Wijziging zonder breuk](02-wijziging-zonder-breuk/) | additieve wijziging, v1.1.0 | nog niet |
 | 3 | [Breaking wijziging](03-breaking/) | twee majors naast elkaar | nog niet |
 | 4 | [Acceptatie](04-acceptatie/) | de gebruikersflow over de keten | nog niet |
