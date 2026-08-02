@@ -21,6 +21,10 @@
 
   <properties>
     <java.version>21</java.version>
+    <!-- De contractlaag draait pas na de deploy, tegen een draaiend deelsysteem met zijn
+         stub ernaast. Zonder deze uitsluiting faalt een gewone `mvn test`.
+         ci/verify-contract.sh schakelt hem weer in met -DexcludedGroups= -->
+    <excludedGroups>contract</excludedGroups>
   </properties>
 
   <dependencies>
@@ -44,6 +48,15 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Houdt wat Order verstuurt tegen de gepubliceerde spec. Dat is de richting die een
+         integratietest met een zelfbedachte mock niet dekt, en de reden dat een
+         provider-driven opzet iets toevoegt. -->
+    <dependency>
+      <groupId>com.atlassian.oai</groupId>
+      <artifactId>swagger-request-validator-core</artifactId>
+      <version>3.0.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

@@ -93,6 +93,22 @@ curl -X POST http://localhost:8082/orders \
 Die tweede komt uit een scenario-mapping: de spec beschrijft per status één response, en
 een afgewezen betaling volgt niet uit de spec. Zie `deelsystemen/order/stub-scenarios/`.
 
+En dan de contractverificatie van de consumer, in beide richtingen: wat Order verstuurt
+voldoet aan de spec, en wat hij met de responses doet klopt.
+
+```sh
+ci/verify-contract.sh consumer order-payment payment-api 1.0.0 \
+  http://order-api:8082 ci-order_default http://payment-api:8081/__admin
+```
+
+De eerste richting is de reden dat dit meer is dan een integratietest met een mock. Wat
+Order daadwerkelijk verstuurde komt uit het request journal van de stub, en gaat langs de
+spec uit het register — niet langs een verwachting die de test zelf opschrijft.
+
+Wil je zien dat het werkt: laat `HttpPaymentClient` een veld meesturen dat het contract
+niet kent. De stub accepteert het zonder morren en Order blijft groen draaien; alleen deze
+controle ziet het.
+
 ```sh
 docker compose -p ci-order -f deelsystemen/order/docker-compose.yml -f compose/stub.yml down
 ```
@@ -180,3 +196,4 @@ opslag is in memory.
 | `600.00` levert `CANCELLED`, geen fout | een afgewezen betaling is geen contractschending |
 | `amount: 0` levert 400 `INVALID_AMOUNT` | dát is er wel een |
 | Contractverificatie wordt rood bij 200 in plaats van 201 | de gate doet echt iets |
+| Een veld dat het contract niet kent, komt langs de stub maar niet langs de consumerverificatie | de stub is geen norm, de spec wel |
