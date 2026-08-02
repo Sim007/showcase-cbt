@@ -27,8 +27,11 @@ dan zie je het deelsysteem door de gang lopen en bij elke gate een oordeel krijg
 
 Alleen de terminal is ook goed: `CBT_LIVE=0 01-basis/demo/demo.sh`.
 
-De demo loopt de hele gang af, van contract tot gebruikersflow op Acceptatie, en eindigt
-met het rapport. Hij ruimt zelf op voordat hij begint, dus je kunt hem meteen opnieuw
+De demo begint bij de **uitgangssituatie**: Order en Payment draaien al op Test en
+Acceptatie, met pipelines en tests die het al deden. Daarna komt het contract erbij en
+loopt dezelfde gang nog een keer, maar nu mét gate, stub en contractverificatie — zodat je
+ziet wat contracttesten toevoegt in plaats van dat je het moet geloven. Hij eindigt met het
+rapport. Hij ruimt zelf op voordat hij begint, dus je kunt hem meteen opnieuw
 draaien. Achteraf blijven Test en Acceptatie staan om naar te kijken; `opruimen.sh` haalt
 ook die weg.
 
@@ -60,9 +63,10 @@ ci/pipeline-ci.sh order   1.0.0
 ci/pipeline-ci.sh payment 1.0.0
 ```
 
-**Dit is de scène waar de demo om draait.** Order's pipeline draait volledig groen terwijl
-Payment nergens bestaat: wat hij tegenkomt is een stub die uit de spec uit het register is
-gegenereerd.
+**Dit is de scène waar de demo om draait.** Order's pipeline komt tot een oordeel zonder
+Payment in zijn omgeving: daar staat een stub die uit de spec uit het register is
+gegenereerd, onder dezelfde servicenaam. Payment draait ondertussen gewoon op Test en
+Acceptatie — het punt is niet dat hij nergens is, maar dat Order hem niet nodig heeft.
 
 Wat deze pipeline doet, leidt hij af uit `deelsystemen/<naam>/grenzen.env`:
 

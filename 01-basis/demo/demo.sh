@@ -52,14 +52,55 @@ opmerking() {
   echo "  → $1"
 }
 
-# --- opzet ---------------------------------------------------------------------------
+# --- stap 0: de uitgangssituatie ------------------------------------------------------
 
-scene "Opzet: schone lei, het register omhoog en het contract erin"
+scene "Stap 0: de uitgangssituatie — wat er al draait"
 
-# Eerst opruimen, niet achteraf. Een demo die alleen vanaf een handmatig schoongemaakte
-# machine werkt, valt om op het moment dat er publiek bij zit — en het register weigert
-# terecht een tweede publicatie van dezelfde versie.
 01-basis/demo/opruimen.sh
+
+# Dit is het gegeven, niet de demo. Twee deelsystemen die gebouwd en gedeployd worden met
+# pipelines die er al zijn. Daarom gaat het stil: het argument begint pas als contracten
+# erbij komen. Deze stappen staan bewust niet in het rapport — dat is het testbewijs van
+# déze run, en niet van wat er al stond.
+echo "  bestaande CI/CD: images bouwen en deployen…"
+(
+  export CBT_ROOT="${CBT_ROOT}"
+  . ci/lib/tools.sh
+  mvn deelsystemen/payment/payment-api -q package -DskipTests
+  mvn deelsystemen/order/order-api     -q package -DskipTests
+) >/dev/null 2>&1
+docker build -q -t cbt/payment-api:1.0.0 deelsystemen/payment/payment-api >/dev/null
+docker build -q -t cbt/order-api:1.0.0   deelsystemen/order/order-api     >/dev/null
+
+for omgeving in test acceptatie; do
+  for deelsysteem in payment order; do
+    ci/deploy.sh "${deelsysteem}" 1.0.0 "${omgeving}" >/dev/null 2>&1
+  done
+done
+
+echo
+echo "  Test en Acceptatie:"
+for poort in 8081 8082; do
+  curl -s "http://localhost:${poort}/actuator/info" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print('    %-9s deelsysteem %-7s microservice %-7s contract %s' % (
+    d['deelsysteem']['naam'], d['deelsysteem']['versie'], d['build']['version'],
+    d['contract'].get('serveert') or d['contract'].get('pin') or '—'))"
+done
+
+echo
+opmerking "Dit draait al. Pipelines, omgevingen, unit- en integratietests, een smoke en"
+opmerking "een gebruikersflow — dat is de uitgangssituatie en niet wat de showcase toevoegt."
+opmerking ""
+opmerking "De grens ís beschreven: er ligt een OpenAPI-bestand en de deelsystemen noemen"
+opmerking "een contractversie. Maar niets dwingt hem af. Er is geen register, dus geen"
+opmerking "gate op een wijziging, geen stub die eruit komt, en geen verificatie die"
+opmerking "aantoont dat beide kanten zich eraan houden. De spec is documentatie."
+
+# --- stap 1: contracttesten komt erbij ------------------------------------------------
+
+scene "Stap 1: het contract erbij — vanaf hier doet contracttesten mee"
 
 docker compose -f compose/registry.yml up -d >/dev/null
 ci/wacht-op-gezond.sh registry compose/registry.yml >/dev/null 2>&1 || sleep 10
@@ -70,20 +111,23 @@ ci/publish-contract.sh order-payment payment-api 1.0.0 contracts/order-payment/v
 echo
 opmerking "Het contract kwam door de diff-gate. Vanaf hoofdstuk 2 doet die gate werk;"
 opmerking "hier is er nog niets om mee te vergelijken."
+opmerking "Wat hierna volgt is dezelfde gang als daarnet, maar nu mét contracten."
 
 # --- scène 1 -------------------------------------------------------------------------
 
-scene "Scène 1: Order's pipeline draait groen terwijl Payment nergens draait"
+scene "Scène 1: Order's pipeline draait groen zonder Payment in zijn omgeving"
 
 ci/pipeline-microservice.sh order order-api
 ci/pipeline-ci.sh order 1.0.0
 
 echo
-opmerking "Payment draaide hier niet. Wat Order tegenkwam was een stub die uit de spec"
-opmerking "uit het register is gegenereerd — en de verificatie toetste beide richtingen:"
-opmerking "wat Order verstuurt voldoet aan de spec, en wat hij met de antwoorden doet klopt."
-docker ps --format '{{.Names}}' | grep -q payment && echo "  !! er draait toch een payment-container" || \
-  opmerking "Bevestigd: geen enkele payment-container draait."
+opmerking "Lees terug wat er stond: een stub uit het register, en geen deploy van Payment."
+opmerking "Payment draait wél — op Test en op Acceptatie, zoals in elke werkende opzet —"
+opmerking "maar niet in Order's CI-omgeving. Daar stond de stub in zijn plaats, met dezelfde"
+opmerking "servicenaam, zodat Order het verschil niet merkt."
+opmerking ""
+opmerking "De verificatie toetste beide richtingen: wat Order verstuurt voldoet aan de spec,"
+opmerking "en wat hij met de antwoorden doet klopt. Zonder met iemand af te stemmen."
 
 # --- scène 2 -------------------------------------------------------------------------
 

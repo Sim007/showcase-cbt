@@ -725,13 +725,15 @@ De basisdemo loopt de hele productiegang af: contract uit het register, stub eru
 
 | # | Scène | Zichtbaar |
 |---|---|---|
-| 1 | Order's pipeline draait volledig groen terwijl Payment nergens draait | onafhankelijkheid van de consumer |
+| 1 | Order's CI-omgeving bevat de stub en geen Payment; zijn pipeline draait volledig groen | onafhankelijkheid van de consumer |
 | 2 | Payment's pipeline draait groen, met de volledige contractverificatie op zijn CI-omgeving | conformiteit van de provider |
 | 3 | Test omhoog, drie versieniveaus af te lezen | welke versies samen draaien, en dat ze los bewegen |
 | 4 | smoke groen tegen de echte keten | de samenstelling loopt |
 | 5 | Acceptatie omhoog, de gebruikersflow groen | de keten doet wat een gebruiker verwacht |
 
 Scène 1 en 2 zijn in willekeurige volgorde te draaien; begin bewust met Payment, omdat het publiek verwacht dat de consumer als laatste moet.
+
+**Scène 1 gaat niet over de afwezigheid van Payment.** Payment draait op Test en op Acceptatie, zoals in elke werkende opzet. Wat de scène toont is dat Order's *CI-omgeving* hem niet bevat: de buur staat daar als stub uit het register, en de pipeline komt tot een oordeel zonder dat er ergens met iemand hoeft te worden afgestemd.
 
 **Scène 5 vraagt een volledige omgeving.** Een gebruikersflow spant over deelsystemen heen, dus op een lege Acceptatie moeten eerst beide deelsystemen staan voordat er een flow kan draaien. Op een blijvende omgeving speelt dat niet — daar staan ze al — maar een demo begint met een schone lei en moet die eerste vulling dus zelf doen.
 
