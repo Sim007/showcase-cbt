@@ -222,3 +222,30 @@ rapport_oordeel() {
   _live
   [ -n "${CBT_LIVE:-}" ] || echo "rapport: ${RAPPORT_BESTAND#"${CBT_ROOT}/"}"
 }
+
+# info_endpoints <omgeving>
+#
+# Schrijft per draaiende service op die omgeving één regel JSON: de inhoud van zijn
+# info-endpoint. Welke containers erbij horen komt uit het compose-project
+# (<omgeving>-<deelsysteem>) en de poort uit de portmapping — zo hoeft de aanroeper niet
+# te weten welke deelsystemen er bestaan, en ziet hij alleen wat er werkelijk staat.
+#
+# Dat laatste is geen detail. Een lijst met verwachte deelsystemen zou verouderen zodra
+# een squad releaset, en zou een ontbrekend deelsysteem stil verzwijgen in plaats van
+# zichtbaar maken.
+info_endpoints() {
+  _omgeving="$1"
+  for _container in $(docker ps --format '{{.Names}}'); do
+    _project="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' \
+                "${_container}" 2>/dev/null || true)"
+    case "${_project}" in
+      "${_omgeving}-"*) ;;
+      *) continue ;;
+    esac
+    _poort="$(docker port "${_container}" 2>/dev/null | sed -n 's/.*:\([0-9][0-9]*\)$/\1/p' | head -1)"
+    [ -n "${_poort}" ] || continue
+    _info="$(curl -fsS "http://localhost:${_poort}/actuator/info" 2>/dev/null || true)"
+    [ -n "${_info}" ] || continue
+    printf '%s\n' "${_info}"
+  done
+}

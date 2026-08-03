@@ -22,20 +22,7 @@ CBT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OMGEVING="$1"
 
 GEVONDEN=0
-for container in $(docker ps --format '{{.Names}}'); do
-  project="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "${container}" 2>/dev/null || true)"
-  case "${project}" in
-    "${OMGEVING}-"*) ;;
-    *) continue ;;
-  esac
-
-  # Eerste gepubliceerde poort; een service die er geen heeft is niet uit te lezen.
-  poort="$(docker port "${container}" 2>/dev/null | sed -n 's/.*:\([0-9][0-9]*\)$/\1/p' | head -1)"
-  [ -n "${poort}" ] || continue
-
-  info="$(curl -fsS "http://localhost:${poort}/actuator/info" 2>/dev/null || true)"
-  [ -n "${info}" ] || continue
-
+while read -r info; do
   regel="$(printf '%s' "${info}" | jq -r '
     [ .deelsysteem.naam    // "?",
       .deelsysteem.versie  // "?",
@@ -54,6 +41,8 @@ for container in $(docker ps --format '{{.Names}}'); do
 
   printf '  %-9s deelsysteem %-7s microservice %-7s contract %-8s %s\n' "$1" "$2" "$3" "$4" "$5"
   GEVONDEN=$((GEVONDEN + 1))
-done
+done <<EOF
+$(info_endpoints "${OMGEVING}")
+EOF
 
 [ "${GEVONDEN}" -gt 0 ] || echo "  (geen draaiend deelsysteem gevonden op ${OMGEVING})"

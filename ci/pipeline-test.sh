@@ -38,8 +38,11 @@ echo "== ${DEELSYSTEEM} ${VERSIE} naar Test =="
 rapport_start "${DEELSYSTEEM} ${VERSIE} → Test"
 
 stap "deploy op Test" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" test
+stap "versieconformiteit" "${CBT_ROOT}/ci/versieconformiteit.sh" test
+bijzonderheid "$(grep -E '^versieconformiteit: [0-9]' "${STAP_LOG}" | tail -1 | sed 's/^versieconformiteit: //')"
+
 stap "smoke van ${DEELSYSTEEM}" "${CBT_ROOT}/ci/smoke.sh" "${DEELSYSTEEM}" "http://${DEELSYSTEEM}-api:${POORT#*:}" cbt-test
 bijzonderheid "$(grep -oE '[0-9]+ passed' "${STAP_LOG}" | tail -1)"
 
-rapport_oordeel "Oordeel: groen. Het deelsysteem draait op Test en de keten loopt."
+rapport_oordeel "Oordeel: groen. Het deelsysteem draait op Test, elke pin wordt daar geserveerd, en de keten loopt."
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} draait op Test"
