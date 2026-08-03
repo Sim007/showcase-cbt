@@ -947,22 +947,20 @@ En dat is het verschil met wat er nu gebeurt als er iets misgaat aan een grens: 
 
 Zou de deelsysteemversie hier wél oplopen, dan zou dat suggereren dat er iets aan het deelsysteem is veranderd. Er is niets veranderd. Er wordt alleen scherper gekeken, en dat is een eigenschap van de pipeline en niet van wat erdoorheen gaat.
 
+**De volgorde is die van hoofdstuk 0**, en dat is geen detail: alleen dan staan de twee rapporten regel voor regel naast elkaar en is het verschil af te lezen in plaats van bij elkaar te zoeken.
+
 | # | Scène | Zichtbaar |
 |---|---|---|
 | 1 | het contract gepubliceerd in het register, immutable en per versie | het schema is een artefact geworden |
-| 2 | Order's CI-omgeving bevat de stub en geen Payment; zijn pipeline draait volledig groen | onafhankelijkheid van de consumer |
-| 3 | Payment's pipeline draait groen, met de volledige contractverificatie op zijn CI-omgeving | conformiteit van de provider |
-| 4 | Test omhoog, drie versieniveaus af te lezen | welke versies samen draaien, en dat ze los bewegen |
-| 5 | smoke groen tegen de echte keten | de samenstelling loopt |
-| 6 | Acceptatie omhoog, de gebruikersflow groen | de keten doet wat een gebruiker verwacht |
+| 2 | Payment van code naar Acceptatie, met drift en de volledige contractverificatie | conformiteit van de provider |
+| 3 | Order dezelfde gang, met een stub uit het register in plaats van Payment | onafhankelijkheid van de consumer |
+| 4 | de gebruikersflows over de keten, als gedeelde run | de keten doet wat een gebruiker verwacht |
 
-Scène 2 en 3 zijn in willekeurige volgorde te draaien; begin bewust met Order, omdat het publiek verwacht dat de consumer als laatste moet.
+**Scène 3 vervangt de handgeschreven stub uit 0.1.** Wat Order in zijn CI-omgeving tegenkomt is geen zelfgeschreven dubbelganger meer maar een stub uit het register. Dezelfde plek, dezelfde servicenaam, andere herkomst — en dat is de hele wijziging.
 
-**Scène 2 vervangt de mock uit 0.2.** Wat Order in zijn CI-omgeving tegenkomt is geen handgeschreven dubbelganger meer maar een stub uit het register. De norm is daarmee van binnen de test naar buiten verplaatst, en dat is de hele wijziging.
+**Scène 3 gaat niet over de afwezigheid van Payment.** Payment is er net langsgekomen en draait op Test en op Acceptatie. Wat de scène toont is dat Order's *CI-omgeving* hem niet bevat: de pipeline komt tot een oordeel zonder dat er ergens met iemand hoeft te worden afgestemd. Dat Payment toevallig al klaar is, doet er niet toe — was hij het niet geweest, dan was de uitkomst dezelfde.
 
-**Scène 2 gaat niet over de afwezigheid van Payment.** Payment draait op Test en op Acceptatie, en na a en b is dat aantoonbaar in plaats van aangenomen. Wat de scène toont is dat Order's *CI-omgeving* hem niet bevat: de buur staat daar als stub uit het register, en de pipeline komt tot een oordeel zonder dat er ergens met iemand hoeft te worden afgestemd.
-
-**Scène 6 vraagt een volledige omgeving.** Een gebruikersflow spant over deelsystemen heen, dus op een lege Acceptatie moeten eerst beide deelsystemen staan voordat er een flow kan draaien. Op een blijvende omgeving speelt dat niet — daar staan ze al — maar een demo begint met een schone lei en moet die eerste vulling dus zelf doen.
+**Scène 4 hangt aan geen enkele deploy.** Beide Acceptatie-pipelines zijn er in scène 2 en 3 al langsgekomen, en geen van beide wachtte op de ander. Wat hier draait gaat over de samenstelling en niet over een grens.
 
 De demo eindigt met het beeld uit 1.7: bovenaan wat er nu draait, eronder elke stap met tijdstip en uitkomst. Dat is hetzelfde testbewijs dat een pipeline oplevert en niet iets wat voor de demo apart wordt gemaakt.
 

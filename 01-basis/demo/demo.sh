@@ -77,74 +77,52 @@ opmerking "payment-api 1.0.0: één plek, immutable, per versie. Vanaf hier is h
 opmerking "Wat hierna volgt is dezelfde gang als in hoofdstuk 0, met dezelfde deelsystemen,"
 opmerking "maar nu met de contracttesten erbij."
 
-# --- scène 1 -------------------------------------------------------------------------
+# --- payment, van code tot Acceptatie ---------------------------------------------------
 
-scene "Scène 1: Order's pipeline draait groen zonder Payment in zijn omgeving"
-
-ci/pipeline-microservice.sh order order-api
-ci/pipeline-ci.sh order 1.0.0
-
-echo
-opmerking "Lees terug wat er stond: een stub uit het register, en geen deploy van Payment."
-opmerking "Payment draait wél — op Test en op Acceptatie, zoals in elke werkende opzet —"
-opmerking "maar niet in Order's CI-omgeving. Daar stond de stub in zijn plaats, met dezelfde"
-opmerking "servicenaam, zodat Order het verschil niet merkt."
-opmerking ""
-opmerking "De verificatie toetste beide richtingen: wat Order verstuurt voldoet aan de spec,"
-opmerking "en wat hij met de antwoorden doet klopt. Zonder met iemand af te stemmen."
-
-# --- scène 2 -------------------------------------------------------------------------
-
-scene "Scène 2: Payment's pipeline draait groen"
+scene "Payment: van code naar Acceptatie"
 
 ci/pipeline-microservice.sh payment payment-api
-ci/pipeline-ci.sh payment 1.0.0
+ci/pipeline-ci.sh           payment 1.0.0
+ci/pipeline-test.sh         payment 1.0.0
+ci/pipeline-acceptatie.sh   payment 1.0.0
 
 echo
-opmerking "De contractverificatie is volledig: elke operatie uit de spec, elke"
-opmerking "responsecode, happy en unhappy. En de drift-check keek of Payment niet méér"
-opmerking "aanbiedt dan zijn contract noemt."
+opmerking "Zelfde gang als in hoofdstuk 0, met drie stappen erbij. Op de CI-omgeving keek"
+opmerking "de drift-check of Payment niet méér aanbiedt dan zijn contract noemt, en toetste"
+opmerking "de verificatie elke operatie uit de spec — elke responsecode, happy en unhappy."
+opmerking "Op Test kwam de versieconformiteit erbij."
+opmerking ""
+opmerking "Payment staat nu op Acceptatie. Order is nergens geraadpleegd."
 
-# --- scène 3 -------------------------------------------------------------------------
+# --- order, van code tot Acceptatie -----------------------------------------------------
 
-scene "Scène 3: Test omhoog, en wat er draait is af te lezen"
+scene "Order: van code naar Acceptatie, zonder Payment in zijn omgeving"
 
-ci/pipeline-test.sh payment 1.0.0
-ci/pipeline-test.sh order 1.0.0
+ci/pipeline-microservice.sh order order-api
+ci/pipeline-ci.sh           order 1.0.0
+ci/pipeline-test.sh         order 1.0.0
+ci/pipeline-acceptatie.sh   order 1.0.0
 
 echo
 ci/toon-versies.sh test
 
 echo
-opmerking "Drie versieniveaus, drie betekenissen. Ze staan nu toevallig gelijk en gaan"
-opmerking "vanaf hoofdstuk 2 uit elkaar lopen."
+opmerking "Lees terug wat er op de CI-omgeving stond: een stub uit het register, en geen"
+opmerking "deploy van Payment. Payment draait wél — op Test en op Acceptatie, hij is er net"
+opmerking "langsgekomen — maar niet in Order's CI-omgeving. Daar stond de stub in zijn"
+opmerking "plaats, met dezelfde servicenaam, zodat Order het verschil niet merkt."
+opmerking ""
+opmerking "In hoofdstuk 0 stond daar ook een stub. Het verschil is de herkomst: toen met de"
+opmerking "hand geschreven door Order zelf, nu gegenereerd uit de gepubliceerde spec."
+opmerking ""
+opmerking "De verificatie toetste beide richtingen: wat Order verstuurt voldoet aan de spec,"
+opmerking "en wat hij met de antwoorden doet klopt. Zonder met iemand af te stemmen."
+opmerking ""
+opmerking "En geen van beide Acceptatie-pipelines wachtte op de ander."
 
-# --- scène 4 -------------------------------------------------------------------------
+# --- de keten -----------------------------------------------------------------------
 
-scene "Scène 4: dezelfde smoke, nu tegen de echte keten"
-
-ci/smoke.sh order http://order-api:8082 cbt-test
-
-echo
-opmerking "Dezelfde spec draaide in scène 1 tegen de stub en hier tegen het echte"
-opmerking "Payment. Zou hij per omgeving verschillen, dan bewees groen op de ene niets"
-opmerking "over de andere."
-
-# --- scène 5 -------------------------------------------------------------------------
-
-scene "Scène 5: Acceptatie — elk deelsysteem op zijn eigen moment"
-
-ci/pipeline-acceptatie.sh order   1.0.0
-ci/pipeline-acceptatie.sh payment 1.0.0
-
-echo
-opmerking "Geen van beide pipelines wachtte op de ander, en geen van beide draaide een"
-opmerking "gebruikersflow. Die spant over de keten en kan dus niet van één squad zijn —"
-opmerking "zou hij hier hangen, dan blokkeert de afwezigheid van de buur je release."
-
-# --- scène 6 -------------------------------------------------------------------------
-
-scene "Scène 6: de keten, als gedeelde run die niemand tegenhoudt"
+scene "De keten: als gedeelde run die niemand tegenhoudt"
 
 ci/pipeline-gebruikersflows.sh acceptatie
 
@@ -156,6 +134,9 @@ opmerking ""
 opmerking "En valt hij om omdat er een deelsysteem ontbreekt, dan zegt hij dát — een"
 opmerking "onvolledige omgeving, geen kapot deelsysteem. Signaal voor de tribe, geen"
 opmerking "blokkade voor een squad."
+opmerking ""
+opmerking "Leg nu de twee rapporten naast elkaar. Dezelfde deelsystemen, dezelfde versies,"
+opmerking "dezelfde volgorde, dezelfde pipelines. Wat erbij staat is contracttesten."
 
 echo
 CBT_LIVE= ci/rapport-html.sh

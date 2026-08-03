@@ -543,3 +543,19 @@ want het ís dezelfde pipeline die stappen erbij krijgt — precies wat de showc
 tegenover 37. Dat is eerlijker: de CI-omgeving werd eerst aan contracttesten toegeschreven
 terwijl hij er al was. Wat overblijft zijn negen regels die met naam te noemen zijn.
 
+## 2026-08-03 — Beide hoofdstukken lopen in dezelfde volgorde
+
+Hoofdstuk 1 was opgezet als scènes en begon bewust met Order — het publiek verwacht dat de
+consumer als laatste moet, en die verwachting omdraaien was de helft van het argument.
+Hoofdstuk 0 liep intussen per deelsysteem: eerst Payment, dan Order.
+
+Dat kost meer dan het opbrengt. Twee rapporten met een andere volgorde dwingen de lezer om
+zelf te zoeken welke regel bij welke hoort, en juist die vergelijking is de kern van deze
+opzet. Hoofdstuk 1 volgt nu de volgorde van hoofdstuk 0, en de negen extra regels staan op
+hun plek tussen regels die verder identiek zijn.
+
+**Wat er van het oorspronkelijke argument overblijft, is genoeg.** Order's CI-omgeving
+bevat nog steeds geen Payment. Dat Payment er net is langsgekomen maakt dat sterker in
+plaats van zwakker: hij is klaar, en Order heeft hem alsnog niet geraadpleegd. Was hij niet
+klaar geweest, dan was de uitkomst dezelfde.
+
