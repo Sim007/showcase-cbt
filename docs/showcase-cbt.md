@@ -32,6 +32,8 @@ Wat de showcase aantoont is één ding: **hetzelfde mechanisme werkt over vier c
 
 **Waar het naartoe werkt: releasen op testbewijs.** Een squad hoeft niet te vragen of het mag en hoeft met niemand een deployvolgorde af te spreken. Hij heeft bewijs dat zijn kant van elke grens klopt, vastgesteld op een artefact en niet op een gevoel. Dat is wat zelfstandig releasen mogelijk maakt, en alles wat hieronder staat is daar een middel voor.
 
+**En wat daarvoor verdwijnt: de release trein.** Niet alle gewijzigde deelsystemen per sprint tegelijk naar productie, maar elk deelsysteem wanneer zijn eigen squad het klaar acht. Een trein is een afspraak die je maakt omdat niemand van zijn eigen kant zeker genoeg is; komt die zekerheid er per deelsysteem, dan is de trein alleen nog vertraging voor wie eerder klaar was — en een gedeeld risico voor wie dat niet is.
+
 ### De startsituatie
 
 **Deze showcase begint niet bij nul.** Hij veronderstelt een werkende uitgangssituatie: deelsystemen die gebouwd en gedeployd worden, pipelines die draaien, omgevingen die er staan, en een testpiramide die zijn werk doet. Contract-based testing komt daar bovenop en vervangt niets. Zonder die aanname leest de rest als een opdracht om alles opnieuw in te richten, en dat is niet wat er staat.
@@ -73,7 +75,7 @@ Die twee zijn precies wat de showcase toevoegt, en verder niets.
 | Verdwijnt | Waarom |
 |---|---|
 | E2e-tests die de structuur van een grens aantonen | die structuur is al bewezen op een goedkopere laag; de gebruikersflow mag terug naar wat een gebruiker doet |
-| Afstemming over deployvolgorde | de contractversie is het synchronisatiepunt; elk deelsysteem schuift op zijn eigen tempo op |
+| Afstemming over deployvolgorde, en de release trein die daaruit volgt | de contractversie is het synchronisatiepunt; elk deelsysteem schuift op zijn eigen tempo op |
 | Handgeschreven mocks van de buur | een mock die de schrijver bedacht, bevestigt wat de schrijver dacht. De stub komt uit het contract |
 | De vraag "durven we te releasen" | vervangen door een oordeel dat op een artefact is vastgesteld |
 
@@ -425,7 +427,9 @@ niet.
 
 **Alles wat er is, toetst tegen een norm die de schrijver zelf heeft bedacht.** Unit,
 integratie, de mock van de buur, de smoke: allemaal geschreven door de partij die ook de
-code schrijft. Dat is niet fout, het is alleen niet extern.
+code schrijft. Dat is niet fout, het is alleen niet **onafhankelijk**: je kunt de norm
+bijstellen tot je test groen is, in hetzelfde bestand en in dezelfde commit, en niemand
+merkt het.
 
 `OrderIntegratieTest` mockt `PaymentClient` en schrijft het antwoord van de buur zelf voor.
 Die mock is niet fout — hij is **onbewijsbaar**. Hij bevestigt wat de schrijver dacht dat
