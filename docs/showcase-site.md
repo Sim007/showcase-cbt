@@ -149,6 +149,24 @@ liegen: weggooien mag altijd, regenereren kost een run. Dat is een keuze en geen
 Voor deze showcase raakt geen van drieën ons: alles draait op één laptop en een run duurt
 minuten. Een ontwerpsessie mag deze kant verkennen, maar niet ongemerkt kiezen.
 
+**Waar hij komt te staan: als subrepo in `showcase-cbt`.** De site krijgt een eigen
+repository, opgenomen in deze. Daarmee heeft hij een eigen historie en een eigen plek om
+gepubliceerd te worden, zonder dat de showcase-repository volloopt met wat de site nodig
+heeft.
+
+Dat is een stap richting de rechterkolom hierboven, en daar hoort een grens bij die niet mag
+vervagen:
+
+| Wat | Waar |
+|---|---|
+| het script dat de toestand uitleest en de pagina maakt | `ci/` op de hoofdmap — daar staan alle scripts, en dat blijft zo |
+| wat de site zelf nodig heeft: opmaak, sjablonen, later meer pagina's | de subrepo |
+| de gegenereerde pagina | nergens in git; hij is uitvoer van een run (eis 9) |
+
+Zolang de subrepo alleen bevat wat regenereerbaar is, blijft de site een site. Komt er iets
+in dat nergens anders te vinden is, dan is de vork uit dit hoofdstuk genomen — dan is het
+een systeem, en dan hoort het ook als zodanig behandeld te worden.
+
 **Wordt hij het wél, dan is hij een deelsysteem als elk ander** — en dat is geen probleem
 maar een aardigheid. Hij wordt dan consumer van het register: hij pint een contractversie op
 de registry-API, krijgt een `grenzen.env`, en zijn eigen pipeline verifieert hem tegen die

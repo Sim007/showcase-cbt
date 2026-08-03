@@ -144,6 +144,8 @@ Hoofdstuk 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de co
 | Licentie | MIT: vrij te gebruiken, zonder garantie en zonder aansprakelijkheid |
 | Gebruiksmodel | referentie om te bekijken en te draaien; fork of template voor wie er zelf mee wil spelen |
 
+**Eén uitzondering: de site.** `showcase-site` is een eigen repository, opgenomen in deze als subrepo. Hij heeft een andere levensloop dan de showcase — hij wordt gepubliceerd, niet gedraaid — en een eigen historie is daar prettiger bij. Het script dat hem maakt blijft in `ci/`, zoals elk script. Zolang de subrepo alleen bevat wat regenereerbaar is, is dat geen tweede plek waar de waarheid staat; de afweging staat in `docs/showcase-site.md`.
+
 **Eén repository.** Niet negen repositories: dan ontstaan negen kopieën van dezelfde scripts die uit elkaar lopen, en toont de showcase onbedoeld aan dat het niet standaardiseerbaar is. Binnen die ene repository staat wat gedeeld is op de hoofdmap en heeft elk hoofdstuk daarnaast een eigen genummerde map.
 
 ```

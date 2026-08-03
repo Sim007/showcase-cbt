@@ -385,3 +385,20 @@ door een provider op diezelfde omgeving geserveerd worden. Geen bestand, geen on
 In hoofdstuk 5 doet hij daarmee precies wat hij moet: een consumer die gepind staat op een
 versie die niemand meer serveert wordt rood, zonder dat iemand een lijst bijhield.
 
+## 2026-08-03 — De site wordt een subrepo, en de grens die daarbij hoort
+
+`showcase-site` krijgt een eigen repository, opgenomen in `showcase-cbt`. De reden is
+levensloop: de site wordt gepubliceerd en niet gedraaid, en een eigen historie past daar
+beter bij.
+
+**Dit is een uitzondering op "één repository" en dat vraagt om een grens.** Het argument
+tegen negen repositories was dat gedeelde scripts dan uit elkaar lopen. Dat argument geldt
+hier niet zolang het script dat de toestand uitleest in `ci/` blijft staan, waar alle
+scripts staan. Wat in de subrepo hoort is wat alleen de site nodig heeft: opmaak, sjablonen,
+later meer pagina's. Wat er nooit in hoort is de gegenereerde pagina zelf — die is uitvoer
+van een run.
+
+De toets is dezelfde als bij de vork site/systeem: zolang de subrepo alleen bevat wat
+regenereerbaar is, is er geen tweede plek waar de waarheid staat. Komt er iets in dat
+nergens anders te vinden is, dan is de vork genomen en is het een systeem.
+
