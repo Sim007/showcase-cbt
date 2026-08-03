@@ -65,6 +65,18 @@ docker ps --format '{{.Names}}' | grep -q '^test-' || {
   exit 1
 }
 
+# Eigen sporen opruimen, en alleen die. Test en Acceptatie blijven staan: dat is de
+# uitgangssituatie uit hoofdstuk 0 waar dit hoofdstuk op verdergaat.
+#
+# Nodig omdat een contractversie onveranderlijk is: 1.0.0 opnieuw publiceren levert een 409
+# en dat hoort ook zo. Het register is in memory, dus omlaag en omhoog is leegmaken.
+for omgeving in ci-payment ci-order; do
+  ci/opruimen.sh "${omgeving}" payment order >/dev/null 2>&1 || true
+done
+docker compose -f compose/registry.yml down >/dev/null 2>&1 || true
+rm -rf 01-basis/rapport build/stub build/contracts build/drift \
+       build/contract-rapport build/smoke-rapport
+
 docker compose -f compose/registry.yml up -d >/dev/null 2>&1
 ci/wacht-op-gezond.sh registry compose/registry.yml >/dev/null 2>&1 || sleep 10
 toon_pagina

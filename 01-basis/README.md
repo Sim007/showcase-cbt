@@ -37,6 +37,11 @@ Draai eerst `00-start/demo/demo.sh`; deze stopt met een melding als er niets op 
 Achteraf blijven Test en Acceptatie staan om naar te kijken; `ci/opruimen-alles.sh` haalt
 ook die weg.
 
+**Opnieuw draaien kan meteen.** De demo ruimt eerst zijn eigen sporen op — het register en
+de CI-omgevingen — en laat staan wat hoofdstuk 0 heeft neergezet. Dat is nodig omdat een
+contractversie onveranderlijk is: `1.0.0` een tweede keer publiceren levert een 409, en dat
+hoort ook zo.
+
 Het demoscript bedenkt niets zelf: het roept dezelfde pipelines aan die een squad ook
 draait. Wil je begrijpen wat er gebeurt, lees dan hieronder verder — dat zijn precies de
 commando's die de demo uitvoert.
