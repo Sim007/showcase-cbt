@@ -117,13 +117,23 @@ ci/pipeline-acceptatie.sh payment 1.0.0
 ci/pipeline-acceptatie.sh order   1.0.0
 ```
 
-Deploy en de gebruikersflow met het label van dat deelsysteem. Geen smoke: die is op Test
-al gedraaid, en herhalen verplaatst werk naar de duurste plek.
+Deploy en healthcheck, meer niet. Geen smoke: die is op Test al gedraaid, en herhalen
+verplaatst werk naar de duurste plek.
 
-Een gebruikersflow spant over deelsystemen heen, dus dit werkt pas als de omgeving compleet
-is. De eerste keer dat je een lege Acceptatie vult, deploy je ze dus allebei voordat de
-flow iets kan zeggen; daarna schuift elk deelsysteem op zijn eigen tempo op. Ontbreekt er
-een, dan zegt de pipeline dat met zoveel woorden.
+**Geen gebruikersflow ook.** Die spant over de keten en kan dus niet van één squad zijn:
+zou hij hier hangen, dan blokkeert de afwezigheid van je buur jouw release. Geen van beide
+pipelines hierboven wacht op de ander.
+
+### 5 — de gebruikersflows over de keten
+
+```sh
+ci/pipeline-gebruikersflows.sh acceptatie
+```
+
+Gedeeld, gepland, en **geen gate**. Hij kijkt eerst of de omgeving compleet is, zodat de
+melding gaat over wat er ontbreekt in plaats van over een rode test. Ontbreekt er een
+deelsysteem, dan is dat een signaal voor de tribe — iemand moet nog deployen — en geen
+reden om een deployvolgorde af te spreken.
 
 ---
 
@@ -180,6 +190,7 @@ zien wat er gebeurt.
 | `ci/verify-contract.sh` | contractverificatie, `provider` of `consumer` |
 | `ci/drift.sh` | biedt de service precies de operaties die het contract belooft? |
 | `ci/smoke.sh` | de smoke van een deelsysteem, of `keten` over alle grenzen |
+| `ci/gebruikersflow.sh` | de flows van één deelsysteem, of `keten` over alles |
 | `ci/deploy.sh` | chart + release + omgevingswaarden |
 | `ci/versieconformiteit.sh` | wordt elke pin op deze omgeving daar ook geserveerd? |
 | `ci/toon-versies.sh` | wat draait er, uitgelezen bij de containers zelf |

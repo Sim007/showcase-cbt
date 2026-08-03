@@ -132,17 +132,30 @@ opmerking "over de andere."
 
 # --- scène 5 -------------------------------------------------------------------------
 
-scene "Scène 5: Acceptatie, en de gebruikersflow over de keten"
+scene "Scène 5: Acceptatie — elk deelsysteem op zijn eigen moment"
 
-# Een gebruikersflow spant over deelsystemen heen. Beide deelsystemen staan er al sinds
-# hoofdstuk 0, dus die eerste vulling is hier niet meer nodig.
 ci/pipeline-acceptatie.sh order   1.0.0
 ci/pipeline-acceptatie.sh payment 1.0.0
 
 echo
-opmerking "Eén scenario, geen tien. De structuur van de grens is al aangetoond op de"
-opmerking "CI-omgeving; wat hier overblijft is of de keten doet wat een gebruiker"
+opmerking "Geen van beide pipelines wachtte op de ander, en geen van beide draaide een"
+opmerking "gebruikersflow. Die spant over de keten en kan dus niet van één squad zijn —"
+opmerking "zou hij hier hangen, dan blokkeert de afwezigheid van de buur je release."
+
+# --- scène 6 -------------------------------------------------------------------------
+
+scene "Scène 6: de keten, als gedeelde run die niemand tegenhoudt"
+
+ci/pipeline-gebruikersflows.sh acceptatie
+
+echo
+opmerking "Eén scenario, geen tien. De structuur van elke grens is al aangetoond op de"
+opmerking "CI-omgevingen; wat hier overblijft is of de keten doet wat een gebruiker"
 opmerking "verwacht. Dat is wat contracttesten aan een ketentest verandert."
+opmerking ""
+opmerking "En valt hij om omdat er een deelsysteem ontbreekt, dan zegt hij dát — een"
+opmerking "onvolledige omgeving, geen kapot deelsysteem. Signaal voor de tribe, geen"
+opmerking "blokkade voor een squad."
 
 echo
 CBT_LIVE= ci/rapport-html.sh

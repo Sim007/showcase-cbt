@@ -66,7 +66,7 @@ Die twee zijn precies wat de showcase toevoegt, en verder niets.
 |---|---|
 | Een register waarin de spec gepubliceerd staat, immutable en per versie | naast de bestaande artefactopslag |
 | Een diff-gate bij publicatie | bij de contractwijziging, niet in een pipeline |
-| Een stub die uit de spec wordt gegenereerd | in de CI-omgeving; de mock die hij vervangt staat nu binnen de test |
+| Een stub die uit de spec wordt gegenereerd | in de CI-omgeving, waar nu een handgeschreven stub staat — en in de integratietest, waar de buur nu met de hand wordt nagebootst |
 | Contractverificatie aan beide kanten van de grens | in de integratielaag, met de spec als norm |
 | Drift-check en versieconformiteit | naast de piramide, als artefact- en omgevingscontrole |
 
@@ -391,11 +391,19 @@ Dit hoofdstuk toont wat er draait vóórdat contracttesten bestaan. Wat er wel e
 
 ### 0.1 Eén doorloop, twee deelsystemen
 
-| Deel | Wat er gebeurt |
+Elk deelsysteem loopt zijn eigen weg af, van code tot Acceptatie: eerst Payment, dan Order.
+
+| Stap | Wat er gebeurt |
 |---|---|
-| bouwen en testen | beide microservices: unit, integratie, een image |
-| naar Test | beide deelsystemen deployen, healthcheck, de smoke van elk |
-| naar Acceptatie | beide deelsystemen deployen, de gebruikersflow van elk |
+| bouwen en testen | unit, integratie, een image per microservice |
+| naar de CI-omgeving | het deelsysteem alleen neerzetten, de buren als **handgeschreven** stub, en e2e binnen het deelsysteem draaien |
+| naar Test | deployen, healthcheck, de smoke van dat deelsysteem |
+| naar Acceptatie | deployen, healthcheck |
+| daarna, één keer | de gebruikersflow over de complete keten |
+
+**De CI-omgeving bestaat hier al.** Wat er niet is, is de herkomst van wat erin staat: de stub is met de hand geschreven door degene die hem gebruikt, niet gegenereerd uit een gepubliceerd contract. Hij dekt wat de schrijver nodig had, en niets meer — zo schrijf je een stub als er geen norm is om hem uit af te leiden.
+
+**De gebruikersflow hangt aan geen enkele deploy.** Hij spant over de keten en kan dus niet van één squad zijn; hij draait één keer, nadat beide deelsystemen er staan. In hoofdstuk 0 valt dat samen met de volgorde en levert het geen spanning op — daar deployt de tribe toch samen. In hoofdstuk 1 is het het verschil tussen zelfstandig releasen en op elkaar wachten.
 
 **Hoofdstuk 1 doet exact hetzelfde.** Dezelfde twee deelsystemen, dezelfde versies, dezelfde omgevingen — alleen mét contracttesten. Er verandert geen enkel versienummer tussen de twee hoofdstukken, en dat is opzet: zo is er precies één variabele.
 
@@ -456,11 +464,22 @@ Een eigen rapport, `00-start/rapport/rapport-cbt-00`, naast dat van hoofdstuk 1.
 |---|---|---|
 | Deelsystemen | order en payment | order en payment |
 | Versies | alle 1.0.0 | alle 1.0.0 |
-| Omgevingen | Test, Acceptatie | Test, Acceptatie, en een efemere CI-omgeving per deelsysteem |
-| Regels in het rapport | 22 | 35 |
-| Regels over een contract, stub, drift of conformiteit | **0** | het verschil |
+| Omgevingen | CI, Test, Acceptatie | CI, Test, Acceptatie |
+| Pipelines | 5 per deelsysteem | 5 per deelsysteem, plus die van het contract |
+| Regels in het rapport | 28 | 37 |
 
-Die dertien regels zijn het antwoord op "wat kost contracttesten en wat levert het op", uitgedrukt in wat er werkelijk draait. Ze zijn ook een ondergrens: in een bestaande omgeving komt daar eenmalig het werk bij om te repareren wat de eerste verificatie aan het licht brengt (zie 1.11).
+**Negen regels verschil, en ze zijn met naam te noemen:**
+
+| Waar | Wat erbij komt |
+|---|---|
+| het contract | de diff-gate met de publicatie, het terughalen ter controle, en het oordeel daarover |
+| CI van de consumer | de stub wordt gegenereerd in plaats van geschreven, en de consumerverificatie |
+| CI van de provider | de drift-check en de providerverificatie |
+| Test | de versieconformiteit, per deelsysteem |
+
+Dat is het antwoord op "wat kost contracttesten en wat levert het op", uitgedrukt in wat er werkelijk draait in plaats van in een belofte. Het is ook een ondergrens: in een bestaande omgeving komt daar eenmalig het werk bij om te repareren wat de eerste verificatie aan het licht brengt (zie 1.11).
+
+Wat níet in het verschil zit, is even belangrijk. De CI-omgeving stond er al, de stub stond er al, de smoke en de gebruikersflow stonden er al. Contracttesten voegt geen laag toe aan de piramide en geen omgeving aan de straat — het verandert waar de norm vandaan komt.
 
 ---
 
@@ -585,7 +604,7 @@ productie.
 | 2 | microservice | microservice | de code wijzigt | build · `unit` · `integratie` · image met eigen versie |
 | 3 | deelsysteem → CI | deelsysteem | 2 groen | efemere omgeving · stub uit het register · contractverificatie · e2e binnen het deelsysteem · opruimen |
 | 4 | deelsysteem → Test | deelsysteem | 3 groen | deploy · healthcheck · versieconformiteit · smoke van dat deelsysteem |
-| 5 | deelsysteem → Acceptatie | deelsysteem | 4 groen | deploy · gebruikersflow met het label van dat deelsysteem |
+| 5 | deelsysteem → Acceptatie | deelsysteem | 4 groen | deploy · healthcheck · de eigen koppelingen naar buiten |
 | 6 | deelsysteem → Productie | deelsysteem | 5 groen | deploy · **check**: health, versies, monitoring |
 
 **Hiermee brengt een squad zijn deelsysteem zelf naar productie.** Geen enkele stap vraagt
@@ -627,10 +646,21 @@ Op Test volstaat dat het loopt, op Acceptatie dat de keten doet wat een gebruike
 verwacht. Geen smoke op Acceptatie — de laag eronder heeft dat al aangetoond, en herhalen
 verplaatst werk naar de duurste plek.
 
-**Een gebruikersflow spant over deelsystemen heen.** Pipeline 5 van het ene deelsysteem
-heeft daarom de andere nodig op die omgeving. Dat is geen uitzondering maar wat een
-gebruikersflow ís: hij volgt wat een gebruiker doet, en die merkt niets van de indeling in
-deelsystemen. Staat de omgeving nog niet compleet, dan valt de flow terecht om.
+**Een gebruikersflow kan niet van één squad zijn.** Hij volgt wat een gebruiker doet, en
+die merkt niets van de indeling in deelsystemen — de flow spant er dus overheen en heeft de
+hele keten nodig. Zou hij aan pipeline 5 hangen, dan blokkeert de afwezigheid van de buur
+de release van dit deelsysteem, en wacht de ene squad op de andere. Dat is de afstemming
+die contracttesten wegneemt, alleen in gereedschap gegoten.
+
+Hij hoort daarom bij de gedeelde pipelines: gepland, over de keten, en geen gate. Valt hij
+om omdat een deelsysteem ontbreekt, dan is dat een juiste uitkomst met een juiste boodschap
+— *deze omgeving is niet compleet* — en een signaal voor de tribe in plaats van een
+blokkade voor een squad.
+
+Dat er dan iets faalt, is geen tekort van contracttesten maar het bewijs dat ze werken: de
+verificatie op de CI-omgeving heeft al vastgesteld dat de kant van dít deelsysteem klopt,
+zonder dat de buur ergens draaide. Wat overblijft om te falen gaat over de samenstelling en
+niet over de grens.
 
 ---
 

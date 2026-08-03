@@ -70,9 +70,9 @@ ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
 ```
 
 Leg daarna de twee rapporten naast elkaar. **Ze dekken hetzelfde:** dezelfde twee
-deelsystemen, dezelfde versies, dezelfde omgevingen. Het enige verschil is dat hoofdstuk 1
-contracttesten doet — 22 regels tegenover 35, en nul over een contract, stub of drift aan de
-kant van hoofdstuk 0.
+deelsystemen, dezelfde versies, dezelfde omgevingen, dezelfde pipelines. Het enige verschil
+is dat hoofdstuk 1 contracttesten doet — 28 regels tegenover 37, en die negen zijn met naam
+te noemen.
 
 > Het werk dat contracttesten toevoegt = wat hoofdstuk 1 doet − wat hoofdstuk 0 doet.
 

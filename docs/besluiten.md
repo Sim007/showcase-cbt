@@ -491,3 +491,55 @@ deze showcase bestrijdt; het noemt nu alleen wat er werkelijk is vastgesteld.
 tweede bedrijf — maar in een Nederlandse technische tekst leest het als onderneming, en dat
 is een woord dat je één keer verkeerd leest en dan nooit meer goed.
 
+## 2026-08-03 — Een gebruikersflow kan niet van één squad zijn
+
+Hoofdstuk 1 laat elk deelsysteem zijn eigen weg naar Acceptatie lopen. Daarmee kwam een
+volgordeprobleem boven: de gebruikersflow in de Acceptatie-pipeline van Payment spant over
+de keten en heeft Order nodig. Staat Order er nog niet, dan valt hij om.
+
+De verleiding is dan een deployvolgorde af te spreken. **Dat is precies de afstemming die
+contracttesten wegneemt**, alleen in gereedschap gegoten: de ene squad wacht op de andere.
+
+Wat er faalde was ook niet Payment. De contractverificatie op zijn CI-omgeving was groen —
+zijn kant van de grens klopt, vastgesteld zonder dat Order ergens draaide. Wat faalde was de
+gebruikersflow, en die zei iets anders: *deze omgeving is niet compleet.* Een juiste
+uitkomst met een juiste boodschap, en geen tekort van contracttesten maar het bewijs dat ze
+werken.
+
+De regel uit 1.4 beslist waar hij hoort: een gedeelde pipeline is nooit een gate voor één
+squad, en een gebruikersflow ís gedeeld — hij volgt wat een gebruiker doet, en die merkt
+niets van de indeling in deelsystemen. Hij is daarom uit pipeline 5 gehaald en staat in
+`ci/pipeline-gebruikersflows.sh`: gepland, over de keten, geen gate. Pipeline 5 houdt over
+wat alleen over dít deelsysteem gaat — deployen, health, en vanaf hoofdstuk 7 zijn eigen
+koppelingen naar buiten.
+
+**Symptoom dat daarmee verdween.** De demo moest het andere deelsysteem stil vooruit
+deployen voordat een flow iets kon zeggen. Die regel was het bewijs dat de flow op de
+verkeerde plek hing.
+
+## 2026-08-03 — De CI-omgeving bestond al, alleen de stub kwam ergens anders vandaan
+
+Hoofdstuk 0 sloeg de CI-omgeving over en ging van bouwen rechtstreeks naar Test. Dat klopte
+niet met het ontwerp: de startsituatie heeft een efemere CI-omgeving, en daar staat een
+stub waar een buur hoort. Alleen is die stub met de hand geschreven door de consumer, niet
+gegenereerd uit een gepubliceerd contract.
+
+Daarmee is een eerdere correctie in dit document half fout gebleken. Er stond dat de
+handgeschreven mock "binnen de test" staat in plaats van in de CI-omgeving. Het is
+allebei: een Mockito-mock in Order's integratietest, én een handgeschreven WireMock-stub op
+zijn CI-omgeving. Die tweede was weggeredeneerd omdat hij niet gebouwd was.
+
+Hij staat er nu, in `deelsystemen/order/stub-handgeschreven/`. Handgeschreven is broncode,
+dus die hoort in git — anders dan de gegenereerde tegenhanger in `build/stub/`. Hij dekt
+het gelukkige pad en verder niets, en dat is geen slordigheid maar hoe je een stub schrijft
+als er geen norm is om hem uit af te leiden.
+
+**`pipeline-ci.sh` draait nu met of zonder register.** Zonder: deploy op de efemere
+omgeving met de handgeschreven stub, e2e binnen het deelsysteem, opruimen. Met: de stub
+komt uit het register, en drift, provider- en consumerverificatie komen erbij. Eén script,
+want het ís dezelfde pipeline die stappen erbij krijgt — precies wat de showcase beweert.
+
+**Gevolg voor het getal.** Het verschil tussen de twee rapporten was 22 tegenover 35; nu 28
+tegenover 37. Dat is eerlijker: de CI-omgeving werd eerst aan contracttesten toegeschreven
+terwijl hij er al was. Wat overblijft zijn negen regels die met naam te noemen zijn.
+

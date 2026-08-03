@@ -57,50 +57,52 @@ opmerking() {
 ci/opruimen-alles.sh >/dev/null
 toon_pagina
 
-# --- bouwen en testen -----------------------------------------------------------------
+# --- payment, van code tot Acceptatie ---------------------------------------------------
 
-deel "De microservices bouwen en testen"
+deel "Payment: van code naar Acceptatie"
 
 ci/pipeline-microservice.sh payment payment-api
-ci/pipeline-microservice.sh order   order-api
+ci/pipeline-ci.sh           payment 1.0.0
+ci/pipeline-test.sh         payment 1.0.0
+ci/pipeline-acceptatie.sh   payment 1.0.0
 
 echo
-opmerking "Unit en integratie aan beide kanten, en een image per microservice."
+opmerking "Payment is provider en roept niemand aan, dus op zijn CI-omgeving staat geen"
+opmerking "stub. Wat daar draait is het deelsysteem als geheel, op zichzelf."
 
-# --- naar Test ------------------------------------------------------------------------
+# --- order, van code tot Acceptatie -----------------------------------------------------
 
-deel "Naar Test: draait de samenstelling?"
+deel "Order: van code naar Acceptatie"
 
-ci/pipeline-test.sh payment 1.0.0
-ci/pipeline-test.sh order   1.0.0
+ci/pipeline-microservice.sh order order-api
+ci/pipeline-ci.sh           order 1.0.0
+ci/pipeline-test.sh         order 1.0.0
+ci/pipeline-acceptatie.sh   order 1.0.0
 
 echo
-ci/toon-versies.sh test
+opmerking "Order roept Payment aan, dus op zijn CI-omgeving stond een stub — met de hand"
+opmerking "geschreven door Order zelf, op basis van wat hij denkt dat Payment doet."
+opmerking "Zie deelsystemen/order/stub-handgeschreven/. Hij dekt het gelukkige pad en"
+opmerking "verder niets, want er is geen norm om meer uit af te leiden."
 
-echo
-opmerking "De smoke loopt door de grens heen: Order roept Payment aan en krijgt antwoord."
-opmerking "De grens wordt dus geraakt. Maar geen enkele test heeft hem als onderwerp —"
-opmerking "valt hij om, dan zie je een rode smoke en begint het zoeken."
+# --- de keten -----------------------------------------------------------------------
 
-# --- naar Acceptatie ------------------------------------------------------------------
+deel "De keten: doet het geheel wat een gebruiker verwacht?"
 
-deel "Naar Acceptatie: doet de keten wat een gebruiker verwacht?"
-
-# Een gebruikersflow spant over deelsystemen heen, dus op een lege Acceptatie moet de
-# omgeving eerst compleet zijn voordat er een flow kan draaien. Daarna schuift elk
-# deelsysteem op zijn eigen tempo op en speelt dit niet meer.
-ci/deploy.sh order 1.0.0 acceptatie >/dev/null 2>&1
-
-ci/pipeline-acceptatie.sh payment 1.0.0
-ci/pipeline-acceptatie.sh order   1.0.0
+ci/pipeline-gebruikersflows.sh acceptatie
 
 echo
 ci/toon-versies.sh acceptatie
 
 echo
 opmerking "Beide deelsystemen groen op Acceptatie. Kijk nu terug naar wat er is gedraaid:"
-opmerking "unit, integratie, images, een smoke, een gebruikersflow — en nergens het schema"
-opmerking "van de grens. Het ligt in contracts/, het is niet gelezen, niets viel erop."
+opmerking "unit, integratie, images, een efemere CI-omgeving met stub, een smoke en een"
+opmerking "gebruikersflow — en nergens het schema van de grens. Het ligt in contracts/,"
+opmerking "het is niet gelezen, en niets viel erop."
+opmerking ""
+opmerking "De smoke op Test liep wél door de grens heen. De grens wordt dus geraakt, maar"
+opmerking "geen enkele test heeft hem als onderwerp: valt hij om, dan zie je een rode"
+opmerking "smoke en begint het zoeken."
 opmerking ""
 opmerking "Wat er is, toetst tegen een norm die de schrijver zelf heeft bedacht. Order's"
 opmerking "integratietest mockt Payment en schrijft het antwoord van de buur zelf voor."

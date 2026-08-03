@@ -46,14 +46,30 @@ rapport_start "${DEELSYSTEEM} ${VERSIE} → CI"
 
 # --- pint hij een contract? dan eerst de stub, want die moet er staan vóór de deploy ----
 
+# Is er een register? Dan komt de stub daaruit en volgt de contractlaag. Is die er niet,
+# dan draait deze pipeline zoals hij vóór contracttesten draaide: dezelfde efemere
+# omgeving, dezelfde e2e binnen het deelsysteem, maar met de stub die de consumer zelf
+# heeft geschreven. Eén script, want het ís dezelfde pipeline die stappen erbij krijgt.
+REGISTER=""
+curl -fsS "${REGISTRY_URL:-http://localhost:8080}/apis/registry/v3/system/info" >/dev/null 2>&1 \
+  && REGISTER=1
+
 EXTRA=""
 if [ -n "${PINT:-}" ]; then
-  SCENARIOS="deelsystemen/${DEELSYSTEEM}/stub-scenarios"
-  [ -d "${CBT_ROOT}/${SCENARIOS}" ] || SCENARIOS=""
-  # shellcheck disable=SC2086
-  stap "stub uit ${PINT}" "${CBT_ROOT}/ci/generate-stub.sh" ${PINT} ${SCENARIOS}
-  bijzonderheid "$(grep -cE '^stap' "${STAP_LOG}" | tr -d ' ') stappen: mappings, scenario's, schemavalidatie en dekking"
-  export STUB_MAPPINGS="${CBT_ROOT}/build/stub"
+  if [ -n "${REGISTER}" ]; then
+    SCENARIOS="deelsystemen/${DEELSYSTEEM}/stub-scenarios"
+    [ -d "${CBT_ROOT}/${SCENARIOS}" ] || SCENARIOS=""
+    # shellcheck disable=SC2086
+    stap "stub uit ${PINT}" "${CBT_ROOT}/ci/generate-stub.sh" ${PINT} ${SCENARIOS}
+    bijzonderheid "$(grep -cE '^stap' "${STAP_LOG}" | tr -d ' ') stappen: mappings, scenario's, schemavalidatie en dekking"
+    export STUB_MAPPINGS="${CBT_ROOT}/build/stub"
+  else
+    HANDGESCHREVEN="${CBT_ROOT}/deelsystemen/${DEELSYSTEEM}/stub-handgeschreven"
+    [ -d "${HANDGESCHREVEN}/mappings" ] \
+      || fout "geen handgeschreven stub in ${HANDGESCHREVEN}/mappings, en geen register om er een te genereren"
+    export STUB_MAPPINGS="${HANDGESCHREVEN}"
+    echo "  stub: handgeschreven, uit ${HANDGESCHREVEN#"${CBT_ROOT}/"}"
+  fi
   EXTRA="compose/stub.yml"
 fi
 
@@ -62,7 +78,7 @@ stap "deploy op ${OMGEVING}" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERS
 
 # --- serveert hij een contract? ---------------------------------------------------------
 
-if [ -n "${SERVEERT:-}" ]; then
+if [ -n "${SERVEERT:-}" ] && [ -n "${REGISTER}" ]; then
   # shellcheck disable=SC2086
   stap "drift" "${CBT_ROOT}/ci/drift.sh" ${SERVEERT} "${RUNTIME_SPEC_URL}"
   bijzonderheid "$(grep '^drift:' "${STAP_LOG}" | tail -1)"
@@ -74,12 +90,26 @@ fi
 
 # --- pint hij een contract? -------------------------------------------------------------
 
-if [ -n "${PINT:-}" ]; then
+if [ -n "${PINT:-}" ] && [ -n "${REGISTER}" ]; then
   # shellcheck disable=SC2086
   stap "contractverificatie, consumer" "${CBT_ROOT}/ci/verify-contract.sh" consumer ${PINT} "${INTERNE_URL}" "${NETWERK}" "${STUB_ADMIN_URL}"
   bijzonderheid "$(grep -oE 'Tests run: [0-9]+, Failures: [0-9]+, Errors: [0-9]+' "${STAP_LOG}" | tail -1)" || true
 fi
 
-CONTRACTEN="${SERVEERT:-}${SERVEERT:+ (geserveerd)}${PINT:+${SERVEERT:+, }}${PINT:-}${PINT:+ (gepind)}"
-rapport_oordeel "Oordeel: groen. ${DEELSYSTEEM} ${VERSIE} voldoet aan ${CONTRACTEN}. Dit is het bewijs waarop naar Test gedeployd mag worden."
-echo "klaar: ${DEELSYSTEEM} ${VERSIE} voldoet aan zijn contracten"
+# --- e2e binnen het deelsysteem -----------------------------------------------------------
+#
+# Dit is de laag die er ook zonder contracttesten al was: draait het deelsysteem als geheel,
+# met zijn buren vervangen? Zonder register is dit het enige wat de CI-omgeving oplevert;
+# met register komt de contractlaag erbij en toont deze stap dat de twee elkaar niet bijten.
+
+stap "e2e binnen ${DEELSYSTEEM}" "${CBT_ROOT}/ci/smoke.sh" "${DEELSYSTEEM}" "${INTERNE_URL}" "${NETWERK}"
+bijzonderheid "$(grep -oE '[0-9]+ passed' "${STAP_LOG}" | tail -1)"
+
+if [ -n "${REGISTER}" ]; then
+  CONTRACTEN="${SERVEERT:-}${SERVEERT:+ (geserveerd)}${PINT:+${SERVEERT:+, }}${PINT:-}${PINT:+ (gepind)}"
+  rapport_oordeel "Oordeel: groen. ${DEELSYSTEEM} ${VERSIE} voldoet aan ${CONTRACTEN}. Dit is het bewijs waarop naar Test gedeployd mag worden."
+  echo "klaar: ${DEELSYSTEEM} ${VERSIE} voldoet aan zijn contracten"
+else
+  rapport_oordeel "Oordeel: groen. ${DEELSYSTEEM} ${VERSIE} draait als geheel op een eigen omgeving. Over de grenzen is hier niets vastgesteld."
+  echo "klaar: ${DEELSYSTEEM} ${VERSIE} draait als geheel"
+fi
