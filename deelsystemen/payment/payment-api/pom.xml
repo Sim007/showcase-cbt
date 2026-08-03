@@ -15,7 +15,7 @@
 
   <groupId>cbt</groupId>
   <artifactId>payment-api</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.0</version>
   <name>payment-api</name>
   <description>Provider van de grens Order -&gt; Payment</description>
 

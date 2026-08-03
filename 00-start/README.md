@@ -2,8 +2,12 @@
 
 > Vereist: niets. Hoofdstuk 1 vereist dit hoofdstuk.
 
-Wat er draait vóórdat contracttesten bestaan. Dit hoofdstuk varieert niets en toont geen
-enkele techniek uit de showcase — het staat er om te laten zien waar de rest vandaan komt.
+Wat er draait vóórdat contracttesten bestaan: twee deelsystemen, door de bestaande
+pipelines, naar Test en Acceptatie. Alles groen.
+
+Hoofdstuk 1 doet **exact hetzelfde** — dezelfde deelsystemen, dezelfde versies — maar dan
+mét contracttesten. Het verschil tussen de twee rapporten is daarmee precies wat
+contracttesten toevoegt, en niets anders.
 
 **Wat het aantoont en waarom het zo werkt** staat in
 [docs/showcase-cbt.md](../docs/showcase-cbt.md), hoofdstuk 0. Hieronder staat hoe je het
@@ -14,7 +18,7 @@ draait.
 ## De korte weg
 
 ```sh
-00-start/demo/demo.sh          # de twee bedrijven achter elkaar
+00-start/demo/demo.sh          # dit hoofdstuk
 00-start/demo/demo.sh --stap   # met een pauze ertussen, voor een presentatie
 ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
 ```
@@ -23,54 +27,48 @@ Daarna gaat [hoofdstuk 1](../01-basis/README.md) verder waar dit ophoudt.
 
 ---
 
-## De twee bedrijven
-
-### a — de uitgangssituatie
-
-Beide deelsystemen op Test en Acceptatie, versie 1.0.0. Dit gaat stil: het is het gegeven
-en niet het argument.
-
-```sh
-ci/toon-versies.sh test
-ci/toon-versies.sh acceptatie
-```
-
-Wat er ligt en wat niet:
-
-| | Er wel | Er niet |
-|---|---|---|
-| De grens | het schema, als bestand naast de code | het register |
-| De implementatie | beide kanten, gebouwd en gedeployd | — |
-| De toetsing | unit, integratie, e2e | de contracttesten |
-
-### b — een release zoals het nu gaat
-
-Payment repareert een bug en gaat naar Acceptatie, langs de pipelines die er al waren:
+## De drie delen
 
 ```sh
 ci/pipeline-microservice.sh payment payment-api
-ci/pipeline-test.sh         payment 1.0.1
-ci/pipeline-acceptatie.sh   payment 1.0.1
+ci/pipeline-microservice.sh order   order-api
+
+ci/pipeline-test.sh payment 1.0.0
+ci/pipeline-test.sh order   1.0.0
+
+ci/pipeline-acceptatie.sh payment 1.0.0
+ci/pipeline-acceptatie.sh order   1.0.0
 ```
 
-De bugfix zit in [PaymentService.java](../deelsystemen/payment/payment-api/src/main/java/cbt/payment/PaymentService.java):
-bedragen worden op twee decimalen opgeslagen. Puur intern — `amount` staat niet in de
-response, dus aan de grens verandert er niets.
+Dat is de hele bestaande gang: unit, integratie, een image, deploy, smoke, gebruikersflow.
 
 **Let op wat er niet gebeurt.** In geen enkele stap komt het schema van de grens voor. Het
 ligt in `contracts/`, het wordt niet gelezen, en niets valt erop.
+
+Wat er wél draait:
+
+| | Er wel | Er niet |
+|---|---|---|
+| De grens | wordt geraakt — de smoke loopt er doorheen | is nergens onderwerp van een test |
+| De norm | in de test, door de schrijver bedacht | buiten de test, gepubliceerd |
+| Het register | — | — |
 
 ---
 
 ## Wat je moet zien
 
-Alles wordt groen, en dat is terecht — de fix is goed. De vraag die erop volgt is:
+Alles wordt groen, en terecht. Het punt is niet dat er iets misgaat — het punt is dat je
+**aan deze uitkomst niet kunt zien óf er iets misgaat aan de grens.**
 
-> Payment 1.0.1 staat op Acceptatie en alles was groen. **Weet Order dat?**
+Order's integratietest mockt Payment en schrijft het antwoord van de buur zelf voor:
 
-Deze wijziging raakte de grens niet. Maar dat weet je omdat iemand de code heeft gelezen,
-niet omdat de pipeline het heeft vastgesteld — en een wijziging die de grens wél raakt,
-geeft precies dezelfde uitkomst.
+```java
+@MockitoBean
+private PaymentClient paymentClient;
+```
+
+Die mock is niet fout. Hij is **onbewijsbaar** — hij bevestigt wat de schrijver dacht dat
+Payment doet, en blijft groen als Payment verandert.
 
 ---
 
@@ -81,6 +79,13 @@ geeft precies dezelfde uitkomst.
 00-start/rapport/rapport-cbt-00.html    dezelfde inhoud, om te laten zien
 ```
 
-Leg hem naast `01-basis/rapport/rapport-cbt-01.html`. Die van hoofdstuk 0 is korter en
-bevat geen enkele regel over een contract, een stub of drift. Dat verschil is de hele
-showcase, in twee bestanden.
+Leg hem naast `01-basis/rapport/rapport-cbt-01.html`:
+
+| | Hoofdstuk 0 | Hoofdstuk 1 |
+|---|---|---|
+| Deelsystemen | order en payment | order en payment |
+| Versies | alle 1.0.0 | alle 1.0.0 |
+| Regels | 22 | 35 |
+| Regels over contract, stub, drift of conformiteit | **0** | het verschil |
+
+Omdat de dekking gelijk is, ís dat verschil het werk dat contracttesten toevoegt.

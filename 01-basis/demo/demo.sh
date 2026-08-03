@@ -98,7 +98,7 @@ opmerking "en wat hij met de antwoorden doet klopt. Zonder met iemand af te stem
 scene "Scène 2: Payment's pipeline draait groen"
 
 ci/pipeline-microservice.sh payment payment-api
-ci/pipeline-ci.sh payment 1.0.1
+ci/pipeline-ci.sh payment 1.0.0
 
 echo
 opmerking "De contractverificatie is volledig: elke operatie uit de spec, elke"
@@ -109,7 +109,7 @@ opmerking "aanbiedt dan zijn contract noemt."
 
 scene "Scène 3: Test omhoog, en wat er draait is af te lezen"
 
-ci/pipeline-test.sh payment 1.0.1
+ci/pipeline-test.sh payment 1.0.0
 ci/pipeline-test.sh order 1.0.0
 
 echo
@@ -137,7 +137,7 @@ scene "Scène 5: Acceptatie, en de gebruikersflow over de keten"
 # Een gebruikersflow spant over deelsystemen heen. Beide deelsystemen staan er al sinds
 # hoofdstuk 0, dus die eerste vulling is hier niet meer nodig.
 ci/pipeline-acceptatie.sh order   1.0.0
-ci/pipeline-acceptatie.sh payment 1.0.1
+ci/pipeline-acceptatie.sh payment 1.0.0
 
 echo
 opmerking "Eén scenario, geen tien. De structuur van de grens is al aangetoond op de"

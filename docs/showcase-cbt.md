@@ -387,20 +387,25 @@ Niemand leest negen hoofdstukken. Vijf leespaden:
 
 Dit hoofdstuk toont wat er draait vóórdat contracttesten bestaan. Wat er wel en niet is, staat in *De startsituatie* hierboven; hier wordt het gedraaid in plaats van beschreven.
 
-**Het staat apart om één reden.** Zolang a, b en c in één script zitten, houdt niets tegen dat de startsituatie het register aanraakt, en rust de bewering "hier speelt het schema geen rol" op discipline. Een eigen map die alleen de scripts van vóór CBT aanroept, maakt er een eigenschap van de indeling van. Dat is dezelfde zet als "de omgeving ís het netwerk".
+**Het staat apart om één reden.** Zat de startsituatie in hetzelfde script als hoofdstuk 1, dan hield niets tegen dat hij het register aanraakt, en rustte de bewering "hier speelt het schema geen rol" op discipline. Een eigen map die alleen de scripts van vóór CBT aanroept, maakt er een eigenschap van de indeling van. Dat is dezelfde zet als "de omgeving ís het netwerk".
 
-### 0.1 De demo: twee bedrijven
+### 0.1 Eén doorloop, twee deelsystemen
 
-| | Bedrijf | Wat er gebeurt | Wat het aantoont |
-|---|---|---|---|
-| a | De uitgangssituatie | beide deelsystemen 1.0.0 op Test en Acceptatie | er staat iets werkends; de showcase begint niet bij nul |
-| b | Een release zoals het nu gaat | payment 1.0.1 door de bestaande pipeline naar Acceptatie | welke pipeline en welke tests er al zijn — en dat het schema nergens in voorkomt |
+| Deel | Wat er gebeurt |
+|---|---|
+| bouwen en testen | beide microservices: unit, integratie, een image |
+| naar Test | beide deelsystemen deployen, healthcheck, de smoke van elk |
+| naar Acceptatie | beide deelsystemen deployen, de gebruikersflow van elk |
 
-**Wat er niet gebeurt weegt even zwaar.** In geen enkele stap van b komt het schema voor. Het ligt in de repository, het wordt niet gelezen, en niets valt erop. Dat is "spec-first is er wel, maar niet expliciet" aangetoond in plaats van beweerd.
+**Hoofdstuk 1 doet exact hetzelfde.** Dezelfde twee deelsystemen, dezelfde versies, dezelfde omgevingen — alleen mét contracttesten. Er verandert geen enkel versienummer tussen de twee hoofdstukken, en dat is opzet: zo is er precies één variabele.
 
-**b is de makkelijkste scène om verkeerd te lezen.** Alles wordt groen en de wijziging gaat goed; het risico is dat het publiek concludeert dat er niets aan de hand is. De wijziging is daarom met opzet een gewone bugfix en geen breuk — die zit in hoofdstuk 3 — en het bedrijf eindigt op de vraag die het zelf niet kan beantwoorden: *Payment 1.0.1 staat op Acceptatie en alles was groen. Weet Order dat?* Niets in die pipeline heeft het gecontroleerd. Dat het goed ging is gebleken, niet vastgesteld.
+> **Het werk dat contracttesten toevoegt = wat hoofdstuk 1 doet − wat hoofdstuk 0 doet.**
 
-**b is een release van Payment, en dat is geen toeval.** Payment is provider en roept niemand aan, dus zijn pipeline heeft geen mock van een buur nodig. Een release van Order zou de vraag oproepen wat er in zijn plaats staat, en dat is de vraag van hoofdstuk 1.
+Die aftrekking is alleen zuiver als al het andere gelijk blijft. Vandaar geen bugfix, geen versiebump en geen extra deelsysteem aan één van beide kanten. Wat overblijft in het verschil is het register, de stub, de verificatie aan beide kanten, de drift-check en de versieconformiteit — en niets anders.
+
+**Wat er niet gebeurt weegt even zwaar als wat er wel gebeurt.** In geen enkele stap komt het schema van de grens voor. Het ligt in `contracts/`, het wordt niet gelezen, en niets valt erop. Dat is "spec-first is er wel, maar niet afdwingbaar" aangetoond in plaats van beweerd.
+
+**Dit hoofdstuk is de makkelijkste om verkeerd te lezen.** Alles wordt groen, en terecht. Het risico is dat het publiek concludeert dat er niets aan de hand is. Het punt is niet dat er iets misgaat; het punt is dat je aan deze uitkomst niet kunt zien óf er iets misgaat aan de grens.
 
 ### 0.2 Wat er is en wat er niet is
 
@@ -445,7 +450,17 @@ familie als een linter, en de reden dat hij een eigen pipeline heeft (1.4).
 
 ### 0.3 Wat het oplevert
 
-Een eigen rapport, `00-start/rapport/rapport-cbt-00`. Dat is zichtbaar dunner dan dat van hoofdstuk 1 en bevat geen enkele contractregel. Twee rapporten naast elkaar tonen het verschil beter dan één rapport met een knip erin.
+Een eigen rapport, `00-start/rapport/rapport-cbt-00`, naast dat van hoofdstuk 1. Twee rapporten naast elkaar tonen het verschil beter dan één rapport met een knip erin — en omdat de dekking gelijk is, is dat verschil af te lezen in plaats van te geloven.
+
+| | Hoofdstuk 0 | Hoofdstuk 1 |
+|---|---|---|
+| Deelsystemen | order en payment | order en payment |
+| Versies | alle 1.0.0 | alle 1.0.0 |
+| Omgevingen | Test, Acceptatie | Test, Acceptatie, en een efemere CI-omgeving per deelsysteem |
+| Regels in het rapport | 22 | 35 |
+| Regels over een contract, stub, drift of conformiteit | **0** | het verschil |
+
+Die dertien regels zijn het antwoord op "wat kost contracttesten en wat levert het op", uitgedrukt in wat er werkelijk draait. Ze zijn ook een ondergrens: in een bestaande omgeving komt daar eenmalig het werk bij om te repareren wat de eerste verificatie aan het licht brengt (zie 1.11).
 
 ---
 
@@ -879,11 +894,11 @@ De demo begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien, er is net e
 
 | Versieniveau | Na hoofdstuk 0 | Na hoofdstuk 1 |
 |---|---|---|
-| deelsysteem `payment` | 1.0.1 | 1.0.1 |
-| microservice `payment-api` | 1.0.1 | 1.0.1 |
+| deelsysteem `payment` | 1.0.0 | 1.0.0 |
+| microservice `payment-api` | 1.0.0 | 1.0.0 |
 | contract `payment-api` | niet gepubliceerd | 1.0.0 |
 
-**Wat verandert is het oordeel.** Dezelfde payment 1.0.1 die in hoofdstuk 0 groen door de pipeline kwam, gaat hier langs de contractlaag. Dat is een strengere norm op een ongewijzigd artefact — en daarmee is hoofdstuk 1 in de eerste plaats geen nieuwe manier van werken vooruit, maar een uitspraak over wat er al staat.
+**Wat verandert is het oordeel.** Dezelfde payment 1.0.0 die in hoofdstuk 0 groen door de pipeline kwam, gaat hier langs de contractlaag. Dat is een strengere norm op een ongewijzigd artefact — en daarmee is hoofdstuk 1 in de eerste plaats geen nieuwe manier van werken vooruit, maar een uitspraak over wat er al staat.
 
 Dat is ook wat een squad als eerste meemaakt die dit invoert: de eerste run gaat niet over de volgende release maar over de huidige. Gaat hij rood, dan heeft de pipeline niets kapotgemaakt — **hij heeft zichtbaar gemaakt wat al niet klopte.** Het artefact was nooit conform; er keek alleen niemand.
 

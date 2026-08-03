@@ -41,13 +41,18 @@ stap "deploy op Test" "${CBT_ROOT}/ci/deploy.sh" "${DEELSYSTEEM}" "${VERSIE}" te
 # Alleen als er een register is. Zonder gepubliceerde contracten vergelijkt deze check
 # twee handgeschreven beweringen, en dan hoort hij er niet te staan — ook niet groen. De
 # startsituatie draait dezelfde pipeline en moet er dus niets van terugzien.
+CONFORMITEIT=""
 if curl -fsS "${REGISTRY_URL:-http://localhost:8080}/apis/registry/v3/system/info" >/dev/null 2>&1; then
   stap "versieconformiteit" "${CBT_ROOT}/ci/versieconformiteit.sh" test
   bijzonderheid "$(grep -E '^versieconformiteit: [0-9]' "${STAP_LOG}" | tail -1 | sed 's/^versieconformiteit: //')"
+  CONFORMITEIT=" elke pin wordt daar geserveerd,"
 fi
 
 stap "smoke van ${DEELSYSTEEM}" "${CBT_ROOT}/ci/smoke.sh" "${DEELSYSTEEM}" "http://${DEELSYSTEEM}-api:${POORT#*:}" cbt-test
 bijzonderheid "$(grep -oE '[0-9]+ passed' "${STAP_LOG}" | tail -1)"
 
-rapport_oordeel "Oordeel: groen. Het deelsysteem draait op Test, elke pin wordt daar geserveerd, en de keten loopt."
+# Het oordeel noemt alleen wat er werkelijk is vastgesteld. Draaide de
+# versieconformiteitscheck niet, dan staat hij hier ook niet in — een oordeel dat meer
+# beweert dan er is gecontroleerd, is precies wat deze showcase bestrijdt.
+rapport_oordeel "Oordeel: groen. Het deelsysteem draait op Test,${CONFORMITEIT} en de keten loopt."
 echo "klaar: ${DEELSYSTEEM} ${VERSIE} draait op Test"

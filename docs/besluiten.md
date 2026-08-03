@@ -464,3 +464,30 @@ elke pin terecht rood zou maken op een moment dat hij niet hoort te draaien. Het
 gaat nu omlaag, en `pipeline-test.sh` slaat de stap over als er geen register is, zodat het
 rapport van hoofdstuk 0 er ook geen groene regel over toont.
 
+## 2026-08-03 — Hoofdstuk 0 en 1 verschillen in één ding
+
+Hoofdstuk 0 draaide één deelsysteem — een patchrelease van payment — en hoofdstuk 1 draaide
+er twee. Daarmee was de vergelijking tussen de twee rapporten niet zuiver: een deel van het
+verschil was dekking en niet contracttesten. Precies de soort claim die deze showcase
+anderen verwijt.
+
+Beide hoofdstukken doen nu hetzelfde: **twee deelsystemen, dezelfde versies, dezelfde
+omgevingen.** De patchrelease en de bugfix zijn eruit, want een tweede variabele maakt de
+aftrekking troebel.
+
+> Het werk dat contracttesten toevoegt = wat hoofdstuk 1 doet − wat hoofdstuk 0 doet.
+
+Gemeten: 22 regels tegenover 35. Nul regels over een contract, stub, drift of conformiteit
+in hoofdstuk 0. Dat verschil is af te lezen in plaats van te geloven, en het is een
+ondergrens — in een bestaande omgeving komt er eenmalig reparatiewerk bij.
+
+**Twee dingen die de vraag "draait order eigenlijk wel?" blootlegde.** Order draaide, maar
+kwam in geen enkele regel van het rapport voor omdat hij buiten de pipelines was neergezet.
+En het oordeel op Test beweerde "elke pin wordt daar geserveerd" terwijl die controle in
+hoofdstuk 0 helemaal niet draait. Een oordeel dat meer stelt dan er is gecontroleerd, is wat
+deze showcase bestrijdt; het noemt nu alleen wat er werkelijk is vastgesteld.
+
+**"Bedrijf" is vervangen door "deel".** Bedoeld was de theaterbetekenis — eerste bedrijf,
+tweede bedrijf — maar in een Nederlandse technische tekst leest het als onderneming, en dat
+is een woord dat je één keer verkeerd leest en dan nooit meer goed.
+

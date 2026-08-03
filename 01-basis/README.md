@@ -62,7 +62,7 @@ niet in: die vraagt een draaiend deelsysteem.
 
 ```sh
 ci/pipeline-ci.sh order   1.0.0
-ci/pipeline-ci.sh payment 1.0.1
+ci/pipeline-ci.sh payment 1.0.0
 ```
 
 **Dit is de scène waar de demo om draait.** Order's pipeline komt tot een oordeel zonder
@@ -87,7 +87,7 @@ De omgeving wordt na afloop opgeruimd, ook als er iets faalt.
 ### 3 — het deelsysteem naar Test
 
 ```sh
-ci/pipeline-test.sh payment 1.0.1
+ci/pipeline-test.sh payment 1.0.0
 ci/pipeline-test.sh order   1.0.0
 ```
 
@@ -102,8 +102,8 @@ curl -s http://localhost:8081/actuator/info
 
 | Wat | Waarde | Betekenis |
 |---|---|---|
-| `deelsysteem.versie` | 1.0.1 | wat er gedeployd is |
-| `build.version` | 1.0.1 | de microservice, uit de pom |
+| `deelsysteem.versie` | 1.0.0 | wat er gedeployd is |
+| `build.version` | 1.0.0 | de microservice, uit de pom |
 | `contract.serveert` | 1.0.0 | de grens, uit het register |
 
 Voor Payment lopen de contractversie en de andere twee al uit elkaar: de bugfix uit
@@ -113,7 +113,7 @@ over de hele linie. Vanaf hoofdstuk 2 gaan ook de eerste twee los van elkaar bew
 ### 4 — het deelsysteem naar Acceptatie
 
 ```sh
-ci/pipeline-acceptatie.sh payment 1.0.1
+ci/pipeline-acceptatie.sh payment 1.0.0
 ci/pipeline-acceptatie.sh order   1.0.0
 ```
 
@@ -146,10 +146,10 @@ xdg-open 01-basis/rapport/rapport-cbt-01.html  # Linux
 
 | Tijd | Onderdeel | Stap | Uitkomst | Bijzonderheden |
 |---|---|---|---|---|
-| 19:30:22 | payment-api 1.0.1 | unit | groen | Tests run: 9 |
-| 19:30:43 | payment 1.0.1 → CI | drift | groen | 2 operaties komen overeen |
-| 19:30:57 | payment 1.0.1 → CI | contractverificatie, provider | groen | 1632 generated, 1632 passed |
-| 19:30:57 | payment 1.0.1 → CI | — | oordeel | voldoet aan payment-api 1.0.0 |
+| 19:30:22 | payment-api 1.0.0 | unit | groen | Tests run: 9 |
+| 19:30:43 | payment 1.0.0 → CI | drift | groen | 2 operaties komen overeen |
+| 19:30:57 | payment 1.0.0 → CI | contractverificatie, provider | groen | 1632 generated, 1632 passed |
+| 19:30:57 | payment 1.0.0 → CI | — | oordeel | voldoet aan payment-api 1.0.0 |
 
 Dat is wat "releasen op testbewijs" concreet maakt: niet dát het groen was, maar wát er
 wanneer is aangetoond en tegen welke contractversie.

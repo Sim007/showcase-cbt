@@ -69,8 +69,12 @@ wat er draait zonder contracttesten, dan wat die toevoegen.
 ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
 ```
 
-Leg daarna de twee rapporten naast elkaar. Die van hoofdstuk 0 is korter en bevat geen
-enkele regel over een contract, een stub of drift.
+Leg daarna de twee rapporten naast elkaar. **Ze dekken hetzelfde:** dezelfde twee
+deelsystemen, dezelfde versies, dezelfde omgevingen. Het enige verschil is dat hoofdstuk 1
+contracttesten doet — 22 regels tegenover 35, en nul over een contract, stub of drift aan de
+kant van hoofdstuk 0.
+
+> Het werk dat contracttesten toevoegt = wat hoofdstuk 1 doet − wat hoofdstuk 0 doet.
 
 Beide zijn groen, en dat is met opzet: deze showcase toont het mechanisme en niet het
 invoeren ervan. In een bestaande omgeving levert de eerste contractverificatie meestal een
