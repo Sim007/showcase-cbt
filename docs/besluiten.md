@@ -402,3 +402,36 @@ De toets is dezelfde als bij de vork site/systeem: zolang de subrepo alleen beva
 regenereerbaar is, is er geen tweede plek waar de waarheid staat. Komt er iets in dat
 nergens anders te vinden is, dan is de vork genomen en is het een systeem.
 
+## 2026-08-03 — De startsituatie raakt de grens, maar test hem niet
+
+Hoofdstuk 0 stond beschreven als "de API-tests bestaan al, alleen ligt hun norm binnen de
+test". Dat was waar en te vaag. Scherper: **er is geen enkele test wiens onderwerp de grens
+is.** De smoke op Test loopt er doorheen, dus de grens wordt geraakt — maar als hij omvalt
+is de uitslag een rode smoke en begint het zoeken, want de test wees niet naar de grens.
+
+Dat onderscheid — geraakt versus getest — houdt de startsituatie eerlijk. Zonder die nuance
+wordt het een stroman: "ze testten de grens niet". Ze testten hem wel, één keer, laat,
+samengesteld en alleen op het gelukkige pad.
+
+Wat er in de startsituatie ontbreekt staat nu als tien punten in 0.2. Drie ervan stonden
+nergens: de gate op een schemawijziging, de drift-check en de versieconformiteit. De eerste
+is bovendien geen test maar een vergelijking van twee artefacten, en dat staat er nu bij.
+
+De bindende zin eronder: alles wat er in de startsituatie is, toetst tegen een norm die de
+schrijver zelf heeft bedacht. Daarmee is wat hoofdstuk 1 toevoegt niet *meer* testen maar
+één ding waaruit de rest volgt — een norm die buiten de test ligt.
+
+## 2026-08-03 — Versieconformiteit heeft het register als grond, niet als optie
+
+De check was in pipeline-test gezet en draaide daardoor ook in hoofdstuk 0. Dat is fout: hij
+staat in de tabel *Wat contracttesten toevoegt*, dus hij hoort niet in de startsituatie.
+
+De uitweg is geen `if register bereikbaar`, want dat is een truc. De check toetst elke pin op
+twee dingen: staat die versie als gepubliceerde versie in het register, en wordt hij op deze
+omgeving geserveerd. Zonder register faalt de eerste voorwaarde en is de check niet van
+toepassing — niet uitgezet, maar zonder grond.
+
+Dat maakt hem meteen strenger: een pin op een versie die nooit gepubliceerd is, is ook fout.
+En het legt bloot waarom hij in de startsituatie niets zou vaststellen: daar zijn de versies
+op de info-endpoints twee handgeschreven beweringen die met elkaar vergeleken worden.
+

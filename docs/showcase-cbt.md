@@ -400,13 +400,44 @@ Dit hoofdstuk toont wat er draait vóórdat contracttesten bestaan. Wat er wel e
 
 **b is een release van Payment, en dat is geen toeval.** Payment is provider en roept niemand aan, dus zijn pipeline heeft geen mock van een buur nodig. Een release van Order zou de vraag oproepen wat er in zijn plaats staat, en dat is de vraag van hoofdstuk 1.
 
-### 0.2 De API-tests bestaan al
+### 0.2 Wat er is en wat er niet is
 
-Er wordt getest, en niet zuinig: unit en integratie aan beide kanten, een smoke op Test en een gebruikersflow op Acceptatie. Wat ontbreekt is niet de test maar de **norm buiten de test**.
+Er wordt getest, en niet zuinig. Wat ontbreekt is niet de test maar de **norm buiten de
+test**.
 
-`OrderIntegratieTest` mockt `PaymentClient` en schrijft het antwoord van de buur zelf voor. Die mock is niet fout — hij is onbewijsbaar. Hij is geschreven door dezelfde persoon die de verwachting formuleert, en bevestigt daarom wat de schrijver dacht dat Payment doet. Verandert Payment, dan blijft de test groen.
+| | In de startsituatie |
+|---|---|
+| Spec-first werken | **wel** — er ligt een OpenAPI-bestand en de grens is er eerst |
+| De grens wordt geraakt | **wel** — de smoke op Test loopt er doorheen |
+| De grens is onderwerp van een test | **niet** |
+| Een centraal register | **niet** |
+| Een gate op een wijziging van de spec | **niet** |
+| Een stub die uit het contract komt | **niet** |
+| Een providertest tegen het contract | **niet** |
+| Een consumertest tegen het contract | **niet** |
+| Een drift-check tussen belofte en implementatie | **niet** |
+| Versieconformiteit over de omgeving | **niet** |
 
-Dat is de plek waar hoofdstuk 1 aan komt: de mock verhuist van binnen de test naar een omgeving, en zijn inhoud komt uit het register in plaats van uit een hoofd.
+**De grens wordt geraakt, niet getest.** Er is geen enkele test wiens onderwerp de grens is;
+hij komt langs omdat een smoke er doorheen loopt. Valt hij om, dan is de uitslag een rode
+smoke op Test en begint het zoeken — de test wees niet naar de grens, dus de uitkomst ook
+niet.
+
+**Alles wat er is, toetst tegen een norm die de schrijver zelf heeft bedacht.** Unit,
+integratie, de mock van de buur, de smoke: allemaal geschreven door de partij die ook de
+code schrijft. Dat is niet fout, het is alleen niet extern.
+
+`OrderIntegratieTest` mockt `PaymentClient` en schrijft het antwoord van de buur zelf voor.
+Die mock is niet fout — hij is **onbewijsbaar**. Hij bevestigt wat de schrijver dacht dat
+Payment doet, en blijft groen als Payment verandert.
+
+Daarmee is wat hoofdstuk 1 toevoegt niet *meer* testen, maar één ding waaruit de rest volgt:
+een norm die buiten de test ligt. Elk "niet" in de tabel hierboven is in hoofdstuk 1 een
+"wel", en telkens is het register de bron.
+
+**Eén ervan is geen test.** De gate op een schemawijziging vergelijkt twee artefacten en
+draait op een ander moment — bij de wijziging van de spec, niet bij een build. Dezelfde
+familie als een linter, en de reden dat hij een eigen pipeline heeft (1.4).
 
 ### 0.3 Wat het oplevert
 
@@ -718,11 +749,13 @@ Geen van beide is een pipelinestap. De controles draaien na **elke** deploy, ong
 
 Elk deelsysteem meldt op zijn info-endpoint **beide** versies: zijn eigen serviceversie, en de contractversies waar hij aan hangt — bij de provider de versies die hij serveert, bij de consumer zijn pin. Dat onderscheid moet zichtbaar zijn, anders leest niemand af of `1.1.0` over het deelsysteem of over de grens gaat.
 
-**De check vergelijkt niet met een verwachte samenstelling, maar met zichzelf** (O2, gesloten). De vraag is: wordt elke pin die op deze omgeving staat, op deze omgeving ook geserveerd? Dat is uit de omgeving zelf af te leiden — de consumers melden hun pins, de providers melden wat ze serveren — en er is dus geen bestand dat bijgehouden moet worden.
+**De check vergelijkt niet met een verwachte samenstelling, maar met zichzelf** (O2, gesloten). De vraag is tweeledig: staat elke pin die op deze omgeving voorkomt als gepubliceerde versie in het register, en wordt hij op deze omgeving ook geserveerd? Dat is uit de omgeving zelf af te leiden — de consumers melden hun pins, de providers melden wat ze serveren — en er is dus geen bestand dat bijgehouden moet worden.
 
 Dat is niet de goedkoopste oplossing maar de enige juiste, want een *verwachte* samenstelling bestaat hier niet: elk deelsysteem schuift op zijn eigen tempo op, dus er is geen moment waarop een bepaalde combinatie de bedoelde is. Een lijst met verwachte versies zou randvoorwaarde 4 tegenspreken en zou bij elke release van iemand anders verouderen. De vraag "draait hier de bedoelde combinatie" is daarmee de verkeerde vraag; "sluit alles hier op elkaar aan" is de goede.
 
-In hoofdstuk 5 doet die check zijn werk: een consumer die gepind staat op een versie die niemand meer serveert, wordt rood zonder dat iemand een lijst hoefde bij te houden.
+Die eerste voorwaarde is geen formaliteit maar de reden dat deze check bij contracttesten hoort en niet bij de startsituatie. Zonder register zijn de versies op de info-endpoints twee handgeschreven beweringen die met elkaar vergeleken worden; pas als ze allebei naar een gepubliceerd artefact wijzen, stelt de vergelijking iets vast. In hoofdstuk 0 is de check daarom niet van toepassing — niet uitgezet, maar zonder grond.
+
+In hoofdstuk 5 doet hij zijn werk: een consumer die gepind staat op een versie die niemand meer serveert, wordt rood zonder dat iemand een lijst hoefde bij te houden.
 
 Die check is niet zomaar een van de drie. Hij is degene die het afzien van een `can-i-deploy`-gate verdedigbaar maakt: de smoke gaat niet over inhoud en komt groen door een verkeerde versiecombinatie heen, de versieconformiteitscheck niet.
 
