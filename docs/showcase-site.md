@@ -26,9 +26,24 @@ Later komen Notification en Portal erbij, en daarmee async, SOAP en front-ends.
 | service | één bouwbaar en deploybaar onderdeel: een microservice of een micro-frontend |
 | contractverificatie | toetsing van een implementatie aan de gepubliceerde spec |
 
-**Drie omgevingen.** Een efemere CI-omgeving per deelsysteem, waar de buren als stub uit de
-spec staan; Test, waar alle deelsystemen echt draaien maar de buitenwereld niet; Acceptatie,
-met de koppelingen naar buiten erbij.
+**Vier scopes, als een trap.** Elke trede vervangt minder dan de vorige, tot er niets meer
+vervangen is.
+
+| Scope | Waar | Wat vervangen is |
+|---|---|---|
+| microservice | de build, geen omgeving | de buur, als mock binnen de test |
+| deelsysteem | efemere CI-omgeving | elke grens naar buiten, als stub uit het register |
+| systeem | Test | alleen nog de buitenwereld |
+| systeem + externe interfaces | Acceptatie | niets |
+
+De regel eronder: een omgeving vervangt precies wat hij niet bevat, en de vervanging komt
+uit het contract van die grens. Daaruit volgt dat **stubs op één niveau bestaan** — een stub
+van een buurdeelsysteem op Test is een fout en geen keuze. Productie bestaat in het model
+maar wordt in de showcase niet gebouwd.
+
+**Waarom Test én Acceptatie:** eigenaarschap. Test is de laatste omgeving die je volledig
+bezit — resetten, versiebeheren, afdwingen. Acceptatie is de eerste waar dat niet meer
+geldt.
 
 **Drie versieniveaus, en ze bewegen los.** De contractversie hoort bij de grens en staat in
 het register. De microserviceversie komt uit de pom en zit in de image. De deelsysteemversie
@@ -40,6 +55,22 @@ een diff-gate bij publicatie, een stub die uit de spec wordt gegenereerd, contra
 aan beide kanten van de grens, en een drift-check. Wat het wegneemt: e2e-tests die alleen de
 structuur van een grens aantoonden, afstemming over deployvolgorde, en handgeschreven mocks
 van de buur.
+
+**Zes pipelines per artefact, plus gedeelde.** Eén voor het contract, één voor de
+microservice, en vier voor het deelsysteem onderweg: CI, Test, Acceptatie, Productie. Op
+productie staat *check* en niet *test* — daar wordt waargenomen, niet aangetoond. Daarnaast
+draaien er geplande pipelines over het geheel: alle grenzen, alle smokes, alle
+gebruikersflows. Het verschil is waar ze aan hangen — de zes aan een wijziging, de gedeelde
+aan een moment, want de samenstelling verandert ook als jij niets doet.
+
+Eén regel die de site raakt: **een gedeelde pipeline is nooit een gate voor één squad.** Wat
+de site over het geheel toont, mag dus nooit lezen als een stoplicht voor een individuele
+release.
+
+**Twee hoofdstukken, twee rapporten.** Hoofdstuk 0 toont de startsituatie: wat er draait
+voordat contracttesten bestaan, inclusief een gewone release door de bestaande pipeline.
+Hoofdstuk 1 voegt het register en de contracttesten toe. `rapport-cbt-00` is zichtbaar
+dunner dan `rapport-cbt-01` en bevat geen enkele contractregel.
 
 **Waar het naartoe werkt:** een squad kan releasen op testbewijs, zonder met iemand een
 deployvolgorde af te spreken.
@@ -153,8 +184,15 @@ in — dat komt van de kant van de consumer, uit zijn info-endpoint.
 tijd (UTC), onderdeel, stap, uitkomst (`groen` / `**ROOD**` / `**oordeel**`),
 bijzonderheden.
 
-**Wat er niet is, en niet stilzwijgend verzonnen mag worden:** de verwachte samenstelling
-van een omgeving (open punt O2), monitoring op productie (O8), en historie over runs heen.
+**Grensconformiteit is af te leiden en hoeft niet ergens te staan.** Elke consumer meldt
+zijn pin, elke provider meldt wat hij serveert. Wordt een pin op die omgeving niet
+geserveerd, dan sluit er iets niet aan. Er is geen bestand met de verwachte samenstelling en
+dat is een keuze, geen gemis: elk deelsysteem schuift op zijn eigen tempo op, dus er bestaat
+geen combinatie die *de bedoelde* is. De vraag is niet "draait hier de bedoelde combinatie"
+maar "sluit alles hier op elkaar aan".
+
+**Wat er niet is, en niet stilzwijgend verzonnen mag worden:** monitoring op productie (O8),
+een Productie-omgeving (wel gemodelleerd, niet gebouwd), en historie over runs heen.
 
 ---
 
@@ -169,11 +207,15 @@ daaruit, niet andersom.
 | squadlid | welke versie serveert mijn buur nu, en op welke hang ik? | ja — info-endpoints |
 | squadlid van de provider | wie hangt er aan de versie die ik wil opruimen? | ja — register plus de pins van alle consumers |
 | architect / tribe | welke grenzen zijn er, en wie staat waar? | ja — register |
-| wie het niet kent | wat gebeurt hier eigenlijk, en waar zijn we? | ja — rapport plus fase |
-| release manager | draait op Test de samenstelling die er hoort te draaien? | **nee** — O2 staat open |
+| wie het niet kent | wat gebeurt hier eigenlijk, en waar zijn we? | ja — rapport plus hoofdstuk |
+| release manager | sluit op Test alles op elkaar aan? | ja — pins naast geserveerde versies, beide uit de info-endpoints |
 
-Die laatste regel hoort zichtbaar te blijven als een lege plek, niet weggelaten te worden.
-Een ontbrekende controle die je ziet is beter dan een die niemand mist.
+Let op de formulering van de laatste: niet *de bedoelde* combinatie, maar of alles op elkaar
+aansluit. Een site die de eerste vraag stelt, heeft een lijst nodig die iemand bijhoudt en
+die veroudert zodra een andere squad releaset.
+
+Wat wél als lege plek zichtbaar moet blijven: monitoring op productie. Een ontbrekende
+controle die je ziet is beter dan een die niemand mist.
 
 ---
 
@@ -194,12 +236,16 @@ Een ontbrekende controle die je ziet is beter dan een die niemand mist.
 **Nu: één pagina.** Boven wat er op dit moment draait, eronder wat er in deze run is
 gebeurd. Eén link, één venster, ververst zichzelf tijdens een run — dat werkt al.
 
+Die twee helften hebben een verschillende reikwijdte, en dat is geen slordigheid. Het
+bovenste deel is systeembreed: versies, grenzen en aansluiting gaan over alles wat draait.
+Het onderste deel hoort bij één hoofdstuk, want een rapport is het bewijs van één run.
+
 **Later: een site.** Een pagina per deelsysteem, een pagina per grens. De testsoorten als
 kolommen, zodat een UI-test er later bij komt als een kolom en niet als een verbouwing. Dat
 is de reden om nu al datagedreven te bouwen in plaats van de blokken vast te metselen.
 
-De volgorde: eerst de versiematrix, dan de gate-keten, dan de fase-indicator, dan de
-testsoorten. Elk stuk is los bruikbaar; niets ervan wacht op het volgende.
+De volgorde: eerst de versiematrix, dan de gate-keten van de zes pipelines, dan de
+aansluiting van alle grenzen, dan de testsoorten. Elk stuk is los bruikbaar; niets ervan wacht op het volgende.
 
 ---
 
