@@ -653,7 +653,7 @@ Dat dashboard beantwoordt drie vragen, en de derde is er niet bij gekomen om te 
 
 **Het dashboard leest echte toestand.** Versies uit draaiende info-endpoints, grenzen uit het register, gates uit het rapport. Geen enkel gegeven komt uit een demoscript, want dan toont het dashboard wat iemand bedoelde in plaats van wat er is. Dat is dezelfde regel als bij de stub, om dezelfde reden.
 
-**Voorlopig één pagina.** De stip op de horizon is een site: per deelsysteem een pagina, per grens een pagina, en de testsoorten als kolommen zodat er later een UI-test bij kan zonder verbouwing. Voor dit hoofdstuk is één pagina genoeg — bovenaan wat er nu draait, eronder wat er in deze run is gebeurd. Wat er voor die site hoe dan ook geldt, staat in `docs/showcase-test.md`.
+**Voorlopig één pagina.** De stip op de horizon is een site: per deelsysteem een pagina, per grens een pagina, en de testsoorten als kolommen zodat er later een UI-test bij kan zonder verbouwing. Voor dit hoofdstuk is één pagina genoeg — bovenaan wat er nu draait, eronder wat er in deze run is gebeurd. Wat er voor die site hoe dan ook geldt, staat in `docs/showcase-site.md`.
 
 **Rood: eerst weer draaiend, dan pas de vraag hoe het kwam.** Op Test en Acceptatie draaien release candidates, en dan is vooruit meestal sneller dan terug: een kapotte RC is een signaal om snel een nieuwe te leveren. Rollback is het antwoord wanneer vooruit niet snel kan. Bij een afwijkende versiesamenstelling is roll-forward vrijwel altijd juist — het ontbrekende deelsysteem alsnog deployen in plaats van het geslaagde terugtrekken. Rollback geldt voor deployments; het register kent geen rollback, daar is alleen een nieuwe versie.
 

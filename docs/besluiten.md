@@ -251,3 +251,32 @@ van wat er is, en dat is dezelfde fout als een stub die niet uit de spec komt.
 Voorlopig één pagina: boven wat er nu draait, eronder wat er in deze run is gebeurd. De
 stip op de horizon is een site met een pagina per deelsysteem en per grens, en de
 testsoorten als kolommen — zodat een UI-test er later bij kan zonder verbouwing.
+
+## 2026-08-03 — De site leidt af en bewaart niets
+
+De vraag was of we het over een site hebben of over een systeem. Het antwoord bepaalt meer
+dan de naam: het verschil zit op één punt, namelijk of het ding eigen toestand heeft.
+
+Gekozen: **een site.** Hij leidt alles af uit drie bronnen — versies uit de draaiende
+info-endpoints, gates uit het rapport, grenzen uit het register — en bewaart zelf niets.
+Weggooien mag altijd; regenereren kost een run. Wat je niet bewaart, kan niet stilletjes
+verouderen, en een site die alleen afleidt kan niet liegen over iets wat elders al veranderd
+is.
+
+**Wanneer het alsnog een systeem wordt.** Drie redelijke wensen forceren die stap: historie
+over runs heen ("was het gisteren ook groen?"), altijd bereikbaar zijn zonder eerst iets te
+draaien, en meerdere omgevingen tegelijk in beeld. Geen van drieën raakt deze showcase —
+alles draait op één laptop en een run duurt minuten. Het punt van dit besluit is dat een
+ontwerpsessie die kant mag verkennen maar niet ongemerkt mag kiezen.
+
+**En dan is hij een deelsysteem als elk ander.** Hij wordt consumer van het register: pint
+een contractversie op de registry-API, krijgt een `grenzen.env`, en zijn eigen pipeline
+verifieert hem tegen die spec. Het dashboard ondergaat dan het mechanisme dat het toont.
+Sterker dan wat er nu ligt, maar niet in hoofdstuk 1.
+
+De harde eisen staan als negen controleerbare regels in `docs/showcase-site.md`, elk met de
+voorwaarde waaronder hij geschonden is. De eerste twee — elk gegeven uit echte toestand, en
+ontbrekend blijft ontbrekend — wegen zwaarder dan de rest: een pagina die toont wat iemand
+bedoelde in plaats van wat er is, laat precies het probleem zien dat deze showcase
+bestrijdt, en doet dat onzichtbaar.
+
