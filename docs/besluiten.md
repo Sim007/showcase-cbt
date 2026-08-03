@@ -435,3 +435,32 @@ Dat maakt hem meteen strenger: een pin op een versie die nooit gepubliceerd is, 
 En het legt bloot waarom hij in de startsituatie niets zou vaststellen: daar zijn de versies
 op de info-endpoints twee handgeschreven beweringen die met elkaar vergeleken worden.
 
+## 2026-08-03 — Hoofdstuk 1 bumpt geen enkele versie
+
+De vraag was of de deelsystemen na hoofdstuk 1 naar 1.1.0 moeten, omdat ze dan meedoen aan
+contracttesten. Antwoord: nee. De onderliggende artefacten veranderen niet — niet het
+contract, niet de microservice, niet de samenstelling van het deelsysteem. Een
+deelsysteemversie is een pin op een samenstelling, en een nieuw nummer op een ongewijzigde
+samenstelling is leeg.
+
+**Wat wél verandert is het oordeel, niet het artefact.** Dezelfde payment 1.0.1 die in
+hoofdstuk 0 groen door de pipeline kwam, gaat in hoofdstuk 1 langs de contractlaag.
+Strengere norm, ongewijzigd artefact.
+
+Daaruit volgt iets dat sterker is dan de versietabel die het vervangt: hoofdstuk 1 is in de
+eerste plaats geen nieuwe manier van werken vooruit, maar **een uitspraak over wat er al
+staat**. Dat is ook wat een squad als eerste meemaakt die dit invoert — de eerste run gaat
+over de huidige release en niet over de volgende. Gaat hij rood, dan heeft de pipeline niets
+kapotgemaakt: hij heeft zichtbaar gemaakt wat al niet klopte.
+
+Zou de deelsysteemversie hier oplopen, dan zou dat suggereren dat er iets aan het
+deelsysteem is veranderd. Er wordt alleen scherper gekeken, en dat is een eigenschap van de
+pipeline en niet van wat erdoorheen gaat.
+
+**Bijvangst bij het bouwen.** `opruimen-alles.sh` herstartte het register in plaats van het
+omlaag te halen. Daardoor kon hoofdstuk 0 een bereikbaar-maar-leeg register aantreffen — een
+derde toestand die nergens in het ontwerp voorkomt, en waarin de versieconformiteitscheck
+elke pin terecht rood zou maken op een moment dat hij niet hoort te draaien. Het register
+gaat nu omlaag, en `pipeline-test.sh` slaat de stap over als er geen register is, zodat het
+rapport van hoofdstuk 0 er ook geen groene regel over toont.
+

@@ -9,9 +9,15 @@
 # samenstelling de juiste is. Een lijst met verwachte versies zou die randvoorwaarde
 # tegenspreken en zou verouderen zodra een andere squad releaset.
 #
-# De vraag die wél te beantwoorden is: wordt elke pin die op deze omgeving staat, op deze
-# omgeving ook geserveerd? Consumers melden hun pin, providers melden wat ze serveren, en
-# daarmee controleert de omgeving zichzelf — zonder dat iemand iets bijhoudt.
+# De vraag die wél te beantwoorden is, is tweeledig: staat elke pin die op deze omgeving
+# voorkomt als gepubliceerde versie in het register, en wordt hij op deze omgeving ook
+# geserveerd? Consumers melden hun pin, providers melden wat ze serveren, en daarmee
+# controleert de omgeving zichzelf — zonder dat iemand iets bijhoudt.
+#
+# Die eerste voorwaarde is geen formaliteit. Zonder register zijn de versies op de
+# info-endpoints twee handgeschreven beweringen die met elkaar vergeleken worden; pas als
+# ze allebei naar een gepubliceerd artefact wijzen, stelt de vergelijking iets vast. In de
+# startsituatie is deze check daarom niet van toepassing — niet uitgezet, maar zonder grond.
 #
 # Dit is de controle die het afzien van een can-i-deploy-gate verdedigbaar maakt. De smoke
 # gaat niet over inhoud en komt groen door een verkeerde versiecombinatie heen; deze niet.
@@ -29,6 +35,15 @@ fout() {
 
 [ "$#" -eq 1 ] || fout "gebruik: versieconformiteit.sh <omgeving>"
 OMGEVING="$1"
+
+REGISTRY_URL="${REGISTRY_URL:-http://localhost:8080}"
+API="${REGISTRY_URL}/apis/registry/v3"
+
+if ! curl -fsS "${API}/system/info" >/dev/null 2>&1; then
+  echo "versieconformiteit: geen register op ${REGISTRY_URL} — deze controle is hier niet van toepassing"
+  echo "  Zonder gepubliceerde contracten vergelijkt hij twee handgeschreven beweringen."
+  exit 0
+fi
 
 ALLE="$(mktemp)"
 PINS="$(mktemp)"
@@ -60,11 +75,21 @@ while IFS="$(printf '\t')" read -r groep artifact versie consument; do
   [ -n "${groep}" ] || continue
   GECONTROLEERD=$((GECONTROLEERD + 1))
 
+  # Voorwaarde 1: bestaat deze versie als gepubliceerd contract? Een pin op iets wat
+  # nooit gepubliceerd is, is net zo fout als een pin die niemand serveert — en zonder
+  # deze controle valt dat pas op als er ook geen provider blijkt te draaien.
+  if ! curl -fsS -o /dev/null "${API}/groups/${groep}/artifacts/${artifact}/versions/${versie}"; then
+    echo "  ROOD  ${consument} pint ${groep}/${artifact} ${versie} — die versie staat niet in het register"
+    ROOD=$((ROOD + 1))
+    continue
+  fi
+
+  # Voorwaarde 2: wordt hij hier geserveerd?
   provider="$(awk -F'\t' -v g="${groep}" -v a="${artifact}" -v v="${versie}" \
               '$1==g && $2==a && $3==v { print $4; exit }' "${GESERVEERD}")"
 
   if [ -n "${provider}" ]; then
-    echo "  ok    ${consument} pint ${groep}/${artifact} ${versie} — geserveerd door ${provider}"
+    echo "  ok    ${consument} pint ${groep}/${artifact} ${versie} — gepubliceerd, en geserveerd door ${provider}"
   else
     aanwezig="$(awk -F'\t' -v g="${groep}" -v a="${artifact}" \
                 '$1==g && $2==a { printf "%s ", $3 }' "${GESERVEERD}")"

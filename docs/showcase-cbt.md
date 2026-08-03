@@ -875,15 +875,19 @@ Twee dingen die uit dit overzicht volgen. **De meeste maatregelen zijn geen test
 
 De demo begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien, er is net een release doorheen gegaan, en er is geen register. Wat hier gebeurt is de toevoeging — dezelfde deelsystemen, nu met contracttesten.
 
-**Wat er verandert aan het deelsysteem, en wat niet.** De images worden niet herbouwd. Het deelsysteem krijgt één ding erbij: `grenzen.env`, de verklaring welke contracten hij serveert en welke hij pint. Dat is een wijziging op deelsysteemniveau en niet op microserviceniveau, en dus een nieuwe minor op dat ene niveau.
+**Aan het artefact verandert niets.** Geen image wordt herbouwd, geen samenstelling wijzigt, geen versienummer beweegt. Het contract krijgt voor het eerst een gepubliceerde versie, maar de spec zelf is dezelfde die er in hoofdstuk 0 ongelezen lag.
 
 | Versieniveau | Na hoofdstuk 0 | Na hoofdstuk 1 |
 |---|---|---|
-| deelsysteem `payment` | 1.0.1 | **1.1.0** |
+| deelsysteem `payment` | 1.0.1 | 1.0.1 |
 | microservice `payment-api` | 1.0.1 | 1.0.1 |
-| contract `payment-api` | — | **1.0.0** |
+| contract `payment-api` | niet gepubliceerd | 1.0.0 |
 
-Drie niveaus, drie verschillende getallen, op één info-endpoint af te lezen. Dat is precies waarom ze uit elkaar gehouden worden, en het staat in dit hoofdstuk al op tafel in plaats van pas in hoofdstuk 2.
+**Wat verandert is het oordeel.** Dezelfde payment 1.0.1 die in hoofdstuk 0 groen door de pipeline kwam, gaat hier langs de contractlaag. Dat is een strengere norm op een ongewijzigd artefact — en daarmee is hoofdstuk 1 in de eerste plaats geen nieuwe manier van werken vooruit, maar een uitspraak over wat er al staat.
+
+Dat is ook wat een squad als eerste meemaakt die dit invoert: de eerste run gaat niet over de volgende release maar over de huidige. Gaat hij rood, dan heeft de pipeline niets kapotgemaakt — **hij heeft zichtbaar gemaakt wat al niet klopte.** Het artefact was nooit conform; er keek alleen niemand.
+
+Zou de deelsysteemversie hier wél oplopen, dan zou dat suggereren dat er iets aan het deelsysteem is veranderd. Er is niets veranderd. Er wordt alleen scherper gekeken, en dat is een eigenschap van de pipeline en niet van wat erdoorheen gaat.
 
 | # | Scène | Zichtbaar |
 |---|---|---|
