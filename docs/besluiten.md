@@ -341,3 +341,47 @@ tegen te spreken.
 **Eén cel gecorrigeerd.** De CI-omgeving had "—" bij buitenwereld. Ook daar is de
 buitenwereld gestubd, net als de buren; dat volgt uit de regel en stond er anders.
 
+## 2026-08-03 — Zes pipelines per artefact, en gedeelde pipelines die niemand tegenhouden
+
+Er stonden er vier. Er ontbraken er twee, en het onderscheid tussen de twee soorten stond
+er niet.
+
+**Het contract krijgt een eigen pipeline.** Een grens wijzigt op een ander moment dan de
+code die hem implementeert, en de contractversie beweegt los van de microserviceversie. Als
+publiceren een stap in de microservicepipeline was, zou elke codewijziging aan de spec komen
+en zou een spec zonder implementatie niet te publiceren zijn — terwijl spec-first juist
+vraagt dat het contract er eerder is.
+
+**Productie hoort in het model, ook al bouwen we hem niet.** De belofte is dat een squad
+zijn deelsysteem zelf naar productie brengt; stopt het model bij Acceptatie, dan stopt het
+verhaal één stap te vroeg. Een vierde omgeving op een laptop toont niets nieuws, dus hij
+wordt beschreven en niet gebouwd — en dat staat erbij.
+
+Op productie staat **check** en niet test. Daar wordt niet meer aangetoond dat het werkt,
+daar wordt waargenomen dat het werkt: health, versies, monitoring. Wie op productie test,
+heeft de omgevingen ervoor niet vertrouwd.
+
+**Twee soorten pipelines, en het verschil is waar ze aan hangen.** De zes per artefact
+hangen aan een wijziging en zijn een gate. De gedeelde — alle grenzen, alle smokes, alle
+gebruikersflows — hangen aan een moment, want de samenstelling verandert ook als jij niets
+doet. Daaruit volgt de regel: **een gedeelde pipeline is nooit een gate voor één squad.**
+Moet een squad wachten tot de tribe-brede run groen is, dan is de afstemming terug die
+contracttesten wegneemt, alleen nu in gereedschap gegoten.
+
+## 2026-08-03 — O2 gesloten: de omgeving wordt met zichzelf vergeleken
+
+De versieconformiteitscheck wachtte op een antwoord: waar komt de verwachte samenstelling
+vandaan? Die vraag was fout gesteld, en dat werd zichtbaar door de pipeline "alle grenzen".
+
+Er bestaat geen verwachte samenstelling. Randvoorwaarde 4 zegt dat elk deelsysteem op zijn
+eigen tempo opschuift, dus er is geen moment waarop een bepaalde combinatie de bedoelde is.
+Een lijst met verwachte versies zou die randvoorwaarde tegenspreken en zou verouderen zodra
+iemand anders releaset.
+
+De juiste vraag is niet "draait hier de bedoelde combinatie" maar "sluit alles hier op
+elkaar aan". Die is uit de omgeving zelf af te leiden: elke pin die een consumer meldt, moet
+door een provider op diezelfde omgeving geserveerd worden. Geen bestand, geen onderhoud.
+
+In hoofdstuk 5 doet hij daarmee precies wat hij moet: een consumer die gepind staat op een
+versie die niemand meer serveert wordt rood, zonder dat iemand een lijst bijhield.
+

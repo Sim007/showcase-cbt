@@ -521,37 +521,64 @@ Wat per omgeving verschilt, staat niet in een tweede servicedefinitie maar in en
 
 ---
 
-### 1.4 Vier pipelines
+### 1.4 De pipelines
 
-Bouwen gebeurt per microservice, deployen per deelsysteem. Dat levert vier soorten
-pipeline op — vier scripts, meer instanties: de eerste draait per microservice, de andere
-drie per deelsysteem.
+Een pipeline hoort bij één artefact en bij één eigenaar. Dat levert zes soorten op: één
+voor het contract, één voor de microservice, en vier voor het deelsysteem onderweg naar
+productie.
 
-| # | Pipeline | Per | Stappen |
-|---|---|---|---|
-| 1 | microservice | microservice | build · `unit` · `integratie` · image met eigen versie en een label voor de contractversies |
-| 2 | deelsysteem → CI | deelsysteem | efemere omgeving neerzetten · healthcheck · contractverificatie · opruimen |
-| 3 | deelsysteem → Test | deelsysteem | deploy · healthcheck · smoke van dat deelsysteem |
-| 4 | deelsysteem → Acceptatie | deelsysteem | deploy · gebruikersflow met het label van dat deelsysteem |
+| # | Pipeline | Per | Draait als | Stappen |
+|---|---|---|---|---|
+| 1 | schema → register | grens | de spec wijzigt | diff-gate · publiceren met expliciete versie |
+| 2 | microservice | microservice | de code wijzigt | build · `unit` · `integratie` · image met eigen versie |
+| 3 | deelsysteem → CI | deelsysteem | 2 groen | efemere omgeving · stub uit het register · contractverificatie · e2e binnen het deelsysteem · opruimen |
+| 4 | deelsysteem → Test | deelsysteem | 3 groen | deploy · healthcheck · versieconformiteit · smoke van dat deelsysteem |
+| 5 | deelsysteem → Acceptatie | deelsysteem | 4 groen | deploy · gebruikersflow met het label van dat deelsysteem |
+| 6 | deelsysteem → Productie | deelsysteem | 5 groen | deploy · **check**: health, versies, monitoring |
 
-**De gate is telkens de vorige omgeving groen.** Pipeline 2 draait als de microservices van
-het deelsysteem groen zijn, 3 als 2 groen is, 4 als 3 groen is. Er is geen moment waarop
-alles tegelijk verhuist; elk deelsysteem schuift op zijn eigen tempo op.
+**Hiermee brengt een squad zijn deelsysteem zelf naar productie.** Geen enkele stap vraagt
+om een ander team, en de gate is telkens de vorige omgeving groen. Er is geen moment waarop
+alles tegelijk verhuist.
 
-**Wat op Test en Acceptatie draait, mag klein blijven.** De diepte zit in pipeline 2: daar
+**Het contract heeft een eigen pipeline omdat het een eigen levenscyclus heeft.** Een grens
+wijzigt op een ander moment dan de code die hem implementeert, en de contractversie beweegt
+los van de microserviceversie. Zou publiceren een stap in pipeline 2 zijn, dan zou elke
+codewijziging aan de spec komen en zou een spec zonder implementatie niet te publiceren
+zijn — terwijl spec-first juist vraagt dat het contract er eerder is.
+
+**Op productie staat "check" en niet "test".** Daar wordt niet meer aangetoond dat het werkt;
+daar wordt waargenomen dat het werkt. Health, welke versies er staan, en monitoring — dat is
+testfeature F4. Wie op productie test, heeft de vorige omgevingen niet vertrouwd.
+
+**Daarnaast pipelines die over het geheel gaan.** De lijst is open; wat erbij komt voldoet
+aan dezelfde twee eisen.
+
+| Pipeline | Wat hij vaststelt |
+|---|---|
+| alle grenzen | elke pin die op de omgeving staat, wordt daar ook geserveerd |
+| alle smokes | de samenstelling loopt nog, ook als er niets is gedeployd |
+| alle gebruikersflows | de keten doet wat een gebruiker verwacht |
+
+**Het verschil tussen de twee groepen is waar ze aan hangen.** Pipeline 1 tot en met 6
+hangen aan een artefact: er is iets gewijzigd, en dit is het bewijs dat het mag doorschuiven.
+De gedeelde pipelines hangen aan een moment: de samenstelling verandert ook als niemand iets
+deployt, want de buurman deployt wel. Ze draaien daarom gepland.
+
+**Een gedeelde pipeline is nooit een gate voor één squad.** Zou een squad moeten wachten tot
+de tribe-brede run groen is, dan is de afstemming terug die contracttesten juist wegneemt —
+alleen nu in gereedschap gegoten. Ze stellen vast en ze houden niemand tegen; wie ze rood
+maakt, hoort het als eerste.
+
+**Wat op Test en Acceptatie draait, mag klein blijven.** De diepte zit in pipeline 3: daar
 staat het deelsysteem alleen, met stubs waar zijn buren horen, en daar is een run goedkoop.
 Op Test volstaat dat het loopt, op Acceptatie dat de keten doet wat een gebruiker
 verwacht. Geen smoke op Acceptatie — de laag eronder heeft dat al aangetoond, en herhalen
 verplaatst werk naar de duurste plek.
 
-**Een gebruikersflow spant over deelsystemen heen.** Pipeline 4 van het ene deelsysteem
+**Een gebruikersflow spant over deelsystemen heen.** Pipeline 5 van het ene deelsysteem
 heeft daarom de andere nodig op die omgeving. Dat is geen uitzondering maar wat een
 gebruikersflow ís: hij volgt wat een gebruiker doet, en die merkt niets van de indeling in
 deelsystemen. Staat de omgeving nog niet compleet, dan valt de flow terecht om.
-
-**De smoke over álle grenzen hangt niet aan een deploy.** Die gaat over de samenstelling,
-en die verandert ook als er niets wordt gedeployd. Hij draait daarom gepland en is van de
-tribe, niet van een squad.
 
 ---
 
@@ -687,7 +714,13 @@ Geen van beide is een pipelinestap. De controles draaien na **elke** deploy, ong
 | versieconformiteit | welke contractversies draaien samen |
 | smoke over de echte keten | de technische integratie werkt |
 
-Elk deelsysteem meldt op zijn info-endpoint **beide** versies: zijn eigen serviceversie, en de contractversies waar hij aan hangt — bij de provider de versies die hij serveert, bij de consumer zijn pin. Dat onderscheid moet zichtbaar zijn, anders leest niemand af of `1.1.0` over het deelsysteem of over de grens gaat. De versieconformiteitscheck kijkt naar de contractversies en vergelijkt die samenstelling met de verwachte.
+Elk deelsysteem meldt op zijn info-endpoint **beide** versies: zijn eigen serviceversie, en de contractversies waar hij aan hangt — bij de provider de versies die hij serveert, bij de consumer zijn pin. Dat onderscheid moet zichtbaar zijn, anders leest niemand af of `1.1.0` over het deelsysteem of over de grens gaat.
+
+**De check vergelijkt niet met een verwachte samenstelling, maar met zichzelf** (O2, gesloten). De vraag is: wordt elke pin die op deze omgeving staat, op deze omgeving ook geserveerd? Dat is uit de omgeving zelf af te leiden — de consumers melden hun pins, de providers melden wat ze serveren — en er is dus geen bestand dat bijgehouden moet worden.
+
+Dat is niet de goedkoopste oplossing maar de enige juiste, want een *verwachte* samenstelling bestaat hier niet: elk deelsysteem schuift op zijn eigen tempo op, dus er is geen moment waarop een bepaalde combinatie de bedoelde is. Een lijst met verwachte versies zou randvoorwaarde 4 tegenspreken en zou bij elke release van iemand anders verouderen. De vraag "draait hier de bedoelde combinatie" is daarmee de verkeerde vraag; "sluit alles hier op elkaar aan" is de goede.
+
+In hoofdstuk 5 doet die check zijn werk: een consumer die gepind staat op een versie die niemand meer serveert, wordt rood zonder dat iemand een lijst hoefde bij te houden.
 
 Die check is niet zomaar een van de drie. Hij is degene die het afzien van een `can-i-deploy`-gate verdedigbaar maakt: de smoke gaat niet over inhoud en komt groen door een verkeerde versiecombinatie heen, de versieconformiteitscheck niet.
 
@@ -778,7 +811,7 @@ De diff-gate hoort bij de contractwijziging, niet bij de pipeline van Payment of
 
 Hiermee dekt dit hoofdstuk alle drie de detectiemomenten in de bouwstraat: breaking change op de schemawijziging, non-conforme provider-implementatie, non-conforme consumeraanroep. In hoofdstuk 1 heeft de gate nog niets te vergelijken — er is één versie. Vanaf hoofdstuk 2 doet hij werk.
 
-De aanroep van `publish-contract` is een aansluitpunt, net als bij `get-contract`: hier handmatig, later vanuit een pipeline. Dat verandert wie het script start, niet wat het doet.
+Deze drie stappen zijn pipeline 1 uit 1.4: het contract heeft een eigen pipeline omdat het een eigen levenscyclus heeft. Wie hem start is een vraag voor de werkwijze en niet voor de techniek — de spec kan in de repository van de provider staan of in een eigen spec-repository met review door de architect (O5). Dat verandert wie het script aanroept, niet wat het doet.
 
 ---
 
@@ -847,6 +880,7 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 | Angular UI | hoofdstuk 8 |
 | Publicatie vanuit een pipeline | hier handmatig; O5 |
 | Monitoring op Productie (F4) | vereist een productielaag; O8 |
+| Pipeline 6, naar Productie | beschreven in 1.4, niet gebouwd: een vierde omgeving op een laptop toont hetzelfde als Acceptatie zonder de koppelingen |
 
 ---
 
@@ -860,11 +894,12 @@ De wijzigingslog is daarmee ook de driftlog: elke regel is een moment waarop de 
 
 De stub wordt zelf gegenereerd en draait op WireMock (O7, gesloten). Prism van Stoplight is geprobeerd en doet padtemplates, `example`-waarden en requestvalidatie native, maar kan geen response kiezen op basis van de requestinhoud — en dat heeft het scenario uit 1.2 nodig. De reden staat in 1.6.
 
+De **versieconformiteitscheck vergelijkt de omgeving met zichzelf** (O2, gesloten). Er is geen verwachte samenstelling omdat er geen bedoelde combinatie bestaat: elk deelsysteem schuift op zijn eigen tempo op. De check stelt vast dat elke pin op de omgeving daar ook geserveerd wordt; zie 1.7.
+
 De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het contract. Het schema legt vast dat er een `code` en een `message` zijn; welke codes voorkomen niet. Een consumer reageert op de HTTP-status, niet op een codestring — anders wordt elke nieuwe foutsituatie bij de provider een contractwijziging. De implementatie gebruikt daardoor ook codes die niet in de spec als voorbeeld staan, zoals `INVALID_REQUEST` bij een niet-gedeclareerd veld.
 
 | # | Openstaand punt |
 |---|---|
-| O2 | Verwachte samenstelling voor de versieconformiteitscheck: bestand in de repo of afgeleid uit de pins van de deelnemende pipelines |
 | O3 | Eigenaarschap: wie bewaakt de versieconformiteit en wie voert de rollback uit |
 | O4 | Version state voor deprecated versies in Apicurio 3.x — naamgeving verifiëren |
 | O5 | Eigenaarschap van de spec: in de provider-repo of in een aparte spec-repo met review door de architect. Technisch afgedekt via het aansluitpunt in 1.9; dit is een vraag voor de werkwijze, niet voor deze showcase |
