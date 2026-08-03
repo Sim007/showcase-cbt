@@ -28,13 +28,13 @@ dan zie je het deelsysteem door de gang lopen en bij elke gate een oordeel krijg
 
 Alleen de terminal is ook goed: `CBT_LIVE=0 01-basis/demo/demo.sh`.
 
-De demo begint bij de **uitgangssituatie**: Order en Payment draaien al op Test en
-Acceptatie, met pipelines en tests die het al deden, en het schema van de grens ligt als
-bestand naast de code. Wat er níet is, is het register en de contracttesten. Die twee komen
-er in stap 1 bij, waarna dezelfde gang nog een keer loopt — nu met gate, stub en
-verificatie aan beide kanten. Zo zie je wat contracttesten toevoegt in plaats van dat je
-het moet geloven. Hij eindigt met het rapport. Hij ruimt zelf op voordat hij begint, dus je kunt hem meteen opnieuw
-draaien. Achteraf blijven Test en Acceptatie staan om naar te kijken; `opruimen.sh` haalt
+De demo begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien al, en er is geen
+register. Hier komt eerst het register erbij, en daarna loopt dezelfde gang nog een keer —
+dezelfde deelsystemen, dezelfde versies, nu met gate, stub en verificatie aan beide kanten.
+Zo zie je wat contracttesten toevoegt in plaats van dat je het moet geloven.
+
+Draai eerst `00-start/demo/demo.sh`; deze stopt met een melding als er niets op Test staat.
+Achteraf blijven Test en Acceptatie staan om naar te kijken; `ci/opruimen-alles.sh` haalt
 ook die weg.
 
 Het demoscript bedenkt niets zelf: het roept dezelfde pipelines aan die een squad ook
@@ -43,10 +43,22 @@ commando's die de demo uitvoert.
 
 ---
 
-## De vier pipelines
+## De pipelines
 
-Bouwen gebeurt per **microservice**, deployen per **deelsysteem**. Dat levert vier soorten
-pipeline op, en de gate is telkens de vorige omgeving groen.
+Bouwen gebeurt per **microservice**, deployen per **deelsysteem**, en het contract heeft
+een eigen pipeline. De gate is telkens de vorige omgeving groen — behalve bij de laatste,
+en dat is met opzet.
+
+### 0 — het schema naar het register
+
+```sh
+ci/pipeline-contract.sh order-payment payment-api 1.0.0 \
+  contracts/order-payment/v1.0.0/openapi.yaml
+```
+
+De diff-gate met de publicatie, en daarna terughalen ter controle. Het contract heeft een
+eigen pipeline omdat het een eigen levenscyclus heeft: een grens wijzigt op een ander moment
+dan de code die hem implementeert, en spec-first vraagt dat het contract er eerder is.
 
 ### 1 — de microservice bouwen en testen
 
@@ -106,9 +118,9 @@ curl -s http://localhost:8081/actuator/info
 | `build.version` | 1.0.0 | de microservice, uit de pom |
 | `contract.serveert` | 1.0.0 | de grens, uit het register |
 
-Voor Payment lopen de contractversie en de andere twee al uit elkaar: de bugfix uit
-hoofdstuk 0 raakte de grens niet, dus die bleef op 1.0.0 staan. Order staat nog op 1.0.0
-over de hele linie. Vanaf hoofdstuk 2 gaan ook de eerste twee los van elkaar bewegen.
+Ze staan nu alle drie op 1.0.0, en dat is opzet: tussen hoofdstuk 0 en 1 verandert er geen
+enkel versienummer, zodat het verschil tussen de twee rapporten alleen contracttesten kan
+zijn. Vanaf hoofdstuk 2 lopen ze uit elkaar, en dan is het onderscheid het punt.
 
 ### 4 — het deelsysteem naar Acceptatie
 
@@ -218,7 +230,8 @@ groen draaien. Alleen de toetsing aan de spec ziet het.
 | Scène | Waarom het ertoe doet |
 |---|---|
 | Order draait groen zonder Payment in zijn CI-omgeving | de consumer is onafhankelijk van zijn buur |
-| De stub komt uit het register, niet uit de test | de norm ligt buiten de test |
+| De stub komt uit het register, niet uit een hoofd | vergelijk met `deelsystemen/order/stub-handgeschreven/` uit hoofdstuk 0 |
 | `600.00` levert `CANCELLED`, geen fout | een afgewezen betaling is geen contractschending |
 | `amount: 0` levert 400 `INVALID_AMOUNT` | dát is er wel een |
+| Geen Acceptatie-pipeline wacht op de ander | de gebruikersflow is gedeeld en geen gate |
 | Drie versies naast elkaar op één endpoint | contract, microservice en deelsysteem bewegen los |
