@@ -474,11 +474,28 @@ De drempel van 500,00 is willekeurig maar vast. Ze levert twee scenario's op die
 
 ### 1.3 Drie omgevingen
 
+Vier scopes, elk met een eigen plek en een eigen vraag. De trap loopt van één stuk code naar de hele keten, en bij elke trede is er minder vervangen.
+
+| Scope | Waar het draait | Wat er echt is | Wat vervangen is | Testlaag |
+|---|---|---|---|---|
+| microservice | de build, geen omgeving | de eigen code | de buur, als mock **binnen** de test | unit, integratie |
+| deelsysteem | efemere CI-omgeving | alle services van het deelsysteem | elke grens naar buiten, als stub uit het register | contractverificatie, e2e binnen het deelsysteem |
+| systeem | Test | alle deelsystemen | alleen nog de buitenwereld | e2e over het systeem |
+| systeem + externe interfaces | Acceptatie | ook de externe koppelingen | niets | e2e over de keten |
+
+**Eén regel eronder:** een omgeving vervangt precies wat hij niet bevat, en de vervanging komt uit het contract van die grens. Elke trede maakt de vervanging kleiner, tot er niets meer te vervangen valt.
+
+**Stubs bestaan op één niveau.** Eronder is het geen stub maar een mock in code: in hetzelfde proces, zonder deploy, en met de norm binnen de test. Erboven valt er niets te stubben, want de buren staan er echt. Wie op Test een stub van een buurdeelsysteem tegenkomt, kijkt naar een fout — niet naar een keuze.
+
+**Waarom Test én Acceptatie.** Het verschil is eigenaarschap, niet volledigheid. Test is de laatste omgeving die je volledig bezit: alles erin is te resetten, te versiebeheren en af te dwingen. Acceptatie is de eerste waar dat niet meer geldt — een externe partij heeft zijn eigen releasekalender, zijn eigen storingen en zijn eigen testdata, en die zet jij niet terug.
+
+Samenvoegen koopt twee problemen tegelijk: een storing bij een ander maakt jouw Test rood, en een reset van Test vraagt om iets terug te zetten wat niet van jou is. Daarom loopt de knip precies op de grens van wat je bezit. Dat is de technische reden voor een plek waar externe koppelingen echt zijn; of dat een blijvende omgeving moet zijn waar mensen met eigen ogen naar kijken, is een andere vraag — zie bijlage A.
+
 | | CI-omgeving | Test | Acceptatie |
 |---|---|---|---|
 | Samenstelling | het deelsysteem + `stub.yml` | alle deelsystemen | alle deelsystemen + `extern.yml` |
 | Buren | WireMock-stub uit de spec | de echte deelsystemen | de echte deelsystemen |
-| Buitenwereld | — | **geen** koppeling; externe partijen staan als stub | **wel** koppeling |
+| Buitenwereld | gestubd, net als de buren | **geen** koppeling; wat buiten staat is gestubd | **wel** koppeling, niets gestubd |
 | Deploy | het deelsysteem uit deze pipeline | één deelsysteem tegelijk | één deelsysteem tegelijk |
 | Gate | de eigen tests staan groen | de controles op Test staan groen voor dat deelsysteem | — |
 | Testlaag | integratie | e2e | e2e |
@@ -722,6 +739,8 @@ De piramide houdt drie lagen. Contracttesten voegt er geen vierde aan toe.
 | **unit** | unit tests — norm in de test | — |
 | **integratie** | integratietest met eigen DB — norm in de test | healthcheck<br>contractverificatie op de CI-omgeving — norm = **spec** |
 | **e2e** | — | smoke op Test · gebruikersflow op Acceptatie |
+
+**e2e is relatief aan wat de omgeving bevat.** Dezelfde laag loopt op drie scopes: op de CI-omgeving door het deelsysteem heen met de buren gestubd, op Test door het systeem, op Acceptatie door de keten met de buitenwereld erbij. Dat is geen drie lagen maar één laag op drie treden van de trap uit 1.3. Zolang Payment uit één service bestaat valt e2e binnen het deelsysteem samen met de contractverificatie; vanaf hoofdstuk 8, als `payment-mf` erbij komt, wordt het onderscheid zichtbaar.
 
 **De as is scope, niet snelheid.** Contractverificatie draait tegen een gedeployde container en is daarmee trager dan de smoke op Test, die een handvol aanroepen doet — en staat er toch onder. Wat de lagen ordent is hoeveel er tegelijk in beeld is: één klasse, één deelsysteem, de hele keten.
 
@@ -1010,6 +1029,8 @@ Acceptatie staat in deze showcase omdat er behoefte is aan een stabiele plek om 
 De showcase neemt hem daarom op zoals hij is, en laat tegelijk zien wat hem overbodig zou maken. **Hoofdstuk 4 draait de gebruikersflow geautomatiseerd** — dat is precies de reden dat Acceptatie bestaat, en meteen het bewijs dat het gepland kan. **Hoofdstuk 7 legt de externe grens onder een contract** — dat is de tweede reden, en die valt daarmee grotendeels weg. Wie beide heeft staan, houdt van de technische onderbouwing van een derde omgeving weinig over.
 
 Wat er dan overblijft is niet-technisch: mensen willen er met eigen ogen naar kijken voordat het naar buiten gaat. Dat is vertrouwen en geen bewijs, en dat argumenteer je niet weg met gereedschap. Wie doet alsof dat hetzelfde probleem is, verliest het gesprek.
+
+**Dit spreekt de eigenaarschapsgrens uit 1.3 niet tegen.** Er is een echte technische knip tussen "alles wat ik bezit is er" en "alles is er": externe partijen zijn niet te resetten en niet af te dwingen, en dat hoort niet in Test. Wat een concessie is, is de vorm — een blijvende omgeving waar mensen met eigen ogen naar kijken voordat het naar buiten gaat. De knip blijft; de vraag is of hij een derde omgeving met vaste bewoners hoeft te zijn.
 
 Deze bijlage staat er niet om een omgeving af te schaffen, maar om te voorkomen dat hij onbesproken blijft. Een concessie die niemand benoemt, wordt vanzelf een uitgangspunt.
 

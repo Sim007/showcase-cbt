@@ -310,3 +310,34 @@ Daarmee klopte het document op één punt niet: het zei dat de handgeschreven mo
 CI-omgeving staat. Hij staat binnen de test. Dat maakt het contrast met hoofdstuk 1 scherper
 in plaats van vager — de stub verplaatst de norm naar buiten de test.
 
+## 2026-08-03 — Vier scopes, en stubs bestaan op één niveau
+
+De omgevingen stonden als drie kolommen naast elkaar beschreven, elk met eigen kenmerken.
+Dat leest als drie keuzes terwijl het één trap is: microservice, deelsysteem, systeem,
+systeem plus de buitenwereld. Elke trede vervangt minder dan de vorige.
+
+De regel eronder is: **een omgeving vervangt precies wat hij niet bevat, en de vervanging
+komt uit het contract van die grens.** Daaruit volgt dat stubs op één niveau bestaan — de
+CI-omgeving. Eronder is het een mock in code, in hetzelfde proces en met de norm binnen de
+test. Erboven valt er niets te stubben. Een stub van een buurdeelsysteem op Test is
+daarmee geen keuze maar een fout, en dat is nu na te kijken in plaats van aan te voelen.
+
+**e2e bleek relatief aan de scope.** Dezelfde laag loopt op drie treden: door het
+deelsysteem, door het systeem, door de keten. Dat verscherpt "de as is scope, niet
+snelheid" in plaats van het tegen te spreken. Zolang Payment uit één service bestaat valt
+e2e binnen het deelsysteem samen met de contractverificatie; vanaf hoofdstuk 8 wordt het
+onderscheid zichtbaar.
+
+**Waarom er twee blijvende omgevingen zijn, is nu beantwoord: eigenaarschap.** Test is de
+laatste omgeving die je volledig bezit — resetten, versiebeheren, afdwingen. Acceptatie is
+de eerste waar dat niet meer geldt. Samenvoegen betekent dat andermans storing jouw Test
+rood maakt en dat een reset iets moet terugzetten wat niet van jou is.
+
+Dat botst niet met bijlage A. De knip op eigenaarschap is technisch en blijft; wat daar een
+concessie heet is de *vorm* — een blijvende omgeving met mensen die ernaar kijken. Die
+nuance stond er niet en is toegevoegd, want zonder haar lijken 1.3 en bijlage A elkaar
+tegen te spreken.
+
+**Eén cel gecorrigeerd.** De CI-omgeving had "—" bij buitenwereld. Ook daar is de
+buitenwereld gestubd, net als de buren; dat volgt uit de regel en stond er anders.
+
