@@ -641,6 +641,20 @@ Dezelfde deelsystemen, dezelfde RC-versies, plus de koppelingen naar buiten. Eé
 
 **Transparantie.** De uitkomst per deelsysteem staat op één dashboard, groen of rood. Dat is geen rapportage achteraf maar onderdeel van het mechanisme: waarnemen in plaats van voorspellen werkt alleen als de waarneming zichtbaar is. Een rood vlak dat niemand ziet, is geen signaal.
 
+Dat dashboard beantwoordt drie vragen, en de derde is er niet bij gekomen om te testen (O11, gesloten):
+
+| Vraag | Waar het antwoord vandaan komt |
+|---|---|
+| Wat draait er waar? | de info-endpoints: deelsysteem-, microservice- en contractversie per omgeving |
+| Welke gates zijn gepasseerd, en wanneer? | het rapport dat de pipelines schrijven |
+| Welke grenzen zijn er, wie serveert ze en wie hangt eraan? | het register |
+
+**De derde vraag is de tribe-vraag.** Vraag een squad welke interfaces zijn deelsysteem aanbiedt, en het antwoord komt traag, incompleet of niet. Dat is geen onwil en geen gebrek aan overzicht bij de mensen: er is geen plek waar het staat. Eén register maakt er een opzoekvraag van, en pas dan is een tribe-breed beeld mogelijk zonder dat iemand het bij elkaar hoeft te vragen. Autonomie zonder dat beeld is geen autonomie maar onzichtbaarheid — en dat is een reden voor het register die losstaat van testen.
+
+**Het dashboard leest echte toestand.** Versies uit draaiende info-endpoints, grenzen uit het register, gates uit het rapport. Geen enkel gegeven komt uit een demoscript, want dan toont het dashboard wat iemand bedoelde in plaats van wat er is. Dat is dezelfde regel als bij de stub, om dezelfde reden.
+
+**Voorlopig één pagina.** De stip op de horizon is een site: per deelsysteem een pagina, per grens een pagina, en de testsoorten als kolommen zodat er later een UI-test bij kan zonder verbouwing. Voor dit hoofdstuk is één pagina genoeg — bovenaan wat er nu draait, eronder wat er in deze run is gebeurd.
+
 **Rood: eerst weer draaiend, dan pas de vraag hoe het kwam.** Op Test en Acceptatie draaien release candidates, en dan is vooruit meestal sneller dan terug: een kapotte RC is een signaal om snel een nieuwe te leveren. Rollback is het antwoord wanneer vooruit niet snel kan. Bij een afwijkende versiesamenstelling is roll-forward vrijwel altijd juist — het ontbrekende deelsysteem alsnog deployen in plaats van het geslaagde terugtrekken. Rollback geldt voor deployments; het register kent geen rollback, daar is alleen een nieuwe versie.
 
 Voordat een controle een correctie in gang zet, mag hij nog een keer draaien. Herhalen is goedkoop en scheidt een echte fout van een toevallige — dat is de winst van waarnemen boven voorspellen.
@@ -729,23 +743,46 @@ Twee dingen die uit dit overzicht volgen. **De meeste maatregelen zijn geen test
 
 ### 1.11 Demo
 
-De basisdemo loopt de hele productiegang af: contract uit het register, stub eruit gegenereerd, beide deelsystemen langs de vier pipelines tot en met Acceptatie. Dit is de demo die het mechanisme in één keer uitlegt; scenariomateriaal blijft er bewust buiten.
+De demo bestaat uit drie bedrijven. Ze lopen achter elkaar en zijn los te draaien: wie de uitgangssituatie al kent, begint bij **c**.
+
+| | Bedrijf | Wat er gebeurt | Wat het aantoont |
+|---|---|---|---|
+| a | De uitgangssituatie | beide deelsystemen 1.0.0 op Test en Acceptatie | er staat iets werkends; de showcase begint niet bij nul |
+| b | Een release zoals het nu gaat | payment 1.0.1 door de bestaande pipeline naar Acceptatie | welke pipeline en welke tests er al zijn — en dat het schema nergens in voorkomt |
+| c | Contracttesten erbij | het register gevuld, de contracttesten in de pipeline, beide deelsystemen naar 1.1.0 | wat contracttesten toevoegt, aan dezelfde deelsystemen |
+
+**Waarom b erin zit.** Zonder b *beweert* de demo dat er al pipelines en tests zijn; met b is het te zien. Wat er niet gebeurt weegt daarbij even zwaar als wat er wel gebeurt: in geen enkele stap van b komt het schema voor. Het ligt in de repository, het wordt niet gelezen, en niets valt erop. Dat is "spec-first is er wel, maar niet expliciet" aangetoond in plaats van beweerd.
+
+**b is ook de makkelijkste scène om verkeerd te lezen.** Alles wordt groen en de wijziging gaat goed; het risico is dat het publiek concludeert dat er niets aan de hand is. Daarom is de wijziging in b met opzet een gewone bugfix en geen breuk — die zit in hoofdstuk 3 — en eindigt het bedrijf op de vraag die het zelf niet kan beantwoorden: *Payment 1.0.1 staat op Acceptatie en alles was groen. Weet Order dat?* Niets in die pipeline heeft het gecontroleerd. Dat het goed ging is gebleken, niet vastgesteld.
+
+**Wat c aan het deelsysteem verandert, en wat niet.** De images worden niet herbouwd. Het deelsysteem krijgt één ding erbij: `grenzen.env`, de verklaring welke contracten hij serveert en welke hij pint. Dat is een wijziging op deelsysteemniveau en niet op microserviceniveau, en dus een nieuwe minor op dat ene niveau.
+
+| Versieniveau | Na a | Na b | Na c |
+|---|---|---|---|
+| deelsysteem `payment` | 1.0.0 | 1.0.1 | **1.1.0** |
+| microservice `payment-api` | 1.0.0 | 1.0.1 | 1.0.1 |
+| contract `payment-api` | — | — | **1.0.0** |
+
+Drie niveaus, drie verschillende getallen, op één info-endpoint af te lezen. Dat is precies waarom ze uit elkaar gehouden worden, en het staat in dit hoofdstuk al op tafel in plaats van pas in hoofdstuk 2.
+
+**De scènes van c.**
 
 | # | Scène | Zichtbaar |
 |---|---|---|
-| 1 | Order's CI-omgeving bevat de stub en geen Payment; zijn pipeline draait volledig groen | onafhankelijkheid van de consumer |
-| 2 | Payment's pipeline draait groen, met de volledige contractverificatie op zijn CI-omgeving | conformiteit van de provider |
-| 3 | Test omhoog, drie versieniveaus af te lezen | welke versies samen draaien, en dat ze los bewegen |
-| 4 | smoke groen tegen de echte keten | de samenstelling loopt |
-| 5 | Acceptatie omhoog, de gebruikersflow groen | de keten doet wat een gebruiker verwacht |
+| 1 | het contract gepubliceerd in het register, immutable en per versie | het schema is een artefact geworden |
+| 2 | Order's CI-omgeving bevat de stub en geen Payment; zijn pipeline draait volledig groen | onafhankelijkheid van de consumer |
+| 3 | Payment's pipeline draait groen, met de volledige contractverificatie op zijn CI-omgeving | conformiteit van de provider |
+| 4 | Test omhoog, drie versieniveaus af te lezen | welke versies samen draaien, en dat ze los bewegen |
+| 5 | smoke groen tegen de echte keten | de samenstelling loopt |
+| 6 | Acceptatie omhoog, de gebruikersflow groen | de keten doet wat een gebruiker verwacht |
 
-Scène 1 en 2 zijn in willekeurige volgorde te draaien; begin bewust met Payment, omdat het publiek verwacht dat de consumer als laatste moet.
+Scène 2 en 3 zijn in willekeurige volgorde te draaien; begin bewust met Order, omdat het publiek verwacht dat de consumer als laatste moet.
 
-**Scène 1 gaat niet over de afwezigheid van Payment.** Payment draait op Test en op Acceptatie, zoals in elke werkende opzet. Wat de scène toont is dat Order's *CI-omgeving* hem niet bevat: de buur staat daar als stub uit het register, en de pipeline komt tot een oordeel zonder dat er ergens met iemand hoeft te worden afgestemd.
+**Scène 2 gaat niet over de afwezigheid van Payment.** Payment draait op Test en op Acceptatie, en na a en b is dat aantoonbaar in plaats van aangenomen. Wat de scène toont is dat Order's *CI-omgeving* hem niet bevat: de buur staat daar als stub uit het register, en de pipeline komt tot een oordeel zonder dat er ergens met iemand hoeft te worden afgestemd.
 
-**Scène 5 vraagt een volledige omgeving.** Een gebruikersflow spant over deelsystemen heen, dus op een lege Acceptatie moeten eerst beide deelsystemen staan voordat er een flow kan draaien. Op een blijvende omgeving speelt dat niet — daar staan ze al — maar een demo begint met een schone lei en moet die eerste vulling dus zelf doen.
+**Scène 6 vraagt een volledige omgeving.** Een gebruikersflow spant over deelsystemen heen, dus op een lege Acceptatie moeten eerst beide deelsystemen staan voordat er een flow kan draaien. Op een blijvende omgeving speelt dat niet — daar staan ze al — maar een demo begint met een schone lei en moet die eerste vulling dus zelf doen.
 
-De demo eindigt met een rapport: elke stap met tijdstip en uitkomst, als markdown en als pagina. Dat is hetzelfde testbewijs dat een pipeline oplevert, en niet iets wat voor de demo apart wordt gemaakt.
+De demo eindigt met het beeld uit 1.7: bovenaan wat er nu draait, eronder elke stap met tijdstip en uitkomst. Dat is hetzelfde testbewijs dat een pipeline oplevert en niet iets wat voor de demo apart wordt gemaakt.
 
 De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen branches: een branch per scenario moet worden bijgewerkt bij elke wijziging in de basis. Elk script past de wijziging toe, draait de betrokken pipelines en eindigt met een reset naar de uitgangssituatie.
 
@@ -757,7 +794,7 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 |---|---|
 | Contractwijziging, breaking change, deprecation | hoofdstuk 2, 3 en 5 |
 | De gebruikersflow en de koppelingen naar buiten op Acceptatie | hoofdstuk 4 |
-| Het dashboard bouwen; hier alleen beschreven | hoofdstuk 4 of 5; zie O11 |
+| De site: per deelsysteem en per grens een pagina | later; hier één pagina, zie 1.7 |
 | Async, SOAP, derde deelsysteem | hoofdstuk 6 en 7 |
 | Angular UI | hoofdstuk 8 |
 | Publicatie vanuit een pipeline | hier handmatig; O5 |
@@ -786,7 +823,6 @@ De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het cont
 | O8 | Pins op info-endpoints als surrogaat voor monitoring (F4): tijdelijk voor de showcase of blijvend naast monitoring |
 | O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
 | O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
-| O11 | Waar het dashboard uit 1.7 gebouwd wordt en waaruit hij zijn gegevens haalt. De info-endpoints leveren de contractversies (zie O8); health en de laatste smoke-uitslag komen ergens anders vandaan |
 
 ---
 

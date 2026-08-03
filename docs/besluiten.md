@@ -214,3 +214,40 @@ vervangen door één regel: start Prism met de spec.
 Twee keer nu is de nieuwste tag van een tool niet bruikbaar gebleken:
 `APICURIO_STORAGE_KIND=mem` bestaat niet meer in Apicurio 3.3.1, en `prism:5.15.10` crasht
 bij het starten. Vastgepinde versies zijn in deze showcase geen formaliteit.
+
+## 2026-08-03 — De demo begint met een release zoals het nu gaat
+
+De demo liep van een schone lei naar een volledige contractgang. De uitgangssituatie werd
+verteld en niet getoond, en dat is dezelfde fout die deze showcase aan anderen verwijt:
+beweren in plaats van aantonen. Wie bij de start niet laat zien wat er al was, krijgt
+halverwege de vraag terug.
+
+De demo heeft daarom drie bedrijven: a) wat er draait, b) een gewone patchrelease door de
+bestaande pipeline, c) contracttesten erbij. In b komt het schema in geen enkele stap voor
+— dat is de aanschouwelijke vorm van "de spec is documentatie".
+
+**Afgewogen en niet gedaan.** De wijziging in b breaking maken zou de pointe harder maken,
+maar dat is hoofdstuk 3 en die pointe moet daar landen. In b gaat het goed; het punt is dat
+niets in die pipeline het heeft vastgesteld.
+
+**Gevolg voor de versies.** c herbouwt geen images. Het deelsysteem krijgt alleen
+`grenzen.env` erbij, dus alleen de deelsysteemversie beweegt: payment staat daarna op
+deelsysteem 1.1.0, microservice 1.0.1, contract 1.0.0. Drie niveaus met drie verschillende
+getallen, in hoofdstuk 1 al af te lezen. Eerder stond er dat ze "toevallig gelijk" waren en
+dat het onderscheid pas vanaf hoofdstuk 2 zichtbaar werd; dat excuus is daarmee weg.
+
+## 2026-08-03 — Het dashboard bestaat ook zonder testen (O11 gesloten)
+
+O11 vroeg waar het dashboard gebouwd wordt en waar zijn gegevens vandaan komen. De
+aanleiding om hem te sluiten kwam van buiten het testverhaal: vraag een squad welke
+interfaces zijn deelsysteem aanbiedt, en het antwoord komt traag of niet — niet uit onwil,
+maar omdat er geen plek is waar het staat.
+
+Eén register maakt daar een opzoekvraag van. Het dashboard leest daarom uit drie bronnen:
+versies uit de draaiende info-endpoints, gates uit het rapport, grenzen uit het register.
+Geen enkel gegeven komt uit een demoscript — anders toont het wat iemand bedoelde in plaats
+van wat er is, en dat is dezelfde fout als een stub die niet uit de spec komt.
+
+Voorlopig één pagina: boven wat er nu draait, eronder wat er in deze run is gebeurd. De
+stip op de horizon is een site met een pagina per deelsysteem en per grens, en de
+testsoorten als kolommen — zodat een UI-test er later bij kan zonder verbouwing.
