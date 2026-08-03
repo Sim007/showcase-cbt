@@ -887,6 +887,19 @@ De demo begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien, er is net e
 
 Dat is ook wat een squad als eerste meemaakt die dit invoert: de eerste run gaat niet over de volgende release maar over de huidige. Gaat hij rood, dan heeft de pipeline niets kapotgemaakt — **hij heeft zichtbaar gemaakt wat al niet klopte.** Het artefact was nooit conform; er keek alleen niemand.
 
+**In deze showcase is die eerste run groen, en dat is met opzet.** Order en Payment zijn gebouwd om aan hun contract te voldoen, dus er valt niets te ontdekken. Een demo die struikelt over migratiewerk toont het mechanisme niet maar de rommel eromheen.
+
+**In werkelijkheid is die eerste run een werklijst.** Dat is het echte werk van invoeren, en het is werk voor de squad — geen knop. De lijst heeft twee soorten regels:
+
+| Bevinding | Wat je doet |
+|---|---|
+| de implementatie doet iets anders dan de spec belooft | de implementatie aanpassen |
+| de spec beschrijft iets anders dan er altijd al gebeurde | de spec corrigeren en als nieuwe versie publiceren |
+
+De tweede is in een bestaande omgeving vaak de grootste categorie: specs die één keer geschreven zijn en daarna zijn achtergebleven. Dat is geen tegenvaller maar de eerste opbrengst — vanaf dat moment klopt de beschrijving weer, en is hij afdwingbaar.
+
+En dat is het verschil met wat er nu gebeurt als er iets misgaat aan een grens: **de lijst is eindig en precies.** Per grens, per operatie, per responsecode, met de spec ernaast. Dat is iets anders dan een rode ketentest en de mededeling dat er ergens iets fout zit.
+
 Zou de deelsysteemversie hier wél oplopen, dan zou dat suggereren dat er iets aan het deelsysteem is veranderd. Er is niets veranderd. Er wordt alleen scherper gekeken, en dat is een eigenschap van de pipeline en niet van wat erdoorheen gaat.
 
 | # | Scène | Zichtbaar |

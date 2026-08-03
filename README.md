@@ -72,12 +72,17 @@ ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
 Leg daarna de twee rapporten naast elkaar. Die van hoofdstuk 0 is korter en bevat geen
 enkele regel over een contract, een stub of drift.
 
+Beide zijn groen, en dat is met opzet: deze showcase toont het mechanisme en niet het
+invoeren ervan. In een bestaande omgeving levert de eerste contractverificatie meestal een
+lijst op — en dat is het echte werk van een squad. Wat het gereedschap doet is die lijst
+eindig en precies maken.
+
 ## De hoofdstukken
 
 | # | Hoofdstuk | Waar het over gaat | Staat |
 |---|---|---|---|
-| 0 | [Startsituatie](00-start/) | wat er draait vóór contracttesten | **werkt** |
-| 1 | [Basis (API)](01-basis/) | Order → Payment, REST, het hele mechanisme | **werkt** |
+| 0 | [Startsituatie](00-start/) | hoe het gaat **zonder** contracttesten | **werkt** |
+| 1 | [Basis (API)](01-basis/) | hoe het gaat **met** contracttesten — Order → Payment, REST | **werkt** |
 | 2 | [Wijziging zonder breuk](02-wijziging-zonder-breuk/) | additieve wijziging, v1.1.0 | nog niet |
 | 3 | [Breaking wijziging](03-breaking/) | twee majors naast elkaar | nog niet |
 | 4 | [Acceptatie](04-acceptatie/) | de gebruikersflow over de keten | nog niet |
