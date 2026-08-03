@@ -79,15 +79,10 @@ for omgeving in test acceptatie; do
 done
 
 echo
-echo "  Test en Acceptatie:"
-for poort in 8081 8082; do
-  curl -s "http://localhost:${poort}/actuator/info" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print('    %-9s deelsysteem %-7s microservice %-7s contract %s' % (
-    d['deelsysteem']['naam'], d['deelsysteem']['versie'], d['build']['version'],
-    d['contract'].get('serveert') or d['contract'].get('pin') or '—'))"
-done
+echo "  Test:"
+ci/toon-versies.sh test
+echo "  Acceptatie:"
+ci/toon-versies.sh acceptatie
 
 echo
 opmerking "Dit draait al: pipelines, omgevingen, unit- en integratietests, een smoke en"
@@ -157,16 +152,7 @@ ci/pipeline-test.sh payment 1.0.0
 ci/pipeline-test.sh order 1.0.0
 
 echo
-for poort in 8081 8082; do
-  curl -s "http://localhost:${poort}/actuator/info" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print('  %-9s deelsysteem %-7s microservice %-7s contract %s' % (
-    d['deelsysteem']['naam'],
-    d['deelsysteem']['versie'],
-    d['build']['version'],
-    d['contract'].get('serveert') or d['contract'].get('pin')))"
-done
+ci/toon-versies.sh test
 
 echo
 opmerking "Drie versieniveaus, drie betekenissen. Ze staan nu toevallig gelijk en gaan"
