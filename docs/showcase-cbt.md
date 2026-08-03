@@ -64,7 +64,7 @@ Die twee zijn precies wat de showcase toevoegt, en verder niets.
 |---|---|
 | Een register waarin de spec gepubliceerd staat, immutable en per versie | naast de bestaande artefactopslag |
 | Een diff-gate bij publicatie | bij de contractwijziging, niet in een pipeline |
-| Een stub die uit de spec wordt gegenereerd | in de CI-omgeving, waar nu een handgeschreven mock staat |
+| Een stub die uit de spec wordt gegenereerd | in de CI-omgeving; de mock die hij vervangt staat nu binnen de test |
 | Contractverificatie aan beide kanten van de grens | in de integratielaag, met de spec als norm |
 | Drift-check en versieconformiteit | naast de piramide, als artefact- en omgevingscontrole |
 
@@ -116,7 +116,8 @@ De showcase loopt langs drie assen. Een deel varieert het **grenstype**: hetzelf
 
 | # | Hoofdstuk | As | Onderwerp | Vereist |
 |---|---|---|---|---|
-| 1 | CBT basis (API) | grenstype | Order → Payment, REST sync, OpenAPI | — |
+| 0 | Startsituatie | — | wat er draait vóór contracttesten | — |
+| 1 | CBT basis (API) | grenstype | Order → Payment, REST sync, OpenAPI | 0 |
 | 2 | Wijziging zonder breuk | levenscyclus | additieve wijziging, v1.1.0 | 1 |
 | 3 | Breaking wijziging | levenscyclus | twee majors serveren en verifiëren, v2.0.0 | 1 |
 | 4 | Acceptatie | testsoort | e2e gebruikersflow over de keten | 1 |
@@ -127,6 +128,8 @@ De showcase loopt langs drie assen. Een deel varieert het **grenstype**: hetzelf
 | 9 | Frontend in shell | grenstype | shell ↔ remote, module-API | eigen model |
 
 Hoofdstuk 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de contractlevenscyclus overheen loopt, geen vijf basissen. Hoofdstuk 1 tot en met 5 dekken de testfeatures F2 (een REST-grens), F3 (versiecontrole bij deployment) en F4 (monitoring op productie); 6 en 7 dekken F5 (async) en F6 (SOAP), en 9 gaat over een frontend-grens. Hoofdstuk 8 heeft bewust geen testfeature: de kaders gelden op grenzen, niet op de binnenkant.
+
+**Hoofdstuk 0 varieert niets.** Het staat er om te laten zien waar de andere hoofdstukken vandaan komen. Zonder dat is elke "toevoeging" een bewering die niemand kan nakijken, en dat is precies het gebrek dat deze showcase op grenzen aanwijst — toegepast op zichzelf.
 
 **De showcase is een boom, geen rij.** De kolom *Vereist* zegt wat er af moet zijn, en dat is niet altijd een hoofdstuk: 6 en 7 hebben `ci/` en het deelsysteem Payment nodig, maar niets uit de tests van hoofdstuk 1. Dat services op de hoofdmap staan in plaats van in een hoofdstukmap, maakt zo'n afhankelijkheid pas benoembaar. De nummering is vlak gehouden omdat 1.2 in dit document al een subparagraaf aanduidt.
 
@@ -163,6 +166,7 @@ showcase-cbt/
 │   │   └── notification-mf/
 │   └── portal/               h9
 │       └── portal-shell/
+├── 00-start/                 demo en README van de startsituatie
 ├── 01-basis/                 compose, demo, README
 ├── 02-wijziging-zonder-breuk/
 ├── 03-breaking/
@@ -370,6 +374,41 @@ Niemand leest negen hoofdstukken. Vijf leespaden:
 | Hoe verloopt de levenscyclus van een contract? | 1 tot en met 5 |
 | Werkt dit ook buiten REST? | 1 en 6, of 1 en 7 |
 | Geldt dit ook voor de frontend? | 8 voor binnen een deelsysteem, 1 en 9 voor de grens tussen shell en remote |
+
+---
+
+## 0. Startsituatie
+
+> Vereist: niets. Hoofdstuk 1 vereist dit hoofdstuk.
+
+Dit hoofdstuk toont wat er draait vóórdat contracttesten bestaan. Wat er wel en niet is, staat in *De startsituatie* hierboven; hier wordt het gedraaid in plaats van beschreven.
+
+**Het staat apart om één reden.** Zolang a, b en c in één script zitten, houdt niets tegen dat de startsituatie het register aanraakt, en rust de bewering "hier speelt het schema geen rol" op discipline. Een eigen map die alleen de scripts van vóór CBT aanroept, maakt er een eigenschap van de indeling van. Dat is dezelfde zet als "de omgeving ís het netwerk".
+
+### 0.1 De demo: twee bedrijven
+
+| | Bedrijf | Wat er gebeurt | Wat het aantoont |
+|---|---|---|---|
+| a | De uitgangssituatie | beide deelsystemen 1.0.0 op Test en Acceptatie | er staat iets werkends; de showcase begint niet bij nul |
+| b | Een release zoals het nu gaat | payment 1.0.1 door de bestaande pipeline naar Acceptatie | welke pipeline en welke tests er al zijn — en dat het schema nergens in voorkomt |
+
+**Wat er niet gebeurt weegt even zwaar.** In geen enkele stap van b komt het schema voor. Het ligt in de repository, het wordt niet gelezen, en niets valt erop. Dat is "spec-first is er wel, maar niet expliciet" aangetoond in plaats van beweerd.
+
+**b is de makkelijkste scène om verkeerd te lezen.** Alles wordt groen en de wijziging gaat goed; het risico is dat het publiek concludeert dat er niets aan de hand is. De wijziging is daarom met opzet een gewone bugfix en geen breuk — die zit in hoofdstuk 3 — en het bedrijf eindigt op de vraag die het zelf niet kan beantwoorden: *Payment 1.0.1 staat op Acceptatie en alles was groen. Weet Order dat?* Niets in die pipeline heeft het gecontroleerd. Dat het goed ging is gebleken, niet vastgesteld.
+
+**b is een release van Payment, en dat is geen toeval.** Payment is provider en roept niemand aan, dus zijn pipeline heeft geen mock van een buur nodig. Een release van Order zou de vraag oproepen wat er in zijn plaats staat, en dat is de vraag van hoofdstuk 1.
+
+### 0.2 De API-tests bestaan al
+
+Er wordt getest, en niet zuinig: unit en integratie aan beide kanten, een smoke op Test en een gebruikersflow op Acceptatie. Wat ontbreekt is niet de test maar de **norm buiten de test**.
+
+`OrderIntegratieTest` mockt `PaymentClient` en schrijft het antwoord van de buur zelf voor. Die mock is niet fout — hij is onbewijsbaar. Hij is geschreven door dezelfde persoon die de verwachting formuleert, en bevestigt daarom wat de schrijver dacht dat Payment doet. Verandert Payment, dan blijft de test groen.
+
+Dat is de plek waar hoofdstuk 1 aan komt: de mock verhuist van binnen de test naar een omgeving, en zijn inhoud komt uit het register in plaats van uit een hoofd.
+
+### 0.3 Wat het oplevert
+
+Een eigen rapport, `00-start/rapport/rapport-cbt-00`. Dat is zichtbaar dunner dan dat van hoofdstuk 1 en bevat geen enkele contractregel. Twee rapporten naast elkaar tonen het verschil beter dan één rapport met een knip erin.
 
 ---
 
@@ -743,29 +782,17 @@ Twee dingen die uit dit overzicht volgen. **De meeste maatregelen zijn geen test
 
 ### 1.11 Demo
 
-De demo bestaat uit drie bedrijven. Ze lopen achter elkaar en zijn los te draaien: wie de uitgangssituatie al kent, begint bij **c**.
+De demo begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien, er is net een release doorheen gegaan, en er is geen register. Wat hier gebeurt is de toevoeging — dezelfde deelsystemen, nu met contracttesten.
 
-| | Bedrijf | Wat er gebeurt | Wat het aantoont |
-|---|---|---|---|
-| a | De uitgangssituatie | beide deelsystemen 1.0.0 op Test en Acceptatie | er staat iets werkends; de showcase begint niet bij nul |
-| b | Een release zoals het nu gaat | payment 1.0.1 door de bestaande pipeline naar Acceptatie | welke pipeline en welke tests er al zijn — en dat het schema nergens in voorkomt |
-| c | Contracttesten erbij | het register gevuld, de contracttesten in de pipeline, beide deelsystemen naar 1.1.0 | wat contracttesten toevoegt, aan dezelfde deelsystemen |
+**Wat er verandert aan het deelsysteem, en wat niet.** De images worden niet herbouwd. Het deelsysteem krijgt één ding erbij: `grenzen.env`, de verklaring welke contracten hij serveert en welke hij pint. Dat is een wijziging op deelsysteemniveau en niet op microserviceniveau, en dus een nieuwe minor op dat ene niveau.
 
-**Waarom b erin zit.** Zonder b *beweert* de demo dat er al pipelines en tests zijn; met b is het te zien. Wat er niet gebeurt weegt daarbij even zwaar als wat er wel gebeurt: in geen enkele stap van b komt het schema voor. Het ligt in de repository, het wordt niet gelezen, en niets valt erop. Dat is "spec-first is er wel, maar niet expliciet" aangetoond in plaats van beweerd.
-
-**b is ook de makkelijkste scène om verkeerd te lezen.** Alles wordt groen en de wijziging gaat goed; het risico is dat het publiek concludeert dat er niets aan de hand is. Daarom is de wijziging in b met opzet een gewone bugfix en geen breuk — die zit in hoofdstuk 3 — en eindigt het bedrijf op de vraag die het zelf niet kan beantwoorden: *Payment 1.0.1 staat op Acceptatie en alles was groen. Weet Order dat?* Niets in die pipeline heeft het gecontroleerd. Dat het goed ging is gebleken, niet vastgesteld.
-
-**Wat c aan het deelsysteem verandert, en wat niet.** De images worden niet herbouwd. Het deelsysteem krijgt één ding erbij: `grenzen.env`, de verklaring welke contracten hij serveert en welke hij pint. Dat is een wijziging op deelsysteemniveau en niet op microserviceniveau, en dus een nieuwe minor op dat ene niveau.
-
-| Versieniveau | Na a | Na b | Na c |
-|---|---|---|---|
-| deelsysteem `payment` | 1.0.0 | 1.0.1 | **1.1.0** |
-| microservice `payment-api` | 1.0.0 | 1.0.1 | 1.0.1 |
-| contract `payment-api` | — | — | **1.0.0** |
+| Versieniveau | Na hoofdstuk 0 | Na hoofdstuk 1 |
+|---|---|---|
+| deelsysteem `payment` | 1.0.1 | **1.1.0** |
+| microservice `payment-api` | 1.0.1 | 1.0.1 |
+| contract `payment-api` | — | **1.0.0** |
 
 Drie niveaus, drie verschillende getallen, op één info-endpoint af te lezen. Dat is precies waarom ze uit elkaar gehouden worden, en het staat in dit hoofdstuk al op tafel in plaats van pas in hoofdstuk 2.
-
-**De scènes van c.**
 
 | # | Scène | Zichtbaar |
 |---|---|---|
@@ -777,6 +804,8 @@ Drie niveaus, drie verschillende getallen, op één info-endpoint af te lezen. D
 | 6 | Acceptatie omhoog, de gebruikersflow groen | de keten doet wat een gebruiker verwacht |
 
 Scène 2 en 3 zijn in willekeurige volgorde te draaien; begin bewust met Order, omdat het publiek verwacht dat de consumer als laatste moet.
+
+**Scène 2 vervangt de mock uit 0.2.** Wat Order in zijn CI-omgeving tegenkomt is geen handgeschreven dubbelganger meer maar een stub uit het register. De norm is daarmee van binnen de test naar buiten verplaatst, en dat is de hele wijziging.
 
 **Scène 2 gaat niet over de afwezigheid van Payment.** Payment draait op Test en op Acceptatie, en na a en b is dat aantoonbaar in plaats van aangenomen. Wat de scène toont is dat Order's *CI-omgeving* hem niet bevat: de buur staat daar als stub uit het register, en de pipeline komt tot een oordeel zonder dat er ergens met iemand hoeft te worden afgestemd.
 

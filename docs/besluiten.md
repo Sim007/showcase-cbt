@@ -280,3 +280,33 @@ ontbrekend blijft ontbrekend — wegen zwaarder dan de rest: een pagina die toon
 bedoelde in plaats van wat er is, laat precies het probleem zien dat deze showcase
 bestrijdt, en doet dat onzichtbaar.
 
+## 2026-08-03 — De startsituatie krijgt een eigen hoofdstuk: 00-start
+
+De demo had drie bedrijven in één script: a) wat er draait, b) een release zoals het nu
+gaat, c) contracttesten erbij. Dat werkt, maar niets houdt tegen dat a of b het register
+aanraakt. De bewering "hier speelt het schema geen rol" rustte dan op discipline in plaats
+van op de indeling.
+
+`00-start/` roept alleen de scripts aan die er vóór contracttesten al waren. Daarmee is het
+geen bewering meer maar een eigenschap. Dezelfde zet als "de omgeving ís het netwerk" en
+"een stub die méér kan dan wat hij vervangt, is net zo fout als een die minder kan".
+
+Bijvangst: een eigen rapport. `rapport-cbt-00` is zichtbaar dunner dan `rapport-cbt-01` en
+bevat geen enkele contractregel. Twee rapporten naast elkaar tonen het verschil beter dan
+één rapport met een knip erin. En `01-basis` heeft geen vlag meer nodig om bij c te
+beginnen — het is gewoon een ander hoofdstuk, met 0 als vereiste.
+
+**Niet hernoemd naar `01-cbt`.** Elk hoofdstuk is cbt; de repository heet er al naar.
+`01-basis` zegt wél wat het is: de referentie-implementatie die de andere hoofdstukken
+alleen nog aanvullen.
+
+**Geen placeholder nodig voor de API-tests.** Ze bestaan al en ze zijn echt: unit en
+integratie aan beide kanten, een smoke en een gebruikersflow. Wat ontbreekt is niet de test
+maar de norm buiten de test. `OrderIntegratieTest` mockt `PaymentClient` met Mockito en
+schrijft het antwoord van de buur zelf voor — die mock is niet fout maar onbewijsbaar, en
+blijft groen als Payment verandert.
+
+Daarmee klopte het document op één punt niet: het zei dat de handgeschreven mock in de
+CI-omgeving staat. Hij staat binnen de test. Dat maakt het contrast met hoofdstuk 1 scherper
+in plaats van vager — de stub verplaatst de norm naar buiten de test.
+
