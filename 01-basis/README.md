@@ -1,6 +1,6 @@
 # 1. Basis (API)
 
-> Vereist: niets, behalve het register uit de [hoofd-README](../README.md#beginnen).
+> Vereist: [hoofdstuk 0](../00-start/README.md). Dit hoofdstuk begint waar dat ophoudt.
 
 Twee deelsystemen, één grens: Order (consumer) → Payment (provider), REST, spec-first,
 contract in Apicurio. Dit hoofdstuk is de referentie-implementatie: het beschrijft de
@@ -15,9 +15,10 @@ draait.
 ## De korte weg
 
 ```sh
-01-basis/demo/demo.sh          # de vijf scènes achter elkaar
+00-start/demo/demo.sh          # eerst hoofdstuk 0: de startsituatie
+01-basis/demo/demo.sh          # dan dit: het register en de contracttesten erbij
 01-basis/demo/demo.sh --stap   # met een pauze ertussen, voor een presentatie
-01-basis/demo/opruimen.sh      # alles weg, ook Test en Acceptatie
+ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
 ```
 
 De demo opent het rapport in je browser en **vult het tijdens de run**: elke stap komt
@@ -61,7 +62,7 @@ niet in: die vraagt een draaiend deelsysteem.
 
 ```sh
 ci/pipeline-ci.sh order   1.0.0
-ci/pipeline-ci.sh payment 1.0.0
+ci/pipeline-ci.sh payment 1.0.1
 ```
 
 **Dit is de scène waar de demo om draait.** Order's pipeline komt tot een oordeel zonder
@@ -86,11 +87,11 @@ De omgeving wordt na afloop opgeruimd, ook als er iets faalt.
 ### 3 — het deelsysteem naar Test
 
 ```sh
-ci/pipeline-test.sh payment 1.0.0
+ci/pipeline-test.sh payment 1.0.1
 ci/pipeline-test.sh order   1.0.0
 ```
 
-Deploy, healthcheck en de smoke van dát deelsysteem. Geen contractverificatie: die hoort op
+Deploy, versieconformiteit en de smoke van dát deelsysteem. Geen contractverificatie: die hoort op
 de CI-omgeving, waar het deelsysteem alleen staat en een run goedkoop is.
 
 Elk deelsysteem meldt daarna alle drie de versieniveaus:
@@ -101,17 +102,18 @@ curl -s http://localhost:8081/actuator/info
 
 | Wat | Waarde | Betekenis |
 |---|---|---|
-| `deelsysteem.versie` | 1.0.0 | wat er gedeployd is |
-| `build.version` | 1.0.0 | de microservice, uit de pom |
+| `deelsysteem.versie` | 1.0.1 | wat er gedeployd is |
+| `build.version` | 1.0.1 | de microservice, uit de pom |
 | `contract.serveert` | 1.0.0 | de grens, uit het register |
 
-Ze staan nu toevallig gelijk. Vanaf hoofdstuk 2 lopen ze uit elkaar, en dan is het
-onderscheid het punt.
+Voor Payment lopen de contractversie en de andere twee al uit elkaar: de bugfix uit
+hoofdstuk 0 raakte de grens niet, dus die bleef op 1.0.0 staan. Order staat nog op 1.0.0
+over de hele linie. Vanaf hoofdstuk 2 gaan ook de eerste twee los van elkaar bewegen.
 
 ### 4 — het deelsysteem naar Acceptatie
 
 ```sh
-ci/pipeline-acceptatie.sh payment 1.0.0
+ci/pipeline-acceptatie.sh payment 1.0.1
 ci/pipeline-acceptatie.sh order   1.0.0
 ```
 
@@ -144,10 +146,10 @@ xdg-open 01-basis/rapport/rapport-cbt-01.html  # Linux
 
 | Tijd | Onderdeel | Stap | Uitkomst | Bijzonderheden |
 |---|---|---|---|---|
-| 19:30:22 | payment-api 1.0.0 | unit | groen | Tests run: 9 |
-| 19:30:43 | payment 1.0.0 → CI | drift | groen | 2 operaties komen overeen |
-| 19:30:57 | payment 1.0.0 → CI | contractverificatie, provider | groen | 1632 generated, 1632 passed |
-| 19:30:57 | payment 1.0.0 → CI | — | oordeel | voldoet aan payment-api 1.0.0 |
+| 19:30:22 | payment-api 1.0.1 | unit | groen | Tests run: 9 |
+| 19:30:43 | payment 1.0.1 → CI | drift | groen | 2 operaties komen overeen |
+| 19:30:57 | payment 1.0.1 → CI | contractverificatie, provider | groen | 1632 generated, 1632 passed |
+| 19:30:57 | payment 1.0.1 → CI | — | oordeel | voldoet aan payment-api 1.0.0 |
 
 Dat is wat "releasen op testbewijs" concreet maakt: niet dát het groen was, maar wát er
 wanneer is aangetoond en tegen welke contractversie.
@@ -179,6 +181,8 @@ zien wat er gebeurt.
 | `ci/drift.sh` | biedt de service precies de operaties die het contract belooft? |
 | `ci/smoke.sh` | de smoke van een deelsysteem, of `keten` over alle grenzen |
 | `ci/deploy.sh` | chart + release + omgevingswaarden |
+| `ci/versieconformiteit.sh` | wordt elke pin op deze omgeving daar ook geserveerd? |
+| `ci/toon-versies.sh` | wat draait er, uitgelezen bij de containers zelf |
 
 ---
 
@@ -202,7 +206,7 @@ groen draaien. Alleen de toetsing aan de spec ziet het.
 
 | Scène | Waarom het ertoe doet |
 |---|---|
-| Order draait groen zonder dat Payment bestaat | de consumer is onafhankelijk van zijn buur |
+| Order draait groen zonder Payment in zijn CI-omgeving | de consumer is onafhankelijk van zijn buur |
 | De stub komt uit het register, niet uit de test | de norm ligt buiten de test |
 | `600.00` levert `CANCELLED`, geen fout | een afgewezen betaling is geen contractschending |
 | `amount: 0` levert 400 `INVALID_AMOUNT` | dát is er wel een |

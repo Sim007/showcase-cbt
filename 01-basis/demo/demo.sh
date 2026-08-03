@@ -4,6 +4,9 @@
 #
 #   demo.sh [--stap]     --stap wacht op een toets tussen de scènes
 #
+# Begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien, er is net een release
+# doorheen gegaan, en er is geen register.
+#
 # Dit script bedenkt niets zelf: het roept de pipelines aan die een squad ook zou draaien.
 # Staat er hier iets wat niet uit ci/ komt, dan toont de demo iets anders dan wat er is.
 #
@@ -52,69 +55,27 @@ opmerking() {
   echo "  → $1"
 }
 
-# --- stap 0: de uitgangssituatie ------------------------------------------------------
+# --- het register erbij ---------------------------------------------------------------
 
-scene "Stap 0: de uitgangssituatie — wat er al draait"
+scene "Het register erbij — en daarna de contracttesten"
 
-01-basis/demo/opruimen.sh >/dev/null
-
-# Dit is het gegeven, niet de demo. Twee deelsystemen die gebouwd en gedeployd worden met
-# pipelines die er al zijn. Daarom gaat het stil: het argument begint pas als contracten
-# erbij komen. Deze stappen staan bewust niet in het rapport — dat is het testbewijs van
-# déze run, en niet van wat er al stond.
-echo "  bestaande CI/CD: images bouwen en deployen…"
-(
-  export CBT_ROOT="${CBT_ROOT}"
-  . ci/lib/tools.sh
-  mvn deelsystemen/payment/payment-api -q package -DskipTests
-  mvn deelsystemen/order/order-api     -q package -DskipTests
-) >/dev/null 2>&1
-docker build -q -t cbt/payment-api:1.0.0 deelsystemen/payment/payment-api >/dev/null
-docker build -q -t cbt/order-api:1.0.0   deelsystemen/order/order-api     >/dev/null
-
-for omgeving in test acceptatie; do
-  for deelsysteem in payment order; do
-    ci/deploy.sh "${deelsysteem}" 1.0.0 "${omgeving}" >/dev/null 2>&1
-  done
-done
-
-echo
-echo "  Test:"
-ci/toon-versies.sh test
-echo "  Acceptatie:"
-ci/toon-versies.sh acceptatie
-
-echo
-opmerking "Dit draait al: pipelines, omgevingen, unit- en integratietests, een smoke en"
-opmerking "een gebruikersflow. Ook het schema van de grens ligt er — als bestand naast de"
-opmerking "code, met een versienummer erin. Dat is de uitgangssituatie."
-opmerking ""
-opmerking "Twee dingen ontbreken, en die twee zijn de hele showcase:"
-opmerking ""
-opmerking "  het register       de spec staat in een repository, niet gepubliceerd per"
-opmerking "                     versie. Dus geen gate op een wijziging."
-opmerking "  de contracttesten  niets toetst aan die spec. Geen stub die eruit komt, geen"
-opmerking "                     verificatie aan een van beide kanten, geen drift-check."
-opmerking ""
-opmerking "Het schema bindt dus niets. Het is documentatie, geen norm waar een build op valt."
-
-# --- stap 1: contracttesten komt erbij ------------------------------------------------
-
-scene "Stap 1: het register erbij — en daarna de contracttesten"
+docker ps --format '{{.Names}}' | grep -q '^test-' || {
+  echo "  Er draait niets op Test. Draai eerst 00-start/demo/demo.sh — dit hoofdstuk" >&2
+  echo "  begint waar dat ophoudt." >&2
+  exit 1
+}
 
 docker compose -f compose/registry.yml up -d >/dev/null 2>&1
 ci/wacht-op-gezond.sh registry compose/registry.yml >/dev/null 2>&1 || sleep 10
 toon_pagina
 
-ci/publish-contract.sh order-payment payment-api 1.0.0 contracts/order-payment/v1.0.0/openapi.yaml
+ci/pipeline-contract.sh order-payment payment-api 1.0.0 contracts/order-payment/v1.0.0/openapi.yaml
 
 echo
-opmerking "Hetzelfde schema, nu gepubliceerd als payment-api 1.0.0: één plek, immutable,"
-opmerking "per versie. Het kwam door de diff-gate — vanaf hoofdstuk 2 doet die gate werk,"
-opmerking "hier is er nog niets om mee te vergelijken."
-opmerking ""
-opmerking "Daarmee is het eerste ontbrekende stuk er. Wat hierna volgt is dezelfde gang als"
-opmerking "daarnet, met dezelfde deelsystemen — maar nu met de contracttesten erbij."
+opmerking "Hetzelfde schema dat in hoofdstuk 0 ongelezen bleef, nu gepubliceerd als"
+opmerking "payment-api 1.0.0: één plek, immutable, per versie. Vanaf hier is het de norm."
+opmerking "Wat hierna volgt is dezelfde gang als in hoofdstuk 0, met dezelfde deelsystemen,"
+opmerking "maar nu met de contracttesten erbij."
 
 # --- scène 1 -------------------------------------------------------------------------
 
@@ -137,7 +98,7 @@ opmerking "en wat hij met de antwoorden doet klopt. Zonder met iemand af te stem
 scene "Scène 2: Payment's pipeline draait groen"
 
 ci/pipeline-microservice.sh payment payment-api
-ci/pipeline-ci.sh payment 1.0.0
+ci/pipeline-ci.sh payment 1.0.1
 
 echo
 opmerking "De contractverificatie is volledig: elke operatie uit de spec, elke"
@@ -148,7 +109,7 @@ opmerking "aanbiedt dan zijn contract noemt."
 
 scene "Scène 3: Test omhoog, en wat er draait is af te lezen"
 
-ci/pipeline-test.sh payment 1.0.0
+ci/pipeline-test.sh payment 1.0.1
 ci/pipeline-test.sh order 1.0.0
 
 echo
@@ -173,12 +134,10 @@ opmerking "over de andere."
 
 scene "Scène 5: Acceptatie, en de gebruikersflow over de keten"
 
-# Een gebruikersflow spant over deelsystemen heen. Op een blijvende omgeving staan ze er
-# allebei al; deze demo begint met een schone lei en moet die eerste vulling dus zelf doen
-# voordat er een flow kan draaien.
-ci/deploy.sh payment 1.0.0 acceptatie >/dev/null
+# Een gebruikersflow spant over deelsystemen heen. Beide deelsystemen staan er al sinds
+# hoofdstuk 0, dus die eerste vulling is hier niet meer nodig.
 ci/pipeline-acceptatie.sh order   1.0.0
-ci/pipeline-acceptatie.sh payment 1.0.0
+ci/pipeline-acceptatie.sh payment 1.0.1
 
 echo
 opmerking "Eén scenario, geen tien. De structuur van de grens is al aangetoond op de"
@@ -191,5 +150,5 @@ CBT_LIVE= ci/rapport-html.sh
 echo
 echo "─────────────────────────────────────────────────────────────────────"
 echo "  Klaar. Test en Acceptatie blijven staan om naar te kijken."
-echo "  Opnieuw draaien kan meteen: de demo ruimt zelf op voordat hij begint."
+echo "  Opnieuw beginnen: ci/opruimen-alles.sh en dan 00-start/demo/demo.sh."
 echo "─────────────────────────────────────────────────────────────────────"

@@ -25,7 +25,7 @@ hoofdstuk. De afwegingen achter de keuzes staan in
 | `compose/` | wat van geen enkel deelsysteem is: het register, de stub, externe koppelingen |
 | `playwright/` | config en gedeelde specs: smoke, later UI |
 | `deelsystemen/` | alle services, één map per deelsysteem; daaronder een map per service |
-| `01-basis/` … `09-frontend-shell/` | een map per hoofdstuk, met alleen tests: demoscript, hoofdstukspecifieke specs, README |
+| `00-start/` … `09-frontend-shell/` | een map per hoofdstuk, met alleen tests: demoscript, hoofdstukspecifieke specs, README |
 
 ## Vereisten
 
@@ -60,12 +60,23 @@ is in memory: na een herstart is hij leeg, en dat is voor een demo precies goed.
 Variabelen — versies, poorten, het adres van de buur — staan in
 [.env.example](.env.example). Kopieer naar `.env` als je iets wilt afwijken.
 
-Ga daarna naar het hoofdstuk dat je wilt zien.
+Begin daarna bij hoofdstuk 0 en 1, in die volgorde. Samen zijn ze het hele verhaal: eerst
+wat er draait zonder contracttesten, dan wat die toevoegen.
+
+```sh
+00-start/demo/demo.sh          # de startsituatie, en een release zoals het nu gaat
+01-basis/demo/demo.sh          # het register en de contracttesten erbij
+ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
+```
+
+Leg daarna de twee rapporten naast elkaar. Die van hoofdstuk 0 is korter en bevat geen
+enkele regel over een contract, een stub of drift.
 
 ## De hoofdstukken
 
 | # | Hoofdstuk | Waar het over gaat | Staat |
 |---|---|---|---|
+| 0 | [Startsituatie](00-start/) | wat er draait vóór contracttesten | **werkt** |
 | 1 | [Basis (API)](01-basis/) | Order → Payment, REST, het hele mechanisme | **werkt** |
 | 2 | [Wijziging zonder breuk](02-wijziging-zonder-breuk/) | additieve wijziging, v1.1.0 | nog niet |
 | 3 | [Breaking wijziging](03-breaking/) | twee majors naast elkaar | nog niet |
@@ -77,6 +88,7 @@ Ga daarna naar het hoofdstuk dat je wilt zien.
 | 9 | [Frontend in shell](09-frontend-shell/) | shell ↔ remote, module-API | nog niet |
 
 Hoofdstuk 1 is de referentie: die schrijft de opzet volledig uit, de andere vullen aan.
+Hoofdstuk 0 varieert niets — het laat zien waar de rest vandaan komt.
 
 ## Vereenvoudigingen
 

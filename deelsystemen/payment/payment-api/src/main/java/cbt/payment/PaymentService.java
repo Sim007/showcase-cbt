@@ -1,6 +1,7 @@
 package cbt.payment;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Set;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -57,8 +58,14 @@ public class PaymentService {
         // Geen UUID: een oplopend nummer houdt de demo herhaalbaar.
         String paymentId = "pay-%06d".formatted(teller.incrementAndGet());
 
+        // Bedragen op twee decimalen opslaan. Zonder dit belandt 10.5 en 10.50 als twee
+        // verschillende waarden in de opslag, en dan tellen rapportages er straks naast.
+        // Puur intern: amount staat niet in de response, dus aan de grens verandert er
+        // niets — en precies dat is aan een pipeline zonder contracttesten niet te zien.
+        BigDecimal bedrag = verzoek.amount().setScale(2, RoundingMode.HALF_UP);
+
         return repository.save(new PaymentEntity(
-                paymentId, verzoek.orderId(), verzoek.amount(), verzoek.currency(), status));
+                paymentId, verzoek.orderId(), bedrag, verzoek.currency(), status));
     }
 
     public Optional<PaymentEntity> find(String paymentId) {

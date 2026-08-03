@@ -179,7 +179,8 @@ rapport_start() {
   mkdir -p "$(dirname "${RAPPORT_BESTAND}")"
   [ -f "${RAPPORT_BESTAND}" ] && return 0
   {
-    echo "# Rapport CBT — hoofdstuk 1"
+    _nr="$(basename "${RAPPORT_BESTAND}" .md | sed 's/.*-//')"
+    echo "# Rapport CBT — hoofdstuk ${_nr#0}"
     echo
     echo "Begonnen op $(date -u '+%Y-%m-%d %H:%M:%S') UTC. Alle tijden zijn UTC."
     echo
