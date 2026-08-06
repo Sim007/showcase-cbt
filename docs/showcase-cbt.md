@@ -12,7 +12,7 @@ Een showcase die contract-based testing aantoonbaar maakt. Het contexthoofdstuk 
 
 Een **grens** is elke interface waar eigenaarschap wisselt tussen deelsystemen — een organisatorisch criterium, geen technisch. Contract-based testing toetst beide kanten van zo'n grens aan één gepubliceerde specificatie, in de bouwstraat, zonder dat de deelsystemen samen hoeven te draaien.
 
-Het contracttesten is hier **provider-driven en spec-first**: de provider bezit en publiceert het contract, en zowel provider als consumer verifiëren hun eigen conformiteit daaraan. Er is gekozen voor open source en dus geen commercieel platform om contracten uit te wisselen of te vergelijken.
+Het contracttesten is hier **provider-driven en schema-first**: de provider bezit en publiceert het contract, en zowel provider als consumer verifiëren hun eigen conformiteit daaraan. Er is gekozen voor open source en dus geen commercieel platform om contracten uit te wisselen of te vergelijken.
 
 Dat is een andere invulling dan **consumer-driven contracts** met Pact, en die vergelijking is de eerste die een lezer maakt. Twee verschillen zijn hier bepalend.
 
@@ -411,7 +411,7 @@ Elk deelsysteem loopt zijn eigen weg af, van code tot Acceptatie: eerst Payment,
 
 Die aftrekking is alleen zuiver als al het andere gelijk blijft. Vandaar geen bugfix, geen versiebump en geen extra deelsysteem aan één van beide kanten. Wat overblijft in het verschil is het register, de stub, de verificatie aan beide kanten, de drift-check en de versieconformiteit — en niets anders.
 
-**Wat er niet gebeurt weegt even zwaar als wat er wel gebeurt.** In geen enkele stap komt het schema van de grens voor. Het ligt in `contracts/`, het wordt niet gelezen, en niets valt erop. Dat is "spec-first is er wel, maar niet afdwingbaar" aangetoond in plaats van beweerd.
+**Wat er niet gebeurt weegt even zwaar als wat er wel gebeurt.** In geen enkele stap komt het schema van de grens voor. Het ligt in `contracts/`, het wordt niet gelezen, en niets valt erop. Dat is "schema-first is er wel, maar niet afdwingbaar" aangetoond in plaats van beweerd.
 
 **Dit hoofdstuk is de makkelijkste om verkeerd te lezen.** Alles wordt groen, en terecht. Het risico is dat het publiek concludeert dat er niets aan de hand is. Het punt is niet dat er iets misgaat; het punt is dat je aan deze uitkomst niet kunt zien óf er iets misgaat aan de grens.
 
@@ -422,7 +422,7 @@ test**.
 
 | | In de startsituatie |
 |---|---|
-| Spec-first werken | **wel** — er ligt een OpenAPI-bestand en de grens is er eerst |
+| Schema-first werken | **wel** — er ligt een OpenAPI-bestand en de grens is er eerst |
 | De grens wordt geraakt | **wel** — de smoke op Test loopt er doorheen |
 | De grens is onderwerp van een test | **niet** |
 | Een centraal register | **niet** |
@@ -487,7 +487,7 @@ Wat níet in het verschil zit, is even belangrijk. De CI-omgeving stond er al, d
 
 ## 1. Basis (API)
 
-Twee deelsystemen, één grens: Order (consumer) → Payment (provider), REST, spec-first, contract in Apicurio. Dit hoofdstuk is de referentie-implementatie: het beschrijft de opzet die de andere showcases alleen nog aanvullen.
+Twee deelsystemen, één grens: Order (consumer) → Payment (provider), REST, schema-first, contract in Apicurio. Dit hoofdstuk is de referentie-implementatie: het beschrijft de opzet die de andere showcases alleen nog aanvullen.
 
 > Hieronder staat wat er is en waarom. **Hoe je het draait** staat in `01-basis/README.md`.
 
@@ -503,7 +503,7 @@ Dat werkt op één voorwaarde: de controles moeten de fout kunnen zien. De smoke
 
 **Contract is geen testlaag maar een norm.** De piramide houdt drie lagen — unit, integratie, e2e. Wat verandert is niet de laag maar de bron van de waarheid: bij unit en integratie ligt de norm in de test, bij contractverificatie ligt hij buiten de test, in een artefact dat elders wordt beheerd. Contractverificatie is daarmee integratie: één deelsysteem, buren gestubd.
 
-**Spec-first minimaliseert geen breuken maar verplaatst ze.** Een noodzakelijke breuk blijft noodzakelijk. Wat verandert is het moment: bij spec-first is de breuk een besluit vóórdat er code ligt, bij code-first een ontdekking als terugdraaien al duur is. De contractverificatie dwingt die belofte af; de drift-check vult het ene gat dat zij niet kan zien.
+**Schema-first minimaliseert geen breuken maar verplaatst ze.** Een noodzakelijke breuk blijft noodzakelijk. Wat verandert is het moment: bij schema-first is de breuk een besluit vóórdat er code ligt, bij code-first een ontdekking als terugdraaien al duur is. De contractverificatie dwingt die belofte af; de drift-check vult het ene gat dat zij niet kan zien.
 
 **Drie omgevingen, drie vragen.** In de CI-omgeving wordt aangetoond dat een deelsysteem volledig werkt zónder zijn buren. Op Test dat de samenstelling die op dat moment draait, klopt en loopt. Op Acceptatie dat de keten doet wat een gebruiker verwacht, mét de koppelingen naar buiten.
 
@@ -617,7 +617,7 @@ alles tegelijk verhuist.
 wijzigt op een ander moment dan de code die hem implementeert, en de contractversie beweegt
 los van de microserviceversie. Zou publiceren een stap in pipeline 2 zijn, dan zou elke
 codewijziging aan de spec komen en zou een spec zonder implementatie niet te publiceren
-zijn — terwijl spec-first juist vraagt dat het contract er eerder is.
+zijn — terwijl schema-first juist vraagt dat het contract er eerder is.
 
 **Op productie staat "check" en niet "test".** Daar wordt niet meer aangetoond dat het werkt;
 daar wordt waargenomen dat het werkt. Health, welke versies er staan, en monitoring — dat is
@@ -989,9 +989,9 @@ De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen bra
 
 **Besloten.** De naamgeving van de testlagen volgt één begrippenlijst en wijkt daar nergens van af; waar dit document "contractverificatie" schrijft, geldt die term consequent in scriptnamen, JUnit-tags en pipeline-uitvoer. Betekenisvolle `example`-waarden zijn een norm voor elke spec: zonder example faalt de stubgeneratie (zie 1.6).
 
-**Dit document is de spec en de code de implementatie** (O12, gesloten). Wat hier staat gaat vooruit op wat er gebouwd wordt, en loopt de bouw ergens tegen iets aan, dan gaat dat eerst terug hierheen — niet stilzwijgend het andere pad op. Dat is dezelfde regel die de showcase op contracten toepast: spec-first, en een drift-check die afdwingt dat de belofte en de werkelijkheid niet uit elkaar lopen.
+**Dit document is de spec en de code de implementatie** (O12, gesloten). Wat hier staat gaat vooruit op wat er gebouwd wordt, en loopt de bouw ergens tegen iets aan, dan gaat dat eerst terug hierheen — niet stilzwijgend het andere pad op. Dat is dezelfde regel die de showcase op contracten toepast: schema-first, en een drift-check die afdwingt dat de belofte en de werkelijkheid niet uit elkaar lopen.
 
-De wijzigingslog is daarmee ook de driftlog: elke regel is een moment waarop de bouw het ontwerp weersprak en het ontwerp is bijgesteld.
+`docs/besluiten.md` is daarmee ook de driftlog: elke gedateerde afweging is een moment waarop de bouw het ontwerp weersprak en het ontwerp is bijgesteld.
 
 De stub wordt zelf gegenereerd en draait op WireMock (O7, gesloten). Prism van Stoplight is geprobeerd en doet padtemplates, `example`-waarden en requestvalidatie native, maar kan geen response kiezen op basis van de requestinhoud — en dat heeft het scenario uit 1.2 nodig. De reden staat in 1.6.
 

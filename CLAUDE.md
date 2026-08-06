@@ -23,7 +23,7 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 
 - Begin elke opdracht met een plan en wacht op akkoord. Bouw daarna in kleine commits, één onderwerp per commit.
 - `docs/showcase-cbt.md` beschrijft de opzet zoals hij nu is, zonder versienummer en zonder wijzigingslog — git houdt de geschiedenis bij. Verandert een keuze, dan gaat de afweging naar `docs/besluiten.md` met een datum, en beveiligingsbevindingen naar `docs/security.md`.
-- Ontwerp gaat vóór implementatie. Loopt de bouw tegen iets aan dat het document tegenspreekt, dan wordt eerst het document bijgesteld. Dat is spec-first toegepast op onszelf.
+- Ontwerp gaat vóór implementatie. Loopt de bouw tegen iets aan dat het document tegenspreekt, dan wordt eerst het document bijgesteld. Dat is schema-first toegepast op onszelf.
 - Kom je iets tegen dat niet klopt met het document of dat niet werkt zoals verwacht: meld het en stop. Niet stilzwijgend een alternatief kiezen.
 - Voeg geen library toe zonder één regel in de commit waarom hij nodig is. Zo min mogelijk dependencies.
 - Vereenvoudigingen die bewust voor de demo zijn gemaakt — register zonder authenticatie, opslag in memory — krijgen een commentaarregel op de plek zelf en komen in de README onder "Vereenvoudigingen".

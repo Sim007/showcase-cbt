@@ -55,7 +55,7 @@ schema's, niet de statuscodes, niet de voorbeelden.
 contract reproduceert — `@ApiResponse`, `@Schema(allowableValues = …)` — zou de vergelijking
 volledig maken. De prijs is dat het contract dan tweemaal geschreven staat: één keer in
 YAML en één keer in annotaties, die uit elkaar kunnen lopen. Dat is code-first dat een
-spec-first-opzet binnensluipt, en de valutalijst zou in drie plekken staan in plaats van
+schema-first-opzet binnensluipt, en de valutalijst zou in drie plekken staan in plaats van
 twee. Een bredere gate die altijd rood staat om redenen die niets met drift te maken
 hebben, is geen gate.
 
@@ -349,7 +349,7 @@ er niet.
 **Het contract krijgt een eigen pipeline.** Een grens wijzigt op een ander moment dan de
 code die hem implementeert, en de contractversie beweegt los van de microserviceversie. Als
 publiceren een stap in de microservicepipeline was, zou elke codewijziging aan de spec komen
-en zou een spec zonder implementatie niet te publiceren zijn — terwijl spec-first juist
+en zou een spec zonder implementatie niet te publiceren zijn — terwijl schema-first juist
 vraagt dat het contract er eerder is.
 
 **Productie hoort in het model, ook al bouwen we hem niet.** De belofte is dat een squad
@@ -585,4 +585,24 @@ wordt is de structuur en niet de formulering.
 De controle staat in geen van beide rapporten. Hij gaat niet over de deelsystemen maar over
 de showcase, en testbewijs van een deelsysteem hoort niet vermengd te raken met een controle
 op de demo.
+
+## 2026-08-06 — "Schema-first" in plaats van "spec-first"
+
+De aanpak heet vanaf nu **schema-first**. Het artefact blijft de **spec**: "de gepubliceerde
+spec", "spec-as-truth" en "de spec uit het register" veranderen niet.
+
+Dat onderscheid is de hele reden. "Spec-first" gebruikte hetzelfde woord voor de werkwijze en
+voor het ding, en dan lees je "de spec is er eerst" als een uitspraak over een bestand in
+plaats van over een volgorde van werken. Schema-first zegt wat er eerst is: het schema, vóór
+de implementatie. Wat daaruit gepubliceerd wordt, is en blijft de spec.
+
+Negen plekken aangepast in `showcase-cbt.md`, `CLAUDE.md` en dit bestand.
+
+**Deze afweging staat hier en niet in een wijzigingslog.** De opdracht vroeg om een regel in
+de wijzigingslog van `showcase-cbt.md`, maar dat document heeft er geen en hoort er geen te
+hebben: `CLAUDE.md` legt vast dat het de opzet beschrijft zoals hij nu is, zonder versienummer
+en zonder log, en dat afwegingen hierheen gaan. Git houdt de geschiedenis bij.
+
+Daarbij viel een restant op: 1.13 zei nog "de wijzigingslog is daarmee ook de driftlog". Die
+zin wijst nu naar dit bestand, wat hij feitelijk al deed.
 
