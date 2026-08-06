@@ -63,6 +63,7 @@ jq -c '
       status: ($ok.key // "geen"),
       example: ($ok.value.content."application/json".example // null),
       schemaRef: ($ok.value.content."application/json".schema."$ref" // null),
+      schema: ($ok.value.content."application/json".schema // null),
       heeftRequestBody: ($methode.value.requestBody != null)
     }' "${REL}/tmp/spec.json" > "${TMP}/werklijst.jsonl"
 
@@ -147,12 +148,23 @@ for mapping in "${MAPPINGS}"/*.json; do
   # Bij een gegenereerde mapping staat het schema in de werklijst; een scenario-mapping
   # noemt het zelf in "x-schema", zodat hij door dezelfde controle gaat.
   REF="$(jq -r --arg op "${NAAM}" 'select(.operationId == $op) | .schemaRef // empty' "${REL}/tmp/werklijst.jsonl" | head -1)"
-  if [ -z "${REF}" ]; then
-    REF="$(jq -r --arg naam "${NAAM}" 'select(.naam == $naam) | .ref' "${REL}/tmp/scenario-schemas.jsonl" | head -1)"
-    [ -n "${REF}" ] || fout "${NAAM}: geen schema om tegen te valideren"
-  fi
 
-  jq --arg ref "${REF}" '. + {"$ref": $ref}' "${REL}/tmp/componenten.json" > "${TMP}/schema-${NAAM}.json"
+  if [ -n "${REF}" ]; then
+    jq --arg ref "${REF}" '. + {"$ref": $ref}' "${REL}/tmp/componenten.json" > "${TMP}/schema-${NAAM}.json"
+  else
+    # Niet elke response verwijst naar een benoemd schema. Een lijst staat vaak inline als
+    # {type: array, items: {$ref}}, en dat is geen tekortkoming van die spec maar geldig
+    # OpenAPI. Het schema staat er dan gewoon, alleen niet achter een $ref.
+    INLINE="$(jq -c --arg op "${NAAM}" 'select(.operationId == $op) | .schema // empty' "${REL}/tmp/werklijst.jsonl" | head -1)"
+    if [ -n "${INLINE}" ] && [ "${INLINE}" != "null" ]; then
+      jq --argjson s "${INLINE}" '. + $s' "${REL}/tmp/componenten.json" > "${TMP}/schema-${NAAM}.json"
+      REF="het inline schema"
+    else
+      REF="$(jq -r --arg naam "${NAAM}" 'select(.naam == $naam) | .ref' "${REL}/tmp/scenario-schemas.jsonl" | head -1)"
+      [ -n "${REF}" ] || fout "${NAAM}: geen schema om tegen te valideren"
+      jq --arg ref "${REF}" '. + {"$ref": $ref}' "${REL}/tmp/componenten.json" > "${TMP}/schema-${NAAM}.json"
+    fi
+  fi
   jq '.response.jsonBody' "${REL}/mappings/${NAAM}.json" > "${TMP}/body-${NAAM}.json"
 
   ajv validate --strict=false -c ajv-formats \
