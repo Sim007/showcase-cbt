@@ -8,8 +8,14 @@ Twee contracten, allebei 1.0.0 in het register onder groep `showcase-cbt`:
 | `run-stream` | AsyncAPI 2.6.0 | wat er tijdens een run gebeurt |
 
 Er is nog geen implementatie. Er is een stub die beide serveert, gegenereerd uit die
-specs, zodat de andere kant kan bouwen voordat showcase-CBT iets uitvoert. Dat is precies
+specs, zodat showcase-website kan bouwen voordat showcase-CBT iets uitvoert. Dat is precies
 het argument dat de showcase maakt, nu op zichzelf toegepast.
+
+**De rollen, met de grens erbij.** Showcase-CBT is **provider van `scenario-api` en van
+`run-stream`**; showcase-website is daar de consumer. Die woorden horen bij een grens en
+niet bij een product: showcase-website is geen consument van showcase-CBT als geheel, alleen
+van deze twee interfaces. Schrijf dus nooit "de provider" zonder erbij te zetten waarvan —
+zeker niet in een showcase waar provider en consumer binnen elk scenario ook al rollen zijn.
 
 ---
 

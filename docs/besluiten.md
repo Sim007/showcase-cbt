@@ -689,3 +689,26 @@ met de bijbehorende groep in het register. Dat raakt `grenzen.env`, de pipelines
 demoscripts van hoofdstuk 0 en 1, dus het gebeurt niet terloops. Het staat hier zodat het
 niet verdwijnt.
 
+## 2026-08-07 — "Provider" mag, mits de grens erbij staat
+
+`context.md` verbood provider en consumer voor de verhouding tussen showcase-CBT en
+showcase-website. Dat verbod komt uit de tijd dat de website alleen het venster was: er was
+geen grens, dus de woorden sloegen nergens op en verwarden alleen maar.
+
+Dat is veranderd. De website ligt bij een andere squad, er wisselt eigenaarschap, en daarmee
+is het een grens als elke andere. **Een showcase over provider-driven testen die de provider
+van zijn eigen grens niet mag benoemen, ondergraaft zichzelf.**
+
+De regel wordt daarom niet opgeheven maar aangescherpt: de woorden horen bij een *grens*, niet
+bij een product. Showcase-website is geen consument van showcase-CBT als geheel — alleen van
+één grens. Dus: **provider van `scenario-api`**, nooit "de provider".
+
+Dat onderscheid is precies wat `context.md` zelf al vastlegde toen het zei dat elke
+deelsysteemgrens een contractgrens is, ook binnen één squad. Een rol hoort bij een grens; dat
+staat ook in 1.5 van `showcase-cbt.md` als de reden dat `grenzen.env` per grens een rol
+noemt en niet per deelsysteem. Deze beslissing maakt de terminologie gelijk aan het model dat
+er al stond.
+
+De vervangende tekst voor `context.md` staat in de opdracht en landt daar zodra dat document
+naar deze repo verhuist.
+
