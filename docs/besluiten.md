@@ -652,6 +652,21 @@ draait en de container die het werk doet. Die grens is niet beschreven en niet g
 daar ging het mis — op dezelfde manier als een niet-afgedwongen grens tussen twee
 deelsystemen. Contracttesten lost dat niet op; het laat zien waar je moet kijken.
 
+**En het is geen eenmalige misser.** Bij het uitbreiden van dezelfde generator sloeg het
+een tweede keer toe, in een andere vorm:
+
+```sh
+AL_AF="$(printf '%s' "${AL_AF}" | jq -c --argjson nr "$(stap_veld "${I}" nummer)" '...')"
+```
+
+`stap_veld` roept ook een container aan, en die staat in de pijp die de buitenste `jq` moet
+voeden. De binnenste at de invoer van de buitenste op; `AL_AF` werd leeg en `--argjson`
+klapte eruit. Dat het déze keer hard faalde in plaats van stil groen te melden, was geluk.
+
+De regel die eruit volgt: **een gereedschap in een pijp of een lus moet zijn invoer expliciet
+toegewezen krijgen.** Geen container nesten in een pijplijn die een andere container voedt,
+en een lus over regels leest van een eigen bestandsdescriptor.
+
 ## 2026-08-06 — Groep is de aanbieder, artifact is de interface
 
 De contracten van de nieuwe grens staan onder `contracts/showcase-cbt/<artifact>/<versie>/`.

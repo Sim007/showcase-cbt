@@ -83,9 +83,23 @@ else
   # ziet ontbreken, denk je te hebben. Het register houdt zijn compatibility rule, maar dat
   # is één net in plaats van twee. Zie O13.
   if [ "${ARTEFACT_TYPE}" != "OPENAPI" ]; then
-    echo "diff-gate NIET UITGEVOERD: oasdiff leest geen ${ARTEFACT_TYPE}."
-    echo "  Deze wijziging is niet op breuken getoetst. Alleen de compatibility rule van"
-    echo "  het register staat er nog tussen. Zie O13 in docs/showcase-cbt.md."
+    # Een waarschuwing scrollt voorbij en stilte mag niet de standaard zijn: publiceren
+    # zonder gate kan wel, maar alleen als iemand er expliciet voor tekent. Zie O13.
+    [ "${CBT_ZONDER_DIFF_GATE:-}" = "akkoord" ] || fout \
+"de diff-gate kan deze wijziging niet toetsen: oasdiff leest geen ${ARTEFACT_TYPE}.
+
+  ${GROEP}/${ARTIFACT} gaat van ${VORIGE} naar ${VERSIE} zonder dat iets heeft
+  vastgesteld of dat een breuk is. Alleen de compatibility rule van het register
+  staat er dan tussen — één net in plaats van twee.
+
+  Publiceren mag, maar niet stilzwijgend. Bevestig het:
+
+      CBT_ZONDER_DIFF_GATE=akkoord ci/publish-contract.sh ${GROEP} ${ARTIFACT} ${VERSIE} ${SPECPAD}
+
+  Zie O13 in docs/showcase-cbt.md."
+
+    echo "diff-gate NIET UITGEVOERD: oasdiff leest geen ${ARTEFACT_TYPE}, en dat is bevestigd."
+    echo "  Deze wijziging is niet op breuken getoetst. Zie O13 in docs/showcase-cbt.md."
   else
     VORIGE_SPEC="${WERKMAP}/${ARTIFACT}-${VORIGE}.vorige.yaml"
     curl -fsS -o "${VORIGE_SPEC}" "${ARTEFACT_URL}/versions/${VORIGE}/content" \

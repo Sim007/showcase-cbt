@@ -65,9 +65,9 @@ components:
               gestartOp: '2026-08-06T09:12:44Z'
             afgerondeStappen:
               - stapNummer: 1
-                uitkomst: groen
+                uitkomst: geslaagd
               - stapNummer: 2
-                uitkomst: groen
+                uitkomst: geslaagd
             lopendeStap: 3
         - name: geen-run
           payload:
@@ -113,21 +113,21 @@ components:
       payload:
         $ref: '#/components/schemas/StapAfgerondPayload'
       examples:
-        - name: groen
+        - name: geslaagd
           payload:
             soort: stap-afgerond
             tijd: '2026-08-06T09:13:07Z'
             runId: run-7c41a9
             stapNummer: 3
-            uitkomst: groen
+            uitkomst: geslaagd
             bijzonderheden: '1632 generated, 1632 passed'
-        - name: rood
+        - name: mislukt
           payload:
             soort: stap-afgerond
             tijd: '2026-08-06T09:13:07Z'
             runId: run-7c41a9
             stapNummer: 3
-            uitkomst: rood
+            uitkomst: mislukt
             bijzonderheden: 'Undocumented HTTP status code - Received: 200, Documented: 201, 400'
 
     CliUitvoer:
@@ -210,10 +210,15 @@ components:
     Uitkomst:
       type: string
       description: >
-        Alleen deze twee. Een stap die nooit gestart is heeft geen uitkomst en levert geen
-        bericht; dat hij ontbreekt is wat "niet uitgevoerd" betekent.
-      enum: [groen, rood]
-      example: groen
+        Alleen deze twee. Nadrukkelijk geen kleur: groen en rood zijn presentatie, en
+        presentatie is een afleiding — de aanroeper bepaalt zelf welke kleur bij geslaagd
+        of mislukt hoort. Zou showcase-CBT hier "groen" sturen, dan besliste hij mee over
+        het beeld, en dat is de kant die volgens context.md niet afleidt.
+
+        Een stap die nooit gestart is heeft geen uitkomst en levert geen bericht; dat hij
+        ontbreekt is wat "niet uitgevoerd" betekent.
+      enum: [geslaagd, mislukt]
+      example: geslaagd
 
     Run:
       type: object
@@ -346,7 +351,7 @@ components:
           type: string
           description: >
             Waarom de run ophield, niet hoe hij afliep. Voltooid betekent dat alle stappen
-            aan bod zijn geweest; gestopt dat een stap rood werd en de pipeline daar
+            aan bod zijn geweest; gestopt dat een stap mislukte en de pipeline daar
             ophield; afgebroken dat er om afbreken is gevraagd. Wat dat betekent voor een
             deelsysteem of voor het rapport, leidt de aanroeper zelf af.
           enum: [voltooid, gestopt, afgebroken]

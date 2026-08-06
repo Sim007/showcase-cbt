@@ -1,7 +1,12 @@
 # Melding aan de squad van showcase-website — de stream wordt SSE
 
-> Verstuurd vóórdat de contracten gepubliceerd zijn. Een contractversie is onveranderlijk,
-> dus als hier iets wringt is dit het moment. Daarna is het een nieuwe versie.
+> Dit gaat naar jullie toe voordat er iets van jullie kant wordt verwacht, en niet als
+> mededeling achteraf bij een publicatie. Showcase-CBT bepaalt het contract, maar dat is
+> geen reden om jullie het als voldongen feit te laten vinden.
+>
+> `run-stream 1.0.0` en `scenario-api 1.0.0` staan in het register en er is een stub die
+> beide serveert. Wringt hier iets, dan is dit het moment: een contractversie is
+> onveranderlijk, dus daarna is het een nieuwe versie met alles wat daarbij hoort.
 
 ## Wat er verandert
 
@@ -30,9 +35,12 @@ herverbindingsprotocol erbij. SSE is voor dat geval het eenvoudiger gereedschap.
 
 ## Wat het jullie oplevert
 
-**Herverbinden zit erin.** De verkenning noemt dat de socket eenmalig wordt aangemaakt en
-er bij een korte drop geen reconnect komt zonder page-reload. `EventSource` doet dat zelf,
-inclusief het hervatten vanaf het laatste ontvangen bericht.
+**Herverbinden zit erin — dat is de vierde onvolkomenheid uit jullie eigen verkenning.**
+Daar staat dat de socket eenmalig wordt aangemaakt, met een lege dependency-array, en dat
+er bij een korte drop geen reconnect komt zonder page-reload. Met `EventSource` hoeft daar
+geen code voor: de browser herstelt de verbinding zelf, met een oplopende wachttijd, en
+stuurt `Last-Event-ID` mee zodat hervatten kan. Dat punt kunnen jullie afstrepen zonder er
+iets voor te bouwen.
 
 **En de verbindingsindicator wordt eerlijk.** Open vraag 2 uit de verkenning — meet
 "verbonden" de eigen server of showcase-CBT — wordt scherper: `EventSource.readyState` gaat
@@ -51,6 +59,33 @@ ze verwerken veranderen daar niet van — het blijft één plek waar geparseerd 
 Wat níet verandert: jullie hoeven nooit tekst te parsen om te weten waar een stap begint of
 eindigt. Elke stap krijgt een expliciet begin- en eindbericht, en cli-uitvoer is een eigen
 berichtsoort die naar een stapnummer verwijst en verder geen betekenis draagt.
+
+## De uitkomst heet geen kleur
+
+`uitkomst` is `geslaagd` of `mislukt`, niet `groen` of `rood`. Kleur is presentatie, en
+presentatie leiden jullie af — dus die bepalen jullie zelf. Zouden wij "groen" sturen, dan
+beslisten wij mee over jullie beeld, en dat is precies de verdeling die `context.md`
+tegenhoudt.
+
+## De stub serveert ook een mislukte run
+
+De verkenning wijst erop dat de simulator nooit een mislukt pad heeft gelopen: alles stond
+op geslaagd omdat het bronbestand dat zei. Juist wat jullie moeten afleiden hangt daaraan.
+De stub geeft daarom drie situaties, om en om bij elke nieuwe verbinding:
+
+| | Wat je krijgt |
+|---|---|
+| 1 | een run die voltooit |
+| 2 | een run die stopt op een mislukte stap — **de stappen erna krijgen geen enkel bericht** |
+| 3 | een momentopname midden in een lopende run |
+
+Situatie 2 is degene waar jullie afleidlogica op moet passen: `reden: gestopt`, en "niet
+uitgevoerd" volgt uit het uitblijven van berichten.
+
+Situatie 3 heeft een gevolg dat bedoeld is en geen bug: **een late kijker heeft een leeg
+CLI-paneel.** De uitvoer van stappen die al af zijn komt niet opnieuw — die draagt geen
+betekenis en zou de kijker eerst een inhaalslag laten afwachten. Wat hij wél krijgt is welke
+stappen geslaagd zijn en welke loopt, en vanaf dat moment loopt de uitvoer mee.
 
 ## Eén ding waar we het niet mee eens zijn
 

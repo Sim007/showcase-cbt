@@ -96,6 +96,26 @@ hij iets ziet.
 
 Loopt er geen run, dan staat er `run: null`. Zwijgen zou dubbelzinnig zijn.
 
+**Gevolg, bekend en bedoeld: wie halverwege binnenkomt, heeft een leeg CLI-paneel.** De
+stappen die al af zijn hebben hun uitvoer al gehad, en die komt niet opnieuw. Wat hij wél
+ziet is welke stappen geslaagd zijn en welke stap loopt — genoeg om de plaat te tekenen —
+en vanaf dat moment loopt de uitvoer gewoon mee.
+
+Dat staat hier zodat het niet later als bevinding terugkomt. Wie het anders wil, vraagt om
+het bufferen en herhalen van uitvoer die per definitie geen betekenis draagt, en betaalt dat
+met een kijker die eerst een inhaalslag moet afwachten.
+
+## 7a. `uitkomst` draagt geen kleur
+
+`geslaagd` en `mislukt`, niet `groen` en `rood`. Kleur is presentatie, en presentatie is een
+afleiding — dus van de andere kant. Zou showcase-CBT "groen" sturen, dan besliste hij mee
+over het beeld.
+
+Het onderscheid lijkt klein en is dat niet: het rapport van hoofdstuk 0 en 1 gebruikt intern
+wél groen en rood, en juist daarom moet de grens die woorden niet doorgeven. Wat binnen één
+deelsysteem een prima weergave is, wordt op een grens een aanname over hoe de ander het
+toont.
+
 ## 8. Naamgeving
 
 Domeinbegrippen in het Nederlands, techniek in het Engels, `lowerCamelCase` overal:
@@ -109,9 +129,17 @@ Het veld `soort` onderscheidt ze binnen één stroom.
 
 **De diff-gate werkt niet op AsyncAPI** (O13). oasdiff leest OpenAPI en niets anders, dus
 `run-stream` komt bij een wijziging niet langs de gate. Bij 1.0.0 valt er niets te
-vergelijken en merk je het niet; bij 1.1.0 wel. `publish-contract.sh` zegt dat nu hardop in
-plaats van het stil over te slaan. Tot dat is opgelost leunt die grens op de compatibility
-rule van het register alleen — één net in plaats van twee.
+vergelijken en merk je het niet; bij 1.1.0 wel.
+
+`publish-contract.sh` **faalt** daarop, en waarschuwt niet: een waarschuwing scrollt voorbij
+en stilte mag niet de standaard zijn. Publiceren kan alleen met een expliciete bevestiging:
+
+```sh
+CBT_ZONDER_DIFF_GATE=akkoord ci/publish-contract.sh showcase-cbt run-stream 1.1.0 <spec>
+```
+
+Tot O13 opgelost is leunt die grens op de compatibility rule van het register alleen — één
+net in plaats van twee, en dat moet iemand elke keer bewust accepteren.
 
 **De contractpaden volgen twee conventies.** Deze grens staat onder
 `contracts/showcase-cbt/<artifact>/<versie>/`, met het artifact expliciet in het pad. De

@@ -6,14 +6,31 @@
 #
 # De tegenhanger van generate-stub.sh, voor een grens zonder request-response. Een stream
 # heeft geen operaties om te beantwoorden maar een verloop om af te spelen, dus wat hier
-# gegenereerd wordt is één run: de berichten in de volgorde waarin ze zouden komen.
+# gegenereerd wordt zijn runs: de berichten in de volgorde waarin ze zouden komen.
 #
 # Twee bronnen, allebei uit het register en niet van schijf:
-#   de AsyncAPI-spec   levert de vorm van elk bericht, uit zijn example
+#   de AsyncAPI-spec   levert de vorm van elk bericht, uit zijn schema
 #   de OpenAPI-spec    levert welke stappen er zijn, uit het example van het scenario
 #
 # Dat de volgorde uit de stamdata komt is geen omweg maar de bedoeling: een stub die zelf
 # stappen verzint, toont een run die nergens beschreven staat.
+#
+# --- Drie situaties, en waarom precies deze ------------------------------------------
+#
+# Een stub die alleen een geslaagde run serveert, laat de aanroeper zijn afleidlogica
+# bouwen tegen iets wat niet bestaat. Juist wat hij moet afleiden — deelsysteem-status,
+# "niet uitgevoerd", de reden waarom een run ophield — hangt aan een run die stópt. Dat was
+# ook de kritiek op de simulator aan de andere kant: alles stond op geslaagd, en het
+# mislukte pad was nooit gelopen.
+#
+#   1  voltooid   alle stappen komen aan bod en slagen
+#   2  gestopt    een stap mislukt; de stappen erna krijgen geen enkel bericht
+#   3  midden     een momentopname midden in een lopende run, voor de late kijker
+#
+# Ze wisselen elkaar af via een WireMock-scenario: elke nieuwe verbinding krijgt de
+# volgende. Dat blijft binnen het contract — hetzelfde endpoint, geen extra parameter die
+# nergens beschreven staat — en het lijkt op de werkelijkheid, waar je ook krijgt wat er
+# op dat moment gebeurt.
 #
 # Server-Sent Events over WireMock, met chunkedDribbleDelay zodat de berichten na elkaar
 # binnenkomen in plaats van in één klap. Geen extra gereedschap: de stub die de REST-kant
@@ -43,10 +60,10 @@ TMP="${UIT}/tmp"
 REL="build/stub"
 mkdir -p "${UIT}/mappings" "${TMP}"
 
-# Schrijft één mapping bij en ruimt de map niet leeg, anders dan generate-stub.sh. Een
-# grens die zowel REST als een stream heeft, wordt door één stub bediend: eerst de
+# Schrijft alleen zijn eigen mappings bij en ruimt de map niet leeg, anders dan
+# generate-stub.sh. Een grens met REST én een stream wordt door één stub bediend: eerst de
 # operaties, dan deze erbij.
-[ -f "${UIT}/mappings/run-stream.json" ] && rm -f "${UIT}/mappings/run-stream.json"
+rm -f "${UIT}"/mappings/run-stream-*.json
 
 # --- stap 1: beide specs ophalen, altijd uit het register -------------------------------
 
@@ -67,16 +84,19 @@ jq -c '.paths."/v1/scenarios/{scenarioId}".get.responses."200".content."applicat
   "${REL}/tmp/scenario.json" > "${TMP}/scenario-example.json"
 
 STAPPEN="$(jq -r '.stappen | length' "${REL}/tmp/scenario-example.json")"
-[ "${STAPPEN}" -gt 0 ] || fout "het scenario-example heeft geen stappen"
-RUN_ID="$(jq -r '.id' "${REL}/tmp/scenario-example.json")"
+[ "${STAPPEN}" -ge 3 ] || fout "het scenario-example heeft ${STAPPEN} stappen; er zijn er minstens drie nodig om een run te laten stoppen met stappen erna"
+SCENARIO_ID="$(jq -r '.id' "${REL}/tmp/scenario-example.json")"
 
-echo "stap 2: ${STAPPEN} stappen in het example van scenario ${RUN_ID}"
+# Waar het misgaat in situatie 2. Bij voorkeur een gate — dat is de stap die bedoeld is om
+# tegen te houden — en nooit de laatste, want dan blijft er niets over om stil te laten.
+FAALT="$(jq -r --argjson laatste "$((STAPPEN - 1))" \
+  '[.stappen | to_entries[] | select(.key < $laatste) | select(.value.type == "gate") | .value.nummer] | first // empty' \
+  "${REL}/tmp/scenario-example.json")"
+[ -n "${FAALT}" ] || FAALT="$(jq -r --argjson i "$((STAPPEN - 2))" '.stappen[$i].nummer' "${REL}/tmp/scenario-example.json")"
 
-# --- stap 3: het verloop samenstellen ---------------------------------------------------
-#
-# Eén bericht per regel, met de naam van het berichtschema erbij zodat stap 4 elk bericht
-# tegen zijn eigen schema kan houden. De tijd loopt op; POSIX kent geen date-rekenen, dus
-# awk doet het.
+echo "stap 2: ${STAPPEN} stappen in het example van scenario ${SCENARIO_ID}; stap ${FAALT} mislukt in de gestopte run"
+
+# --- stap 3: de drie verlopen samenstellen ----------------------------------------------
 
 tijdstip() {
   awk -v n="$1" 'BEGIN {
@@ -85,48 +105,117 @@ tijdstip() {
   }'
 }
 
-: > "${TMP}/verloop.jsonl"
-N=0
-
-regel() {
-  printf '%s\t%s\n' "$1" "$2" >> "${TMP}/verloop.jsonl"
+stap_veld() {
+  jq -r --argjson i "$1" ".stappen[\$i].$2" "${REL}/tmp/scenario-example.json"
 }
 
-# Bij verbinden eerst de stand van zaken. Hier: een run die net begint, dus nog niets
-# afgerond. Zwijgen zou dubbelzinnig zijn — daarom altijd een momentopname.
-regel MomentopnamePayload "$(jq -cn --arg t "$(tijdstip $N)" \
+# regel <bestand> <schema> <json>
+regel() {
+  printf '%s\t%s\n' "$2" "$3" >> "$1"
+}
+
+# stapberichten <bestand> <index> <uitkomst>
+stapberichten() {
+  _b="$1"; _i="$2"; _u="$3"
+  _nr="$(stap_veld "${_i}" nummer)"
+  _cli="$(stap_veld "${_i}" cli)"
+
+  regel "${_b}" StapGestartPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${_nr}" \
+    '{soort:"stap-gestart", tijd:$t, runId:"run-7c41a9", stapNummer:$nr}')"
+  N=$((N + 1))
+
+  regel "${_b}" CliUitvoerPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${_nr}" --arg r "$ ${_cli}" \
+    '{soort:"cli-uitvoer", tijd:$t, runId:"run-7c41a9", stapNummer:$nr, regel:$r}')"
+  N=$((N + 1))
+
+  regel "${_b}" StapAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${_nr}" --arg u "${_u}" \
+    '{soort:"stap-afgerond", tijd:$t, runId:"run-7c41a9", stapNummer:$nr, uitkomst:$u}')"
+  N=$((N + 1))
+}
+
+RUN_JSON="$(jq -cn --arg s "${SCENARIO_ID}" --arg t "$(tijdstip 0)" \
+  '{runId:"run-7c41a9", scenarioId:$s, gestartOp:$t}')"
+
+# --- situatie 1: voltooid ---------------------------------------------------------------
+
+V1="${TMP}/verloop-voltooid.jsonl"; : > "${V1}"; N=0
+
+regel "${V1}" MomentopnamePayload "$(jq -cn --arg t "$(tijdstip $N)" \
   '{soort:"momentopname", tijd:$t, run:null, afgerondeStappen:[]}')"
 N=$((N + 1))
-
-regel RunGestartPayload "$(jq -cn --arg t "$(tijdstip $N)" --arg s "${RUN_ID}" \
+regel "${V1}" RunGestartPayload "$(jq -cn --arg t "$(tijdstip $N)" --arg s "${SCENARIO_ID}" \
   '{soort:"run-gestart", tijd:$t, runId:"run-7c41a9", scenarioId:$s}')"
 N=$((N + 1))
 
 I=0
 while [ "${I}" -lt "${STAPPEN}" ]; do
-  NUMMER="$(jq -r --argjson i "${I}" '.stappen[$i].nummer' "${REL}/tmp/scenario-example.json")"
-  CLI="$(jq -r --argjson i "${I}" '.stappen[$i].cli' "${REL}/tmp/scenario-example.json")"
-
-  regel StapGestartPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${NUMMER}" \
-    '{soort:"stap-gestart", tijd:$t, runId:"run-7c41a9", stapNummer:$nr}')"
-  N=$((N + 1))
-
-  regel CliUitvoerPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${NUMMER}" --arg r "$ ${CLI}" \
-    '{soort:"cli-uitvoer", tijd:$t, runId:"run-7c41a9", stapNummer:$nr, regel:$r}')"
-  N=$((N + 1))
-
-  regel StapAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${NUMMER}" \
-    '{soort:"stap-afgerond", tijd:$t, runId:"run-7c41a9", stapNummer:$nr, uitkomst:"groen"}')"
-  N=$((N + 1))
-
+  stapberichten "${V1}" "${I}" geslaagd
   I=$((I + 1))
 done
 
-regel RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" \
+regel "${V1}" RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" \
   '{soort:"run-afgerond", tijd:$t, runId:"run-7c41a9", reden:"voltooid"}')"
 
-BERICHTEN="$(wc -l < "${TMP}/verloop.jsonl" | tr -d ' ')"
-echo "stap 3: ${BERICHTEN} berichten samengesteld"
+# --- situatie 2: gestopt op een mislukte stap -------------------------------------------
+#
+# De stappen ná de mislukte krijgen geen enkel bericht. Dat is geen omissie in de stub maar
+# de afspraak: "niet uitgevoerd" volgt uit het uitblijven van berichten.
+
+V2="${TMP}/verloop-gestopt.jsonl"; : > "${V2}"; N=0
+
+regel "${V2}" MomentopnamePayload "$(jq -cn --arg t "$(tijdstip $N)" \
+  '{soort:"momentopname", tijd:$t, run:null, afgerondeStappen:[]}')"
+N=$((N + 1))
+regel "${V2}" RunGestartPayload "$(jq -cn --arg t "$(tijdstip $N)" --arg s "${SCENARIO_ID}" \
+  '{soort:"run-gestart", tijd:$t, runId:"run-7c41a9", scenarioId:$s}')"
+N=$((N + 1))
+
+I=0
+STIL=0
+while [ "${I}" -lt "${STAPPEN}" ]; do
+  NR="$(stap_veld "${I}" nummer)"
+  if [ "${NR}" -lt "${FAALT}" ]; then
+    stapberichten "${V2}" "${I}" geslaagd
+  elif [ "${NR}" -eq "${FAALT}" ]; then
+    stapberichten "${V2}" "${I}" mislukt
+  else
+    STIL=$((STIL + 1))
+  fi
+  I=$((I + 1))
+done
+
+regel "${V2}" RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" \
+  '{soort:"run-afgerond", tijd:$t, runId:"run-7c41a9", reden:"gestopt"}')"
+
+# --- situatie 3: midden in een lopende run ----------------------------------------------
+#
+# Geen run-gestart: die is al voorbij. De momentopname draagt wat er al af is, en verder
+# geen cli-uitvoer — die is voor deze kijker weg, en dat is bewust.
+
+V3="${TMP}/verloop-midden.jsonl"; : > "${V3}"; N=6
+
+# In één aanroep en niet in een lus met een pipe. Een container in een pijp die een andere
+# container voedt, eet de invoer van die tweede op — dezelfde val als bij de validatielus,
+# in een andere vorm. Zie docs/besluiten.md.
+AL_AF="$(jq -c '[.stappen[0:2][] | {stapNummer: .nummer, uitkomst: "geslaagd"}]' \
+  "${REL}/tmp/scenario-example.json")"
+LOPEND="$(stap_veld 2 nummer)"
+
+regel "${V3}" MomentopnamePayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson run "${RUN_JSON}" \
+  --argjson af "${AL_AF}" --argjson lopend "${LOPEND}" \
+  '{soort:"momentopname", tijd:$t, run:$run, afgerondeStappen:$af, lopendeStap:$lopend}')"
+N=$((N + 1))
+
+I=2
+while [ "${I}" -lt "${STAPPEN}" ]; do
+  stapberichten "${V3}" "${I}" geslaagd
+  I=$((I + 1))
+done
+
+regel "${V3}" RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" \
+  '{soort:"run-afgerond", tijd:$t, runId:"run-7c41a9", reden:"voltooid"}')"
+
+echo "stap 3: $(wc -l < "${V1}" | tr -d ' ') / $(wc -l < "${V2}" | tr -d ' ') / $(wc -l < "${V3}" | tr -d ' ') berichten (voltooid / gestopt / midden), ${STIL} stappen zonder bericht"
 
 # --- stap 4: elk bericht tegen zijn eigen schema -----------------------------------------
 #
@@ -134,44 +223,57 @@ echo "stap 3: ${BERICHTEN} berichten samengesteld"
 # die iets stuurt wat niet aan de spec voldoet, leert de aanroeper iets aan wat straks
 # nergens op slaat.
 
-jq "{ components: { schemas: .components.schemas } }" "${REL}/tmp/stream.json" > "${TMP}/stream-componenten.json"
+jq '{ components: { schemas: .components.schemas } }' "${REL}/tmp/stream.json" > "${TMP}/stream-componenten.json"
 
 # De lus leest van fd 3 en niet van stdin: elk gereedschap hierbinnen draait in een
 # interactieve container en zou anders de rest van het bestand opslokken. Dan stopt de lus
-# na één bericht en meldt de controle groen over veertien berichten die niemand bekeek.
+# na één bericht en meldt de controle groen over berichten die niemand bekeek — hoe dat
+# ontdekt is, staat in docs/besluiten.md.
 GEVALIDEERD=0
-while IFS="$(printf '\t')" read -r schema bericht <&3; do
-  jq --arg ref "#/components/schemas/${schema}" '. + {"$ref": $ref}' \
-    "${REL}/tmp/stream-componenten.json" > "${TMP}/s-${GEVALIDEERD}.json"
-  printf '%s' "${bericht}" > "${TMP}/b-${GEVALIDEERD}.json"
+for verloop in "${V1}" "${V2}" "${V3}"; do
+  while IFS="$(printf '\t')" read -r schema bericht <&3; do
+    jq --arg ref "#/components/schemas/${schema}" '. + {"$ref": $ref}' \
+      "${REL}/tmp/stream-componenten.json" > "${TMP}/s-${GEVALIDEERD}.json"
+    printf '%s' "${bericht}" > "${TMP}/b-${GEVALIDEERD}.json"
 
-  ajv validate --strict=false -c ajv-formats \
-    -s "${REL}/tmp/s-${GEVALIDEERD}.json" \
-    -d "${REL}/tmp/b-${GEVALIDEERD}.json" >/dev/null 2>&1 \
-    || fout "bericht ${GEVALIDEERD} voldoet niet aan ${schema}: ${bericht}"
+    ajv validate --strict=false -c ajv-formats \
+      -s "${REL}/tmp/s-${GEVALIDEERD}.json" \
+      -d "${REL}/tmp/b-${GEVALIDEERD}.json" >/dev/null 2>&1 \
+      || fout "$(basename "${verloop}"), bericht ${GEVALIDEERD} voldoet niet aan ${schema}: ${bericht}"
 
-  GEVALIDEERD=$((GEVALIDEERD + 1))
-done 3< "${TMP}/verloop.jsonl"
+    GEVALIDEERD=$((GEVALIDEERD + 1))
+  done 3< "${verloop}"
+done
 
 echo "stap 4: ${GEVALIDEERD} berichten voldoen aan hun payloadschema"
 
-# --- stap 5: de mapping wegschrijven -----------------------------------------------------
+# --- stap 5: de mappings wegschrijven ----------------------------------------------------
 
 PAD="$(jq -r '.channels | keys | .[0]' "${REL}/tmp/stream.json")"
 
-# Elk bericht als één SSE-event. De lege regel erna sluit het event af; dat is het formaat
-# en niet iets van ons.
-cut -f2 "${TMP}/verloop.jsonl" | awk '{ printf "data: %s\n\n", $0 }' > "${TMP}/body.txt"
+# mapping <bestand> <verloop> <huidige-staat> <volgende-staat>
+mapping() {
+  _n="$(wc -l < "$2" | tr -d ' ')"
+  cut -f2 "$2" | awk '{ printf "data: %s\n\n", $0 }' > "${TMP}/body.txt"
 
-jq -n --arg pad "${PAD}" --rawfile body "${REL}/tmp/body.txt" --argjson n "${BERICHTEN}" \
-  '{
-     request: { method: "GET", urlPath: $pad },
-     response: {
-       status: 200,
-       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
-       body: $body,
-       chunkedDribbleDelay: { numberOfChunks: $n, totalDuration: ($n * 400) }
-     }
-   }' > "${UIT}/mappings/run-stream.json"
+  jq -n --arg pad "${PAD}" --rawfile body "${REL}/tmp/body.txt" --argjson n "${_n}" \
+    --arg nu "$3" --arg straks "$4" \
+    '{
+       scenarioName: "run-stream",
+       requiredScenarioState: $nu,
+       newScenarioState: $straks,
+       request: { method: "GET", urlPath: $pad },
+       response: {
+         status: 200,
+         headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+         body: $body,
+         chunkedDribbleDelay: { numberOfChunks: $n, totalDuration: ($n * 400) }
+       }
+     }' > "$1"
+}
 
-echo "stap 5: ${UIT#"${CBT_ROOT}/"}/mappings/run-stream.json — ${BERICHTEN} events over $(( BERICHTEN * 400 / 1000 ))s"
+mapping "${UIT}/mappings/run-stream-1-voltooid.json" "${V1}" Started gestopt
+mapping "${UIT}/mappings/run-stream-2-gestopt.json"  "${V2}" gestopt midden
+mapping "${UIT}/mappings/run-stream-3-midden.json"   "${V3}" midden Started
+
+echo "stap 5: drie mappings in ${REL}/mappings/ — elke verbinding krijgt de volgende situatie"
