@@ -1007,6 +1007,7 @@ De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het cont
 | O8 | Pins op info-endpoints als surrogaat voor monitoring (F4): tijdelijk voor de showcase of blijvend naast monitoring |
 | O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
 | O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
+| O13 | **De diff-gate werkt niet op AsyncAPI.** oasdiff leest OpenAPI en niets anders, dus voor `run-stream` valt de gate uit 1.9 weg. Bij 1.0.0 merk je dat niet — er is niets om mee te vergelijken — maar bij de eerste wijziging wel. Tot dat moment leunt die grens op de compatibility rule van het register alleen, en dat is één net in plaats van twee. Op te lossen in hoofdstuk 6, dat toch een AsyncAPI-grens uitwerkt; te overwegen valt een tweede vergelijker naast oasdiff of de gate expliciet als niet-van-toepassing markeren in plaats van hem stil over te slaan |
 
 ---
 
