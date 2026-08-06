@@ -479,6 +479,8 @@ Een eigen rapport, `00-start/rapport/rapport-cbt-00`, naast dat van hoofdstuk 1.
 
 Dat is het antwoord op "wat kost contracttesten en wat levert het op", uitgedrukt in wat er werkelijk draait in plaats van in een belofte. Het is ook een ondergrens: in een bestaande omgeving komt daar eenmalig het werk bij om te repareren wat de eerste verificatie aan het licht brengt (zie 1.11).
 
+**Die aftrekking wordt afgedwongen en niet aangenomen.** `ci/vergelijk-rapporten.sh` toetst dat elke stap uit hoofdstuk 0 in dezelfde volgorde terugkomt in hoofdstuk 1, en leidt het verschil daaruit af. Dat is nodig omdat de koppeling tussen de twee hoofdstukken anders stilletjes breekt: voegt een later hoofdstuk een deelsysteem toe aan één van beide, of loopt de volgorde uiteen, dan blijven allebei gewoon groen en wordt alleen de conclusie onwaar. Een bewering die nergens door wordt afgedwongen is precies wat deze showcase aanvalt — ook wanneer de showcase hem zelf doet.
+
 Wat níet in het verschil zit, is even belangrijk. De CI-omgeving stond er al, de stub stond er al, de smoke en de gebruikersflow stonden er al. Contracttesten voegt geen laag toe aan de piramide en geen omgeving aan de straat — het verandert waar de norm vandaan komt.
 
 ---

@@ -208,6 +208,7 @@ zien wat er gebeurt.
 | `ci/drift.sh` | biedt de service precies de operaties die het contract belooft? |
 | `ci/smoke.sh` | de smoke van een deelsysteem, of `keten` over alle grenzen |
 | `ci/gebruikersflow.sh` | de flows van één deelsysteem, of `keten` over alles |
+| `ci/vergelijk-rapporten.sh` | toetst dat hoofdstuk 0 en 1 gelijk lopen, en leidt de toevoeging af |
 | `ci/deploy.sh` | chart + release + omgevingswaarden |
 | `ci/versieconformiteit.sh` | wordt elke pin op deze omgeving daar ook geserveerd? |
 | `ci/toon-versies.sh` | wat draait er, uitgelezen bij de containers zelf |

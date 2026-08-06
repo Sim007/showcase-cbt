@@ -146,12 +146,26 @@ opmerking ""
 opmerking "En valt hij om omdat er een deelsysteem ontbreekt, dan zegt hij dát — een"
 opmerking "onvolledige omgeving, geen kapot deelsysteem. Signaal voor de tribe, geen"
 opmerking "blokkade voor een squad."
-opmerking ""
-opmerking "Leg nu de twee rapporten naast elkaar. Dezelfde deelsystemen, dezelfde versies,"
-opmerking "dezelfde volgorde, dezelfde pipelines. Wat erbij staat is contracttesten."
 
 echo
 CBT_LIVE= ci/rapport-html.sh
+
+# --- de aftrekking ---------------------------------------------------------------------
+
+RAPPORT_00="${CBT_ROOT}/00-start/rapport/rapport-cbt-00.md"
+if [ -f "${RAPPORT_00}" ]; then
+  scene "De aftrekking: wat contracttesten precies heeft toegevoegd"
+  ci/vergelijk-rapporten.sh "${RAPPORT_00}" "${CBT_RAPPORT:-${CBT_ROOT}/01-basis/rapport/rapport-cbt-01.md}"
+  echo
+  opmerking "Dat lijstje is niet geteld maar afgeleid: elke stap uit hoofdstuk 0 komt in"
+  opmerking "dezelfde volgorde terug, en wat overblijft is de toevoeging. Loopt er ooit"
+  opmerking "iets uiteen — een deelsysteem erbij, een andere volgorde — dan wordt dit rood"
+  opmerking "en klopt de vergelijking niet meer."
+else
+  echo
+  opmerking "Geen rapport van hoofdstuk 0 gevonden, dus de aftrekking is niet te maken."
+  opmerking "Draai 00-start/demo/demo.sh en daarna dit hoofdstuk opnieuw."
+fi
 
 echo
 echo "─────────────────────────────────────────────────────────────────────"

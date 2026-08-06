@@ -559,3 +559,30 @@ bevat nog steeds geen Payment. Dat Payment er net is langsgekomen maakt dat ster
 plaats van zwakker: hij is klaar, en Order heeft hem alsnog niet geraadpleegd. Was hij niet
 klaar geweest, dan was de uitkomst dezelfde.
 
+## 2026-08-06 — De aftrekking wordt afgedwongen in plaats van aangenomen
+
+Hoofdstuk 0 en 1 zeggen alleen samen iets. Elk apart is het een demo die groen wordt; de
+bewering die ze samen dragen is dat het verschil tussen de twee rapporten het werk is dat
+contracttesten toevoegt. Die bewering klopt alleen zolang al het andere gelijk is.
+
+**En hij breekt stilletjes.** Voegt hoofdstuk 6 een deelsysteem toe aan één van beide, zet
+hoofdstuk 2 payment op 1.1.0, of hangt iemand een scène om — dan blijven allebei de
+hoofdstukken gewoon groen en wordt alleen de conclusie onwaar. Niets zegt er iets over.
+
+Dat is precies de soort bewering die deze showcase aanvalt, gebouwd in de showcase zelf. Het
+antwoord is dan ook hetzelfde: maak hem toetsbaar. `ci/vergelijk-rapporten.sh` kijkt of elke
+stap uit hoofdstuk 0 in dezelfde volgorde terugkomt in hoofdstuk 1, en leidt de toevoeging af
+uit wat overblijft. Wordt dat rood, dan is de koppeling gebroken en zie je het meteen.
+
+**Gevolg dat er gratis bij komt:** het getal negen is niet langer door mij geteld maar door
+een script afgeleid. Ik heb deze week twee keer een samenvattend getal gepresenteerd dat ik
+niet had nagerekend; dit is de structurele versie van die correctie.
+
+Vergeleken wordt op onderdeel en stapnaam. Tijdstip en bijzonderheden verschillen per run, en
+de tekst van een oordeel luidt in hoofdstuk 0 anders dan in hoofdstuk 1 — wat vergeleken
+wordt is de structuur en niet de formulering.
+
+De controle staat in geen van beide rapporten. Hij gaat niet over de deelsystemen maar over
+de showcase, en testbewijs van een deelsysteem hoort niet vermengd te raken met een controle
+op de demo.
+
