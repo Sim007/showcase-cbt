@@ -42,6 +42,17 @@ ARTEFACT_URL="${API}/groups/${GROEP}/artifacts/${ARTIFACT}"
 WERKMAP="${CBT_ROOT}/build/contracts"
 mkdir -p "${WERKMAP}"
 
+# Het soort spec volgt uit de inhoud en niet uit een vlag: een spec die zichzelf openapi
+# noemt en als ASYNCAPI wordt gepubliceerd, komt er verkeerd weer uit en dat merk je pas
+# bij de consumer.
+if grep -q '^asyncapi:' "${SPECPAD}"; then
+  ARTEFACT_TYPE="ASYNCAPI"
+elif grep -q '^openapi:' "${SPECPAD}"; then
+  ARTEFACT_TYPE="OPENAPI"
+else
+  fout "${SPECPAD} begint niet met openapi: of asyncapi: — onbekend soort spec"
+fi
+
 major() { echo "${1%%.*}"; }
 
 # Sorteert X.Y.Z numeriek zonder sort -V, dat GNU-specifiek is.
@@ -66,34 +77,44 @@ else
   echo "hoogste gepubliceerde versie: ${VORIGE}"
 
   # --- stap 2: diff-gate ----------------------------------------------------------
-
-  VORIGE_SPEC="${WERKMAP}/${ARTIFACT}-${VORIGE}.vorige.yaml"
-  curl -fsS -o "${VORIGE_SPEC}" "${ARTEFACT_URL}/versions/${VORIGE}/content" \
-    || fout "kon versie ${VORIGE} niet ophalen uit het register"
-
-  # oasdiff draait in een container met de wortel op /work; paden dus relatief.
-  OUD_REL="${VORIGE_SPEC#"${CBT_ROOT}/"}"
-  NIEUW_REL="${SPECPAD#"${CBT_ROOT}/"}"
-
-  # oasdiff onderscheidt in zijn exitcode een gevonden breuk (1) van een tool die zijn
-  # werk niet kon doen (alles daarboven, bijvoorbeeld 102 bij een onleesbare spec). Dat
-  # verschil moet blijven staan: een gate die "breaking wijziging" meldt terwijl hij in
-  # werkelijkheid niets heeft kunnen vergelijken, blokkeert bij toeval en laat bij toeval
-  # door.
-  BREKEND=0
-  oasdiff breaking "${OUD_REL}" "${NIEUW_REL}" --fail-on ERR || BREKEND=$?
-
-  if [ "${BREKEND}" -gt 1 ]; then
-    fout "oasdiff kon de vergelijking niet uitvoeren (exitcode ${BREKEND}). Er is niets getoetst"
-  fi
-
-  if [ "${BREKEND}" -eq 1 ]; then
-    if [ "$(major "${VERSIE}")" = "$(major "${VORIGE}")" ]; then
-      fout "breaking wijziging zonder major-bump: ${VORIGE} -> ${VERSIE}. Publiceer als $(( $(major "${VORIGE}") + 1 )).0.0"
-    fi
-    echo "breaking wijziging, maar de major gaat van $(major "${VORIGE}") naar $(major "${VERSIE}") — toegestaan"
+  #
+  # oasdiff leest OpenAPI en niets anders. Voor een AsyncAPI-grens valt deze gate dus weg,
+  # en dat wordt hier hardop gezegd in plaats van stil overgeslagen: een gate die je niet
+  # ziet ontbreken, denk je te hebben. Het register houdt zijn compatibility rule, maar dat
+  # is één net in plaats van twee. Zie O13.
+  if [ "${ARTEFACT_TYPE}" != "OPENAPI" ]; then
+    echo "diff-gate NIET UITGEVOERD: oasdiff leest geen ${ARTEFACT_TYPE}."
+    echo "  Deze wijziging is niet op breuken getoetst. Alleen de compatibility rule van"
+    echo "  het register staat er nog tussen. Zie O13 in docs/showcase-cbt.md."
   else
-    echo "geen breaking wijziging gevonden"
+    VORIGE_SPEC="${WERKMAP}/${ARTIFACT}-${VORIGE}.vorige.yaml"
+    curl -fsS -o "${VORIGE_SPEC}" "${ARTEFACT_URL}/versions/${VORIGE}/content" \
+      || fout "kon versie ${VORIGE} niet ophalen uit het register"
+
+    # oasdiff draait in een container met de wortel op /work; paden dus relatief.
+    OUD_REL="${VORIGE_SPEC#"${CBT_ROOT}/"}"
+    NIEUW_REL="${SPECPAD#"${CBT_ROOT}/"}"
+
+    # oasdiff onderscheidt in zijn exitcode een gevonden breuk (1) van een tool die zijn
+    # werk niet kon doen (alles daarboven, bijvoorbeeld 102 bij een onleesbare spec). Dat
+    # verschil moet blijven staan: een gate die "breaking wijziging" meldt terwijl hij in
+    # werkelijkheid niets heeft kunnen vergelijken, blokkeert bij toeval en laat bij toeval
+    # door.
+    BREKEND=0
+    oasdiff breaking "${OUD_REL}" "${NIEUW_REL}" --fail-on ERR || BREKEND=$?
+
+    if [ "${BREKEND}" -gt 1 ]; then
+      fout "oasdiff kon de vergelijking niet uitvoeren (exitcode ${BREKEND}). Er is niets getoetst"
+    fi
+
+    if [ "${BREKEND}" -eq 1 ]; then
+      if [ "$(major "${VERSIE}")" = "$(major "${VORIGE}")" ]; then
+        fout "breaking wijziging zonder major-bump: ${VORIGE} -> ${VERSIE}. Publiceer als $(( $(major "${VORIGE}") + 1 )).0.0"
+      fi
+      echo "breaking wijziging, maar de major gaat van $(major "${VORIGE}") naar $(major "${VERSIE}") — toegestaan"
+    else
+      echo "geen breaking wijziging gevonden"
+    fi
   fi
 fi
 
@@ -102,8 +123,8 @@ fi
 PAYLOAD="${WERKMAP}/${ARTIFACT}-${VERSIE}.payload.json"
 
 if [ -z "${VORIGE}" ]; then
-  jq -Rs --arg artifact "${ARTIFACT}" --arg versie "${VERSIE}" \
-    '{artifactId: $artifact, artifactType: "OPENAPI",
+  jq -Rs --arg artifact "${ARTIFACT}" --arg versie "${VERSIE}" --arg type "${ARTEFACT_TYPE}" \
+    '{artifactId: $artifact, artifactType: $type,
       firstVersion: {version: $versie,
                      content: {content: ., contentType: "application/x-yaml"}}}' \
     < "${SPECPAD}" > "${PAYLOAD}"
