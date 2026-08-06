@@ -606,3 +606,71 @@ en zonder log, en dat afwegingen hierheen gaan. Git houdt de geschiedenis bij.
 Daarbij viel een restant op: 1.13 zei nog "de wijzigingslog is daarmee ook de driftlog". Die
 zin wijst nu naar dit bestand, wat hij feitelijk al deed.
 
+## 2026-08-06 — Een lus die groen meldde over veertien berichten die niemand bekeek
+
+Dit staat hier als demomateriaal en niet als bugfix in de historie, want het is het
+faalpatroon waar deze hele showcase over gaat — nu aangetroffen in het gereedschap dat dat
+patroon moet aantonen.
+
+**Wat er gebeurde.** De stubgenerator voor de stream valideert elk bericht tegen zijn eigen
+payloadschema. De lus las de berichten van standaardinvoer:
+
+```sh
+while IFS="$(printf '\t')" read -r schema bericht; do
+  ajv validate ...
+done < "${TMP}/verloop.jsonl"
+```
+
+Elk gereedschap in deze opzet draait in een container met `--interactive`, dus met
+standaardinvoer open. Die container slokte bij het eerste bericht de rest van het bestand
+op. De lus stopte daarna, en het script meldde:
+
+```
+stap 4: 1 berichten voldoen aan hun payloadschema
+```
+
+**Waarom dat erger is dan een fout.** Het script faalde niet. Het meldde succes. Wie niet
+toevallig op het getal lette, had een controle die veertien van de vijftien berichten
+overslaat — en die zou blijven overslaan, stil, bij elke volgende run. Precies wat deze
+showcase aanwijst als het probleem met een groene test die niets toetst.
+
+Het is bovendien alleen opgemerkt doordat het aantal ernaast stond. Had de stap alleen "ok"
+gezegd, dan was er niets te zien geweest. **Een controle die zijn omvang niet meldt, is niet
+te controleren.**
+
+**De oplossing.** De lus leest van bestandsdescriptor 3, zodat wat het lichaam met
+standaardinvoer doet er niet toe doet:
+
+```sh
+while IFS="$(printf '\t')" read -r schema bericht <&3; do
+  ...
+done 3< "${TMP}/verloop.jsonl"
+```
+
+**Wat het aantoont.** Het gereedschap heeft zelf ook een grens: tussen de shell die de lus
+draait en de container die het werk doet. Die grens is niet beschreven en niet getoetst, en
+daar ging het mis — op dezelfde manier als een niet-afgedwongen grens tussen twee
+deelsystemen. Contracttesten lost dat niet op; het laat zien waar je moet kijken.
+
+## 2026-08-06 — Groep is de aanbieder, artifact is de interface
+
+De contracten van de nieuwe grens staan onder `contracts/showcase-cbt/<artifact>/<versie>/`.
+De oudere grens staat onder `contracts/order-payment/v<versie>/`. Vanaf nu geldt de eerste
+indeling: **de groep is de aanbieder, het artifact is de interface.**
+
+**De reden is scherper dan dat er twee conventies waren.** De naam `order-payment` legt de
+afnemer van vandaag vast. Krijgt Payment er morgen een tweede afnemer bij, dan verandert de
+spec niet — maar de groepsnaam is dan onwaar geworden. Hij belooft een tweezijdige relatie
+terwijl er een aanbieder met meerdere afnemers staat.
+
+Dat is precies het soort naam dat stil verkeerd gaat: niets faalt, niemand merkt het, en het
+register — de plek waar de tribe moet kunnen opzoeken wie wat aanbiedt — gaat liegen over de
+vorm van zijn eigen inhoud.
+
+De aanbieder verandert niet als er een afnemer bij komt. Daarom hoort die in de naam.
+
+**Te doen:** `order-payment/v1.0.0/openapi.yaml` wordt `payment/payment-api/1.0.0/openapi.yaml`,
+met de bijbehorende groep in het register. Dat raakt `grenzen.env`, de pipelines en de
+demoscripts van hoofdstuk 0 en 1, dus het gebeurt niet terloops. Het staat hier zodat het
+niet verdwijnt.
+
