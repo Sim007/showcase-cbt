@@ -741,14 +741,21 @@ aantal gecontroleerde items zegt niets.
 
 ## 2026-08-07 — Publiceren zonder afnemer is geen publiceren
 
-Versie 1.0.0 van scenario-api is na "publicatie" driemaal gewijzigd: de uitkomst-enum en
-tweemaal de server-url. Dat mocht, omdat niemand hem had. Een register dat in memory op
-localhost draait en bij elke demo wordt weggegooid, is geen register maar een
-demo-onderdeel.
+`run-stream` draagt het nummer 1.0.0 en is na de eerste keer in het register zetten tweemaal
+gewijzigd: de uitkomst-enum, en de server-url die het pad dubbel bevatte.
+
+**Dat mocht, en dat is precies het ongemakkelijke.** De spec is nog niet officieel 1.0.0 en
+staat nog nergens buiten de squad, dus er is niets geschonden. Maar het nummer zegt van wel.
+Een versienummer is een belofte aan iemand anders, en dat nummer stond er al voordat er
+iemand was om de belofte aan te doen.
+
+Een register dat in memory op localhost draait en bij elke demo wordt weggegooid, is dan ook
+geen register maar een demo-onderdeel. "Gepubliceerd" betekende hier: staat in een lade die
+morgen leeg is.
 
 Zolang een spec voor een andere squad een bestand in een git-repo is, is het de afspraak in
 een document die te zwak is. Onveranderlijkheid is pas echt als iemand anders de versie kan
-ophalen.
+ophalen — tot dat moment is het een voornemen, hoe netjes de nummering ook oogt.
 
 ## 2026-08-07 — Eén document, twee plekken, verkeerde conclusie
 

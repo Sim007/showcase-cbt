@@ -4,9 +4,13 @@
 > mededeling achteraf bij een publicatie. Showcase-CBT bepaalt het contract, maar dat is
 > geen reden om jullie het als voldongen feit te laten vinden.
 >
-> `run-stream 1.0.0` en `scenario-api 1.0.0` staan in het register en er is een stub die
-> beide serveert. Wringt hier iets, dan is dit het moment: een contractversie is
-> onveranderlijk, dus daarna is het een nieuwe versie met alles wat daarbij hoort.
+> `run-stream` en `scenario-api` liggen er als voorstel, met het nummer 1.0.0 erop, en er is
+> een stub die beide serveert. **Vastgezet is er nog niets** — ze staan alleen in het
+> register op onze eigen machine, en dat is er morgen weer leeg.
+>
+> Dat is met opzet: zodra jullie erop bouwen wordt 1.0.0 onveranderlijk, en dan is elke
+> wijziging een nieuwe versie met alles wat daarbij hoort. Wringt er iets, dan is dit dus het
+> moment — daarna wordt het duur.
 
 ## Wat er verandert
 

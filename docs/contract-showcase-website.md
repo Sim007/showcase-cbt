@@ -1,6 +1,8 @@
 # De grens naar showcase-website — gemaakte keuzes
 
-Twee contracten, allebei 1.0.0 in het register onder groep `showcase-cbt`:
+Twee contracten onder groep `showcase-cbt`, allebei met het nummer 1.0.0 en allebei nog een
+**voorstel**: ze staan in het lokale register en nog nergens daarbuiten. Vastgezet worden ze
+zodra showcase-website erop gaat bouwen.
 
 | Artifact | Type | Wat het beschrijft |
 |---|---|---|
