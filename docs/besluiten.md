@@ -712,3 +712,88 @@ er al stond.
 De vervangende tekst voor `context.md` staat in de opdracht en landt daar zodra dat document
 naar deze repo verhuist.
 
+---
+
+# Geleerd
+
+Hierboven staat wat er gekozen is. Hieronder staat wat die keuzes hebben gekost.
+
+Deze notities zijn ontstaan tijdens het bouwen, niet erna bedacht. Ze staan hier omdat ze
+het argument van de showcase dragen: elk van deze gevallen is iets wat in een echte tribe
+ook gebeurt, en meestal onopgemerkt blijft.
+
+De datum is die van het vastleggen, niet van het voorval.
+
+## 2026-08-07 — Stil groen is de standaarduitkomst, niet de uitzondering
+
+Twee keer meldde eigen gereedschap groen over dingen die niemand had bekeken. De
+validatielus las van stdin; de aangeroepen container at de rest van het bestand op, waarna
+de lus stopte na één bericht en groen meldde over veertien ongecontroleerde berichten. Bij
+het uitbreiden van dezelfde generator dook het opnieuw op, in andere vorm: een container
+genest in een pijplijn die een andere container voedt.
+
+Dat het de tweede keer hard faalde in plaats van stil groen te melden, was geluk. Dat hoort
+erbij te staan, want dat is het punt.
+
+Regel: geen container nesten in een pijplijn die een andere container voedt; een lus over
+regels leest van een eigen bestandsdescriptor. En breder: een groene toets zonder zichtbaar
+aantal gecontroleerde items zegt niets.
+
+## 2026-08-07 — Publiceren zonder afnemer is geen publiceren
+
+Versie 1.0.0 van scenario-api is na "publicatie" driemaal gewijzigd: de uitkomst-enum en
+tweemaal de server-url. Dat mocht, omdat niemand hem had. Een register dat in memory op
+localhost draait en bij elke demo wordt weggegooid, is geen register maar een
+demo-onderdeel.
+
+Zolang een spec voor een andere squad een bestand in een git-repo is, is het de afspraak in
+een document die te zwak is. Onveranderlijkheid is pas echt als iemand anders de versie kan
+ophalen.
+
+## 2026-08-07 — Eén document, twee plekken, verkeerde conclusie
+
+De squad onderbouwde een modelleerkeuze met een passage uit context.md die al geschrapt was.
+Ze lazen de versie in de andere repo, omdat de nieuwe daar nog niet was geland. De uitkomst
+bleef toevallig goed; de redenering was onjuist.
+
+Kosten: één ronde. De volgende keer is dat niet gegarandeerd. Een kopie van een document is
+geen kopie maar een tweede document met vertraging.
+
+## 2026-08-07 — Een stub die alleen groen kent, test de verkeerde helft
+
+De eerste stub serveerde vijftien berichten die allemaal slaagden — precies de kritiek die
+de consumer op zijn eigen simulator had. Alles wat de andere kant moet afleiden hangt juist
+aan het mislukte pad: welke stappen geen bericht kregen, waarom de run stopte, wat er dan in
+het rapport hoort.
+
+Zonder dat pad bouwt de consumer zijn afleidlogica tegen een situatie die niet bestaat, en
+blijkt dat pas bij de eerste echte run.
+
+## 2026-08-07 — Een gate toetst niet wat je denkt dat hij toetst
+
+De server-url stond er tweemaal in. De stub had er geen last van; alleen wie de spec léést,
+zag het. De diff-gate toetst breuken, niet geldigheid, en oasdiff leest geen AsyncAPI — voor
+de ene grens gold de gate wel en voor de andere niet, zonder dat iets dat zei.
+
+Regel: een gate die niet kan toetsen, meldt dat hardop en laat de publicatie falen tenzij
+het expliciet wordt bevestigd. Stilte is geen akkoord.
+
+## 2026-08-07 — De aanname zat niet in het contract maar in het gereedschap eromheen
+
+De consumer kon de geleverde stub niet draaien: geen Docker op de werklaptop, geen
+abonnement. Het contract stelde die eis nergens — de verpakking wel. Zolang provider en
+consumer dezelfde laptop deelden, was die aanname onzichtbaar.
+
+Regel: lever een stub in de technologie van de consumer, niet in die van de provider. Wat je
+meelevert is onderdeel van de afspraak, ook als het niet in de spec staat.
+
+## 2026-08-07 — Waarom er is afgesplitst
+
+De website is bewust bij een andere squad belegd, zodat de rol van PO werkelijk gespeeld
+wordt in plaats van beschreven. Alle notities hierboven komen uit die keuze voort; geen
+ervan was voorzien.
+
+Wat nog niet is meegemaakt en het meest zal leren: de tweede wijziging. Een breaking change
+over een grens die je niet zelf aanstuurt, met een deprecatieperiode en een squad met een
+eigen backlog. Dat is scenario 03 en 05 in het echt.
+
