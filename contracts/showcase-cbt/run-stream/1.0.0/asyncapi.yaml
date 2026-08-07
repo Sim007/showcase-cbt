@@ -20,7 +20,9 @@ info:
 
 servers:
   showcase-cbt:
-    url: '{host}/v1/runs/stream'
+    # Alleen de basis. Het pad staat in de channelnaam hieronder; samen vormen ze het
+    # adres. Stond het pad hier ook, dan werd het tweemaal geplakt.
+    url: '{host}'
     protocol: sse
     description: >
       Eén endpoint, altijd open. Bij verbinden komt eerst een momentopname, zodat een late
