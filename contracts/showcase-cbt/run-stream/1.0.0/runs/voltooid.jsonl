@@ -1,0 +1,21 @@
+{"soort":"momentopname","tijd":"2026-08-06T09:12:44Z","run":null,"afgerondeStappen":[]}
+{"soort":"run-gestart","tijd":"2026-08-06T09:12:45Z","runId":"run-7c41a9","scenarioId":"01"}
+{"soort":"stap-gestart","tijd":"2026-08-06T09:12:46Z","runId":"run-7c41a9","stapNummer":1}
+{"soort":"cli-uitvoer","tijd":"2026-08-06T09:12:47Z","runId":"run-7c41a9","stapNummer":1,"regel":"$ ci/pipeline-contract.sh order-payment payment-api 1.0.0 contracts/order-payment/v1.0.0/openapi.yaml"}
+{"soort":"stap-afgerond","tijd":"2026-08-06T09:12:48Z","runId":"run-7c41a9","stapNummer":1,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-06T09:12:49Z","runId":"run-7c41a9","stapNummer":2}
+{"soort":"cli-uitvoer","tijd":"2026-08-06T09:12:50Z","runId":"run-7c41a9","stapNummer":2,"regel":"$ ci/pipeline-microservice.sh payment payment-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-06T09:12:51Z","runId":"run-7c41a9","stapNummer":2,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-06T09:12:52Z","runId":"run-7c41a9","stapNummer":3}
+{"soort":"cli-uitvoer","tijd":"2026-08-06T09:12:53Z","runId":"run-7c41a9","stapNummer":3,"regel":"$ ci/pipeline-ci.sh payment 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-06T09:12:54Z","runId":"run-7c41a9","stapNummer":3,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-06T09:12:55Z","runId":"run-7c41a9","stapNummer":4}
+{"soort":"cli-uitvoer","tijd":"2026-08-06T09:12:56Z","runId":"run-7c41a9","stapNummer":4,"regel":"$ ci/pipeline-microservice.sh order order-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-06T09:12:57Z","runId":"run-7c41a9","stapNummer":4,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-06T09:12:58Z","runId":"run-7c41a9","stapNummer":5}
+{"soort":"cli-uitvoer","tijd":"2026-08-06T09:12:59Z","runId":"run-7c41a9","stapNummer":5,"regel":"$ ci/pipeline-ci.sh order 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-06T09:13:00Z","runId":"run-7c41a9","stapNummer":5,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-06T09:13:01Z","runId":"run-7c41a9","stapNummer":6}
+{"soort":"cli-uitvoer","tijd":"2026-08-06T09:13:02Z","runId":"run-7c41a9","stapNummer":6,"regel":"$ ci/pipeline-gebruikersflows.sh acceptatie"}
+{"soort":"stap-afgerond","tijd":"2026-08-06T09:13:03Z","runId":"run-7c41a9","stapNummer":6,"uitkomst":"geslaagd"}
+{"soort":"run-afgerond","tijd":"2026-08-06T09:13:04Z","runId":"run-7c41a9","reden":"voltooid"}

@@ -47,7 +47,17 @@ fout() {
   exit 1
 }
 
-[ "$#" -eq 5 ] || fout "gebruik: generate-stream-stub.sh <groep> <stream-artifact> <versie> <scenario-artifact> <scenario-versie>"
+# --controleer genereert niets weg maar vergelijkt: bedoeld voor een pipeline, zodat de
+# vastgelegde runbestanden niet stil uit de pas kunnen lopen met de spec.
+CONTROLEER=""
+for _arg in "$@"; do
+  [ "${_arg}" = "--controleer" ] && CONTROLEER=ja
+done
+if [ -n "${CONTROLEER}" ]; then
+  set -- "$1" "$2" "$3" "$4" "$5"
+fi
+
+[ "$#" -eq 5 ] || fout "gebruik: generate-stream-stub.sh <groep> <stream-artifact> <versie> <scenario-artifact> <scenario-versie> [--controleer]"
 
 GROEP="$1"
 STREAM="$2"
@@ -277,3 +287,39 @@ mapping "${UIT}/mappings/run-stream-2-gestopt.json"  "${V2}" gestopt midden
 mapping "${UIT}/mappings/run-stream-3-midden.json"   "${V3}" midden Started
 
 echo "stap 5: drie mappings in ${REL}/mappings/ — elke verbinding krijgt de volgende situatie"
+
+# --- stap 6: de runs als bestand naast het contract --------------------------------------
+#
+# Deze drie worden gegenereerd én gecommit, en dat is een uitzondering op "nooit committen
+# wat gegenereerd is". De reden staat in docs/besluiten.md; de voorwaarde staat hier.
+#
+# Zonder deze stap moest de consumer de runs reconstrueren uit dit script, want als bestand
+# bestonden ze niet. Er was dus niets om naar te verwijzen en niets om tegen te valideren.
+#
+# De voorwaarde is `--controleer`: opnieuw genereren en vergelijken, en falen bij verschil.
+# Zonder die controle vervalt de uitzondering, want dan is dit gewoon een gekopieerd
+# bestand dat stil veroudert.
+
+RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/runs"
+mkdir -p "${RUNS}"
+
+leg_vast() {
+  cut -f2 "$2" > "${TMP}/nieuw.jsonl"
+  if [ "${CONTROLEER:-}" = "ja" ]; then
+    cmp -s "${TMP}/nieuw.jsonl" "$1" \
+      || fout "$(basename "$1") loopt uit de pas met wat de spec nu oplevert.
+  Draai ci/generate-stream-stub.sh zonder --controleer en commit het verschil."
+  else
+    cp "${TMP}/nieuw.jsonl" "$1"
+  fi
+}
+
+leg_vast "${RUNS}/voltooid.jsonl" "${V1}"
+leg_vast "${RUNS}/gestopt.jsonl"  "${V2}"
+leg_vast "${RUNS}/midden.jsonl"   "${V3}"
+
+if [ "${CONTROLEER:-}" = "ja" ]; then
+  echo "stap 6: de drie runbestanden komen overeen met de spec"
+else
+  echo "stap 6: drie runbestanden in contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/runs/"
+fi

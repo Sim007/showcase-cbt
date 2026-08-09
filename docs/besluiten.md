@@ -712,6 +712,34 @@ er al stond.
 De vervangende tekst voor `context.md` staat in de opdracht en landt daar zodra dat document
 naar deze repo verhuist.
 
+## 2026-08-09 — Drie gegenereerde runbestanden mogen wél gecommit worden
+
+`CLAUDE.md` zegt: nooit committen wat gegenereerd is. Hier wijken we daarvan af, en dat is
+een uitzondering met een grens eromheen — geen versoepeling van de regel.
+
+**Waarvoor.** Uitsluitend voor `contracts/showcase-cbt/run-stream/1.0.0/runs/*.jsonl`: de
+drie opgenomen runs. Niet voor gegenereerde bestanden in het algemeen, niet voor
+stubmappings, niet voor `build/`.
+
+**Waarom.** De consumer moest de drie runs reconstrueren uit `ci/generate-stream-stub.sh`,
+want als bestand bestonden ze niet. Er was dus niets om naar te verwijzen en niets om tegen
+te valideren. Een opgenomen run is een artefact dat we léveren, geen tussenproduct van een
+build.
+
+**Onder welke voorwaarde.** `ci/generate-stream-stub.sh --controleer` genereert opnieuw en
+vergelijkt, en faalt bij verschil. Dat is wat de regel eigenlijk beschermt: een gecommit
+gegenereerd bestand veroudert stil. Met die controle kan dat niet.
+
+**Zonder die controle vervalt de uitzondering.** Verdwijnt `--controleer` uit de pipeline,
+dan horen deze bestanden ook te verdwijnen.
+
+**En wanneer hij hoe dan ook vervalt:** zodra de runs als release-asset gepubliceerd worden.
+Dan is er een plek waar ze per versie staan met een checksum, en is een kopie in de
+werkboom overbodig. Dat moment is de volgende stap — Releases, checksum en Spectral.
+
+Dit staat er zo uitgebreid bij omdat een uitzondering zonder vervaldatum over drie maanden
+een precedent is waar iemand naar wijst.
+
 ---
 
 # Geleerd
@@ -803,4 +831,23 @@ ervan was voorzien.
 Wat nog niet is meegemaakt en het meest zal leren: de tweede wijziging. Een breaking change
 over een grens die je niet zelf aanstuurt, met een deprecatieperiode en een squad met een
 eigen backlog. Dat is scenario 03 en 05 in het echt.
+
+## 2026-08-09 — Een example dat intern niet klopt, komt door geen enkele gate
+
+Het scenario-example noemde `order` bij de deelsystemen en had geen enkele order-stap. Alle
+stappen waren van payment of van de keten.
+
+Niemand zag het. De consumer niet — die redeneerde over een geval dat dit example helemaal
+niet kon voortbrengen, en kwam er pas op door zelf een scenario te verzinnen. De spec niet:
+elk veld klopt afzonderlijk, `deelsystemen` is een geldige lijst en `stappen` ook. De stub
+niet: die genereerde er netjes een run uit, alleen zonder order. En Spectral, die we
+volgende stap invoeren, zal het ook niet zien — hij lint velden, en wat hier ontbreekt is
+**samenhang tussen twee velden**.
+
+Dat is de categorie: een example kan volledig geldig zijn en tegelijk onmogelijk. Er is geen
+linter voor "wat je hier belooft, komt verderop niet voor".
+
+Wat het gekost heeft was klein — de consumer merkte het op en de reparatie was een paar
+regels. Wat het had kunnen kosten is groter: hun afleidlogica was gebouwd tegen een geval
+dat de opgenomen runs niet bevatten, en dat blijkt dan pas bij de eerste echte run.
 
