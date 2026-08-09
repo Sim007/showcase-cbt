@@ -14,6 +14,12 @@ info:
     Besturing staat hier en niet in de stream omdat een commando een antwoord nodig heeft:
     of het scenario bestaat, of er al een run loopt, en welk runId je moet volgen.
 
+servers:
+  - url: http://localhost:8090
+    description: >
+      Lokaal, zowel voor de stub als voor showcase-CBT zelf. Er is verder geen omgeving:
+      dit is een showcase en er draait niets op een server.
+
 paths:
   /v1/scenarios:
     get:
@@ -23,6 +29,9 @@ paths:
       responses:
         '200':
           description: De scenario's
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -50,6 +59,9 @@ paths:
       responses:
         '200':
           description: Het scenario
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -117,6 +129,9 @@ paths:
                     cli: ci/pipeline-gebruikersflows.sh acceptatie
         '404':
           description: Onbekend scenario
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -126,6 +141,24 @@ paths:
                 message: er is geen scenario met id 42
 
   /v1/runs:
+    options:
+      operationId: preflightStartRun
+      summary: Preflight voor het starten van een run
+      description: >
+        Staat hier omdat de browser hem stuurt, niet omdat iemand hem aanroept. Een POST
+        met `Content-Type: application/json` is geen simple request, dus de browser vraagt
+        eerst toestemming. Ontbreekt dit antwoord, dan komt de POST er nooit — en dat is
+        geen implementatiedetail maar een eigenschap van deze grens.
+      responses:
+        '204':
+          description: De browser mag de POST sturen
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
     post:
       operationId: startRun
       summary: Een scenario starten
@@ -143,6 +176,9 @@ paths:
       responses:
         '201':
           description: De run is gestart
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -153,6 +189,9 @@ paths:
                 gestartOp: '2026-08-06T09:12:44Z'
         '404':
           description: Onbekend scenario
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -162,6 +201,9 @@ paths:
                 message: er is geen scenario met id 42
         '409':
           description: Er loopt al een run
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -171,6 +213,25 @@ paths:
                 message: run-7c41a9 loopt nog voor scenario 01
 
   /v1/runs/{runId}/afbreken:
+    options:
+      operationId: preflightBreekRunAf
+      summary: Preflight voor het afbreken van een run
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RunId'
+      responses:
+        '204':
+          description: De browser mag de POST sturen
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
     post:
       operationId: breekRunAf
       summary: Een lopende run afbreken
@@ -186,6 +247,9 @@ paths:
       responses:
         '202':
           description: Het verzoek is aangenomen
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -196,6 +260,9 @@ paths:
                 gestartOp: '2026-08-06T09:12:44Z'
         '404':
           description: Onbekende run
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -205,6 +272,9 @@ paths:
                 message: er is geen run met id run-000000
         '409':
           description: De run is al afgerond
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
           content:
             application/json:
               schema:
@@ -214,6 +284,42 @@ paths:
                 message: run-7c41a9 is al afgerond
 
 components:
+
+  headers:
+
+    AccessControlAllowOrigin:
+      description: >
+        De browser van showcase-website praat rechtstreeks met showcase-CBT; er zit geen
+        proxy tussen. Daarmee is CORS onderdeel van deze grens en geen implementatiedetail:
+        ontbreekt deze header, dan weigert de browser het antwoord en ziet de consumer een
+        fout die niets met het contract te maken lijkt te hebben.
+
+        Eén concrete origin en met opzet geen wildcard. Een `*` maakt de spec makkelijker
+        en de afspraak vager, en in een showcase over zorgvuldigheid roept dat de verkeerde
+        vraag op. In een echte opstelling komt deze waarde uit configuratie per omgeving;
+        hier staat de enige die bestaat.
+      required: true
+      schema:
+        type: string
+        enum: ['http://localhost:5173']
+        example: 'http://localhost:5173'
+
+    AccessControlAllowMethods:
+      description: Welke methoden op dit pad zijn toegestaan, als antwoord op de preflight.
+      required: true
+      schema:
+        type: string
+        example: 'POST, OPTIONS'
+
+    AccessControlAllowHeaders:
+      description: >
+        Welke requestheaders de browser mag meesturen. `Content-Type` staat erin omdat een
+        JSON-body de preflight juist veroorzaakt.
+      required: true
+      schema:
+        type: string
+        example: 'Content-Type'
+
   schemas:
 
     ScenarioId:

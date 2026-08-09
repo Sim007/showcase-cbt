@@ -51,9 +51,10 @@ yq -o=json '.' "${SPEC_REL}" > "${TMP}/spec.json"
 # Per operation de laagste 2xx-response: dat is de standaardmapping. Andere statuscodes
 # vragen een matcher die niet uit de spec volgt en horen daarom bij de scenario's.
 jq -c '
-  .paths | to_entries[] as $pad
+  . as $doc
+  | .paths | to_entries[] as $pad
   | $pad.value | to_entries[] as $methode
-  | select($methode.key | IN("get","post","put","patch","delete"))
+  | select($methode.key | IN("get","post","put","patch","delete","options"))
   | ($methode.value.responses | to_entries
       | map(select(.key | test("^2"))) | sort_by(.key) | first) as $ok
   | {
@@ -64,7 +65,27 @@ jq -c '
       example: ($ok.value.content."application/json".example // null),
       schemaRef: ($ok.value.content."application/json".schema."$ref" // null),
       schema: ($ok.value.content."application/json".schema // null),
-      heeftRequestBody: ($methode.value.requestBody != null)
+      heeftRequestBody: ($methode.value.requestBody != null),
+      heeftContent: ($ok.value.content != null),
+
+      # Kopteksten die de spec verplicht stelt, met hun waarde uit de spec zelf. Zonder dit
+      # is de stub permissiever dan wat hij nabootst: een consumer bouwt dan tegen een
+      # antwoord dat de browser bij de echte kant zou weigeren — CORS bijvoorbeeld — en dat
+      # merkt hij pas als de stub weg is.
+      kopteksten: (
+        ($ok.value.headers // {})
+        | to_entries
+        | map({
+            key: .key,
+            value: (
+              (if .value["$ref"]
+               then $doc.components.headers[.value["$ref"] | sub("^#/components/headers/"; "")]
+               else .value end)
+              | (.schema.example // (.schema.enum // [])[0] // "")
+            )
+          })
+        | from_entries
+      )
     }' "${REL}/tmp/spec.json" > "${TMP}/werklijst.jsonl"
 
 [ -s "${TMP}/werklijst.jsonl" ] || fout "geen operations gevonden in de spec"
@@ -81,9 +102,14 @@ while IFS= read -r regel; do
   # Stap 4 — de body komt uit de example en nergens anders. Een body uit het schema
   # gegenereerd levert typegeldige maar betekenisloze waarden op, en dan verliest de
   # consumertest zijn waarde.
-  LEEG="$(printf '%s' "${regel}" | jq -r '.example | if . == null or . == {} then "ja" else "nee" end')"
-  [ "${LEEG}" = "nee" ] \
-    || fout "${OP}: response ${STATUS} heeft geen of een lege example. Elke response in de spec hoort er een te hebben"
+  # Een response zonder body — een preflight bijvoorbeeld — heeft niets om een example van
+  # te maken. Alleen wie content declareert, moet er een hebben.
+  HEEFT_CONTENT="$(printf '%s' "${regel}" | jq -r '.heeftContent')"
+  if [ "${HEEFT_CONTENT}" = "true" ]; then
+    LEEG="$(printf '%s' "${regel}" | jq -r '.example | if . == null or . == {} then "ja" else "nee" end')"
+    [ "${LEEG}" = "nee" ] \
+      || fout "${OP}: response ${STATUS} heeft geen of een lege example. Elke response in de spec hoort er een te hebben"
+  fi
 
   # Stap 3 — padparameters. OpenAPI-paden zijn templates; WireMock matcht daar niet
   # vanzelf op, dus wordt {paymentId} een patroon.
@@ -95,11 +121,10 @@ while IFS= read -r regel; do
       } + (if .heeftRequestBody
            then { headers: { "Content-Type": { contains: "application/json" } } }
            else {} end)),
-    response: {
+    response: ({
       status: (.status | tonumber),
-      headers: { "Content-Type": "application/json" },
-      jsonBody: .example
-    }
+      headers: ((if .heeftContent then { "Content-Type": "application/json" } else {} end) + .kopteksten)
+    } + (if .heeftContent then { jsonBody: .example } else {} end))
   }' > "${MAPPINGS}/${OP}.json"
 
   AANTAL=$((AANTAL + 1))
@@ -142,8 +167,16 @@ fi
 jq '{ components: .components }' "${REL}/tmp/spec.json" > "${TMP}/componenten.json"
 
 GEVALIDEERD=0
+ZONDER_BODY=0
 for mapping in "${MAPPINGS}"/*.json; do
   NAAM="$(basename "${mapping}" .json)"
+
+  # Een mapping zonder body heeft niets te valideren. Dat is geen overslaan van een
+  # controle: er is geen bewering over inhoud om te toetsen.
+  if [ "$(jq -r '.response | has("jsonBody")' "${REL}/mappings/${NAAM}.json")" = "false" ]; then
+    ZONDER_BODY=$((ZONDER_BODY + 1))
+    continue
+  fi
 
   # Bij een gegenereerde mapping staat het schema in de werklijst; een scenario-mapping
   # noemt het zelf in "x-schema", zodat hij door dezelfde controle gaat.
@@ -175,7 +208,12 @@ for mapping in "${MAPPINGS}"/*.json; do
   GEVALIDEERD=$((GEVALIDEERD + 1))
 done
 
-echo "stap 7: ${GEVALIDEERD} bodies voldoen aan hun responseschema"
+# Een controle die nul dingen bekeek en toch groen meldt, is precies het patroon dat in
+# docs/besluiten.md onder Geleerd staat. Er is altijd minstens één response met een body.
+[ "${GEVALIDEERD}" -gt 0 ] \
+  || fout "geen enkele body gevalideerd terwijl er ${AANTAL} mappings zijn. Dat is geen groen maar een controle die niets deed"
+
+echo "stap 7: ${GEVALIDEERD} bodies voldoen aan hun responseschema, ${ZONDER_BODY} zonder body overgeslagen"
 
 # --- stap 8: dekkingscheck ------------------------------------------------------------
 

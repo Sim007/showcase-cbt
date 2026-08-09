@@ -184,8 +184,8 @@ while [ "${I}" -lt "${STAPPEN}" ]; do
   I=$((I + 1))
 done
 
-regel "${V2}" RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" \
-  '{soort:"run-afgerond", tijd:$t, runId:"run-7c41a9", reden:"gestopt"}')"
+regel "${V2}" RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson bij "${FAALT}" \
+  '{soort:"run-afgerond", tijd:$t, runId:"run-7c41a9", reden:"gestopt", gestoptBijStap:$bij}')"
 
 # --- situatie 3: midden in een lopende run ----------------------------------------------
 #
