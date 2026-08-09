@@ -94,6 +94,21 @@ paths:
                     gereedschap: Schemathesis
                     cli: ci/pipeline-ci.sh payment 1.0.0
                   - nummer: 4
+                    type: actie
+                    omschrijving: Unittests van order-api
+                    deelsysteem: order
+                    testsoort: unit
+                    gereedschap: Maven
+                    cli: ci/pipeline-microservice.sh order order-api
+                  - nummer: 5
+                    type: gate
+                    omschrijving: Contractverificatie van de consumer tegen dezelfde spec
+                    deelsysteem: order
+                    omgeving: ci
+                    testsoort: contract
+                    gereedschap: swagger-request-validator
+                    cli: ci/pipeline-ci.sh order 1.0.0
+                  - nummer: 6
                     type: gate
                     omschrijving: De gebruikersflows over de keten
                     omgeving: acceptatie

@@ -170,6 +170,7 @@ components:
             tijd: '2026-08-06T09:13:09Z'
             runId: run-7c41a9
             reden: gestopt
+            gestoptBijStap: 3
 
   schemas:
 
@@ -358,3 +359,25 @@ components:
             deelsysteem of voor het rapport, leidt de aanroeper zelf af.
           enum: [voltooid, gestopt, afgebroken]
           example: voltooid
+        gestoptBijStap:
+          type: integer
+          minimum: 1
+          description: >
+            Het nummer van de stap die mislukte en daarmee de run stopte. Verplicht bij
+            reden gestopt, afwezig bij voltooid en afgebroken.
+
+            Dit stond er eerst niet, omdat het af te leiden viel uit de laatste
+            stap-afgerond met uitkomst mislukt. Dat klopt — de eerste mislukking stopt de
+            run, dus er is er nooit meer dan één — maar die zekerheid stond alleen in
+            proza. Een aanname die je uit een beschrijving moet destilleren is de zwakke
+            afspraak die deze showcase juist afwijst, dus staat het er nu als feit.
+          example: 3
+      # Geen prozaregel maar een voorwaarde: bij gestopt móét het stapnummer erbij. Zo is
+      # het te toetsen in plaats van te vertrouwen.
+      if:
+        required: [reden]
+        properties:
+          reden:
+            const: gestopt
+      then:
+        required: [gestoptBijStap]
