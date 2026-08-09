@@ -80,10 +80,23 @@ de website.
 
 ## 6. Wat er niet in zit
 
-**Geen deelsysteem-status.** Een rode `stap-afgerond` gevolgd door geen stappen meer voor
-dat deelsysteem is hetzelfde feit. Showcase-CBT meldt feiten en leidt niets af; zou die
-status meekomen, dan verhuist een stukje redenering naar de kant die volgens `context.md`
-juist niet redeneert.
+**Geen deelsysteem-status.** Showcase-CBT meldt feiten en leidt niets af; zou die status
+meekomen, dan verhuist een stukje redenering naar de kant die volgens `context.md` juist
+niet redeneert.
+
+De afleidregel die daarbij hoort, staat hier omdat hij nergens anders staat:
+
+> Zodra `run-afgerond` binnenkomt met reden `gestopt` of `afgebroken`, geldt voor **elk**
+> deelsysteem met stappen die geen afronding hebben gekregen — inclusief een deelsysteem dat
+> nooit begonnen is — dat er niets meer komt.
+
+**Niet** "een mislukte stap gevolgd door stilte". Dat stond hier eerst en het is te weinig:
+stappen staan in één doorlopende lijst over het hele scenario, dus een mislukking bij
+Payment laat ook Order zonder berichten achter zonder dat Order iets fout deed. Die regel
+liet zo'n deelsysteem als "nog niet gestart" staan, wat na `run-afgerond` misleidend is.
+
+Gevonden door showcase-website bij het lezen van de spec, niet door ons bij het schrijven
+ervan.
 
 **Geen bericht voor een stap die nooit gestart is.** Dat hij ontbreekt is wat "niet
 uitgevoerd" betekent.

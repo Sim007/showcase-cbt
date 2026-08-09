@@ -94,15 +94,30 @@ stappen geslaagd zijn en welke loopt, en vanaf dat moment loopt de uitvoer mee.
 ## Eén ding waar we het niet mee eens zijn
 
 Jullie behoeftelijst vraagt om een *signaal dat een deelsysteem-pipeline is gestopt*. Dat
-komt er niet, en dat is met opzet.
+komt er niet, en dat is met opzet: showcase-CBT meldt feiten en leidt niets af. Zouden wij
+die status sturen, dan verhuist een stukje redenering naar de kant die volgens `context.md`
+juist niet redeneert.
 
-Een rode stapuitkomst gevolgd door geen stappen meer voor dat deelsysteem is hetzelfde
-feit, en dat afleiden is jullie kant van de afspraak — showcase-CBT meldt feiten en leidt
-niets af. Zou wij die status sturen, dan verhuist een stukje redenering naar de kant die
-volgens `context.md` juist niet redeneert.
+**Maar de regel die wij erbij gaven, klopte niet.** Er stond dat een mislukte stapuitkomst
+gevolgd door stilte hetzelfde feit is. Jullie hebben aangetoond dat dat te weinig is, en de
+regel die jullie ervoor in de plaats zetten is de juiste — we nemen hem over:
 
-Dezelfde regel geldt voor stappen die door een stop nooit gestart zijn: die leveren geen
-bericht. "Niet uitgevoerd" volgt uit het uitblijven ervan.
+> Zodra `run-afgerond` binnenkomt met reden `gestopt` of `afgebroken`, geldt voor **elk**
+> deelsysteem met stappen die geen afronding hebben gekregen — inclusief een deelsysteem dat
+> nooit begonnen is — dat er niets meer komt.
+
+De reden dat onze regel te kort schoot: stappen staan in **één doorlopende lijst over het
+hele scenario**, niet als parallelle pipelines per deelsysteem. Mislukt stap 3 bij Payment,
+dan krijgt Order voor stap 4 nooit een bericht — zonder dat Order iets fout deed. Onze regel
+liet Order dan als "nog niet gestart" staan, en dat is na `run-afgerond` misleidend.
+
+Dat het geval bestond en niemand het zag, kwam doordat ons eigen scenario-example geen
+enkele Order-stap had terwijl het Order wel als deelsysteem noemde. Dat is gerepareerd; de
+opgenomen runs bevatten nu een deelsysteem dat nooit aan de beurt kwam, zodat jullie er
+tegen kunnen testen.
+
+Wat wél blijft: een stap die door een stop nooit gestart is, levert geen bericht. "Niet
+uitgevoerd" volgt uit het uitblijven ervan.
 
 ## Reageren
 
