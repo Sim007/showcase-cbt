@@ -102,7 +102,7 @@ heeft er een — en die grens bestaat los van wie er vandaag aan de andere kant 
 Notification nu bij dezelfde squad liggen verandert daar niets aan: deze verdeling zou morgen
 anders kunnen zijn zonder dat er één contract wijzigt.
 
-Payment laat meteen zien waarom provider en consumer rolwoorden zijn: aan de payments-api-grens is
+Payment laat meteen zien waarom provider en consumer rolwoorden zijn: aan de payment-api-grens is
 het provider, aan de notification-grens ook, en aan de grens met de externe betaalprovider is het
 consumer. Dezelfde squad, dezelfde dag, drie grenzen, twee rollen.
 
@@ -207,7 +207,7 @@ zónder: dat is scenario 00. Elk volgend scenario laat zien wat CBT daaraan vera
 Drie soorten scenario's staan door elkaar in één reeks: die over een **grenstype**, die over de
 **levenscyclus** van één contract, en die over de **weg naar productie** als geheel.
 
-| Nr | Titel | Onderwerp | Grenstype | payments-api |
+| Nr | Titel | Onderwerp | Grenstype | payment-api |
 |---|---|---|---|---|
 | 00 | Startsituatie | De weg naar productie zónder contracttesten | — | — |
 | 01 | Basis (API) | Order → Payment, REST, schema-first | synchroon | 1.0.0 |
@@ -220,7 +220,7 @@ Drie soorten scenario's staan door elkaar in één reeks: die over een **grensty
 | 08 | FE | Frontend binnen één deelsysteem: geen deelsysteemgrens, wél het mechanisme | binnen deelsysteem | |
 | 09 | Shell | *nog aan te vullen* | *nog aan te vullen* | |
 
-**Elk scenario is herhaalbaar.** payments-api 1.0.0 moet op elk moment terug te zetten zijn; de
+**Elk scenario is herhaalbaar.** payment-api 1.0.0 moet op elk moment terug te zetten zijn; de
 versies in de tabel liggen vast als inhoud van de showcase.
 
 ---
@@ -313,7 +313,7 @@ chat.
   leidend, en wordt in Deel A overgenomen zodra hij beschikbaar is.
 - **Versiebereik** van het contract op de grens tussen de twee squads, zolang er nog gebroken mag
   worden.
-- **payments-api-versies** bij scenario 04 en 05.
+- **payment-api-versies** bij scenario 04 en 05.
 - **Scenario 09 (Shell)** — onderwerp en grenstype.
 - **Verwijzing van stap naar grens** — draagt een stap een verwijzing naar de grens die bij een
   gate bewaakt wordt? Zonder die verwijzing kan er alleen per deelsysteem gerapporteerd worden,
