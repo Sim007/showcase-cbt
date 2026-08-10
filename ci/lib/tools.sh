@@ -11,6 +11,12 @@ MAVEN_IMAGE="maven:3.9.16-eclipse-temurin-21"
 YQ_IMAGE="mikefarah/yq:4.53.3"
 NODE_IMAGE="node:22.23.2-alpine"
 AJV_VERSIE="5.0.0"
+
+# De ajv die mee de stubbundel in gaat. Een andere dan hierboven: dat is de CLI voor onze
+# eigen artefactcontroles, dit is de bibliotheek die bij de consumer draait. Ze zijn los
+# gepind omdat ze op verschillende plekken en momenten vervangen worden.
+AJV_VERSIE_BUNDEL="8.17.1"
+AJV_FORMATS_VERSIE="3.0.1"
 PLAYWRIGHT_VERSIE="1.62.1"
 
 # Alles draait als de aanroepende gebruiker en zonder netwerk: deze tools lezen
