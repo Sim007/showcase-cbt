@@ -46,6 +46,19 @@ SPEC_REL="../../../build/contracts/${SPEC_NAAM}"
 RAPPORT="${CBT_ROOT}/build/contract-rapport"
 mkdir -p "${RAPPORT}"
 
+# Elke variant telt zelf hoeveel gevallen er zijn gedraaid. Een verificatie die nul
+# testgevallen uitvoerde en toch groen meldt, heeft niets vastgesteld — een spec zonder
+# operaties of een testselectie die niets matcht levert precies dat op.
+UITVOER="$(mktemp)"
+trap 'rm -f "${UITVOER}"' EXIT
+
+tel_gevallen() {
+  _n="$(grep -oE '[0-9]+ passed' "${UITVOER}" | tail -1 | cut -d' ' -f1)"
+  [ -n "${_n}" ] || _n="$(grep -oE 'Tests run: [0-9]+' "${UITVOER}" | tail -1 | grep -oE '[0-9]+')"
+  verwacht_minstens "${_n:-0}" 1 "gedraaide testgevallen ($1)"
+  echo "contract: ${_n} testgevallen ($1)"
+}
+
 gegenereerd() {
   echo "contract: provider, gegenereerd uit ${GROEP}/${ARTIFACT} ${VERSIE}"
   docker run --rm --network "${NETWERK}" \
@@ -54,8 +67,9 @@ gegenereerd() {
     --volume "${RAPPORT}:/rapport" \
     "${SCHEMATHESIS_IMAGE}" \
     run "/specs/${SPEC_NAAM}" --url "${BASIS_URL}" \
-    --seed 1 --report junit --report-dir /rapport --coverage-no-report \
+    --seed 1 --report junit --report-dir /rapport --coverage-no-report 2>&1 | tee "${UITVOER}" \
     || fout "contractverificatie (provider, gegenereerd) rood"
+  tel_gevallen "provider, gegenereerd"
 }
 
 # -DexcludedGroups= heft de uitsluiting in de pom op: daar staat contract standaard uit,
@@ -64,8 +78,9 @@ geschreven() {
   echo "contract: provider, geschreven, tegen ${BASIS_URL}"
   CBT_NETWERK="${NETWERK}" mvn "deelsystemen/payment/payment-api" test \
     -Dgroups=contract -DexcludedGroups= \
-    -Dcontract.base-url="${BASIS_URL}" -Dcontract.spec="${SPEC_REL}" \
+    -Dcontract.base-url="${BASIS_URL}" -Dcontract.spec="${SPEC_REL}" 2>&1 | tee "${UITVOER}" \
     || fout "contractverificatie (provider, geschreven) rood"
+  tel_gevallen "provider, geschreven"
 }
 
 consumer() {
@@ -74,8 +89,9 @@ consumer() {
   CBT_NETWERK="${NETWERK}" mvn "deelsystemen/order/order-api" test \
     -Dgroups=contract -DexcludedGroups= \
     -Dcontract.base-url="${BASIS_URL}" -Dcontract.spec="${SPEC_REL}" \
-    -Dcontract.stub-admin="${STUB_ADMIN}" \
+    -Dcontract.stub-admin="${STUB_ADMIN}" 2>&1 | tee "${UITVOER}" \
     || fout "contractverificatie (consumer) rood"
+  tel_gevallen "consumer"
 }
 
 case "${ROL}" in

@@ -75,4 +75,9 @@ fi
 
 [ -z "${ONTBREEKT}${TEVEEL}" ] || exit 1
 
-echo "drift: geen — $(wc -l < "${WERKMAP}/beloofd.txt" | tr -d ' ') operaties, contract en runtime komen overeen"
+# Twee lege lijsten komen ook overeen. Zonder deze regel meldt drift "geen verschil" over
+# een contract zonder operaties of een runtime-spec die niet geladen kon worden.
+BELOOFD="$(wc -l < "${WERKMAP}/beloofd.txt" | tr -d ' ')"
+verwacht_minstens "${BELOOFD}" 1 "operaties in het contract om te vergelijken"
+
+echo "drift: geen — ${BELOOFD} operaties, contract en runtime komen overeen"

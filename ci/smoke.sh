@@ -34,16 +34,25 @@ NETWERK="$3"
 
 mkdir -p "${CBT_ROOT}/build/smoke-rapport"
 
+UITVOER="$(mktemp)"
+trap 'rm -f "${UITVOER}"' EXIT
+
 if [ "${DOEL}" = "keten" ]; then
   echo "smoke: keten, tegen ${BASE_URL}"
-  playwright "${NETWERK}" "${BASE_URL}" --project=keten \
+  playwright "${NETWERK}" "${BASE_URL}" --project=keten 2>&1 | tee "${UITVOER}" \
     || fout "ketensmoke rood tegen ${BASE_URL}"
 else
   [ -d "${CBT_ROOT}/deelsystemen/${DOEL}/smoke" ] \
     || fout "deelsysteem ${DOEL} heeft geen smoke in deelsystemen/${DOEL}/smoke/"
   echo "smoke: ${DOEL}, tegen ${BASE_URL}"
-  playwright "${NETWERK}" "${BASE_URL}" --project=deelsysteem "${DOEL}/smoke/" \
+  playwright "${NETWERK}" "${BASE_URL}" --project=deelsysteem "${DOEL}/smoke/" 2>&1 | tee "${UITVOER}" \
     || fout "smoke van ${DOEL} rood tegen ${BASE_URL}"
 fi
 
-echo "smoke: groen"
+# Playwright faalt zelf al bij "No tests found", maar dan leunt deze gate op het
+# standaardgedrag van een gereedschap dat bij een tagbump kan veranderen. Het aantal staat
+# hier als eigen bewering.
+GESLAAGD="$(grep -oE '[0-9]+ passed' "${UITVOER}" | tail -1 | cut -d' ' -f1)"
+verwacht_minstens "${GESLAAGD:-0}" 1 "geslaagde smoketests tegen ${BASE_URL}"
+
+echo "smoke: groen — ${GESLAAGD} tests"

@@ -33,13 +33,22 @@ WAT="$1"
 BASE_URL="$2"
 NETWERK="$3"
 
+UITVOER="$(mktemp)"
+trap 'rm -f "${UITVOER}"' EXIT
+
 if [ "${WAT}" = "keten" ]; then
   echo "gebruikersflow: alle flows over de keten, tegen ${BASE_URL}"
-  playwright "${NETWERK}" "${BASE_URL}" --project=gebruikersflow \
+  playwright "${NETWERK}" "${BASE_URL}" --project=gebruikersflow 2>&1 | tee "${UITVOER}" \
     || fout "gebruikersflow rood tegen ${BASE_URL}"
 else
   echo "gebruikersflow: label @${WAT}, tegen ${BASE_URL}"
-  playwright "${NETWERK}" "${BASE_URL}" --project=gebruikersflow --grep "@${WAT}" \
+  playwright "${NETWERK}" "${BASE_URL}" --project=gebruikersflow --grep "@${WAT}" 2>&1 | tee "${UITVOER}" \
     || fout "gebruikersflow rood tegen ${BASE_URL}"
 fi
-echo "gebruikersflow: groen"
+
+# Een label dat niets matcht is hier het gevaarlijkst: een typefout in @payment levert nul
+# flows op, en zonder deze regel zou dat groen zijn.
+GESLAAGD="$(grep -oE '[0-9]+ passed' "${UITVOER}" | tail -1 | cut -d' ' -f1)"
+verwacht_minstens "${GESLAAGD:-0}" 1 "geslaagde gebruikersflows tegen ${BASE_URL}"
+
+echo "gebruikersflow: groen — ${GESLAAGD} flows"

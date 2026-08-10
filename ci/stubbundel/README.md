@@ -19,11 +19,12 @@ Luistert op **8090**, of op `POORT=9000 node stub.js`.
 | `openapi.yaml` · `asyncapi.yaml` | de twee contracten, zoals gepubliceerd |
 | `stub.js` | de stub — REST en stream in één proces |
 | `stub-data.json` | de routes, gegenereerd uit `openapi.yaml` |
-| `runs/*.jsonl` | drie opgenomen runs |
-| `schemas/berichten.json` | de payloadschema's uit `asyncapi.yaml` |
+| `runs/*.jsonl` | drie fixtures |
+| `schemas/berichten-ontvangst.json` | de payloadschema's, voor **inkomende** berichten |
 | `node_modules/` | ajv en ajv-formats, meer niet |
 
-Alles is uit de gepubliceerde specs gegenereerd. Er zit niets in wat niet uit het contract komt.
+Alles is uit de gepubliceerde specs gegenereerd. Er zit niets in wat niet uit het contract
+komt, en niets is met de hand aangeraakt.
 
 ---
 
@@ -34,21 +35,73 @@ in staat, dan krijg je een 400 met wat er mis is. Dat is de reden om hiertegen t
 plaats van tegen een zelfgeschreven mock: die bevestigt wat de schrijver dacht, deze houdt
 je aan wat er is afgesproken.
 
-**De stream toetst niets.** De drie runs worden afgespeeld zoals ze zijn opgenomen — er zit
-geen validatie tussen. Dat hoeft ook niet: ze zijn bij het maken al tegen hun payloadschema
-gehouden. Maar het betekent dat je er niet op moet vertrouwen om je eigen fouten te vangen.
+**De stream toetst niets.** De drie fixtures worden afgespeeld zoals ze zijn vastgelegd — er
+zit geen validatie tussen. Dat hoeft ook niet: ze zijn bij het maken al tegen hun
+payloadschema gehouden. Maar het betekent dat je er niet op moet vertrouwen om je eigen
+fouten te vangen.
 
-Daarvoor liggen `schemas/berichten.json` erbij. Valideer de binnenkomende berichten in je
-eigen testsuite:
+---
+
+## Het ontvangstschema — lees dit voordat je het gebruikt
+
+`schemas/berichten-ontvangst.json` is voor het valideren van berichten die **binnenkomen**.
+Het is een afgeleid artefact, net als de stub zelf: gegenereerd uit `asyncapi.yaml`, nooit
+met de hand bijgewerkt. **Het is niet het contract** — dat is de spec, en er is er één per
+grens.
 
 ```js
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
-const schemas = require('./schemas/berichten.json');
+const schemas = require('./schemas/berichten-ontvangst.json');
 
 const ajv = addFormats(new Ajv({ strict: false }));
-const keur = ajv.compile({ ...schemas, $ref: '#/components/schemas/StapAfgerondPayload' });
+
+// De index gaat van de waarde in het bericht naar het schema dat erbij hoort.
+const naam = schemas.soortIndex[bericht.soort];
+if (!naam) return;                       // onbekend berichttype: overslaan, geen fout
+const keur = ajv.compile({ ...schemas, $ref: `#/components/schemas/${naam}` });
 ```
+
+**Het toetst de vorm en niet de woordenschat.** Verplichte velden aanwezig, types kloppen,
+structuur klopt. Wat het níét meer toetst: of `soort`, `uitkomst` en `reden` een bekende
+waarde hebben, en of er velden bij staan die niemand kent.
+
+Dat is met opzet, en het heeft een prijs die je moet kennen: **een `soort` met een typefout
+komt hier doorheen.** Die wordt gevangen aan onze verzendkant, waar dezelfde schema's wél
+streng staan. Wie dit over een half jaar leest moet niet denken dat het meer controleert dan
+het doet.
+
+Het strenge schema zit niet in deze bundel. Dat is gereedschap van showcase-CBT voor uitgaand
+verkeer; op runtime aan jullie kant heeft het geen legitiem gebruik, en twee schemasets naast
+elkaar zou alleen betekenen dat de verkeerde nog steeds te pakken valt.
+
+**Wil je zicht op nieuwe velden** — redelijke wens — dan hoort dat in jullie pipeline als
+waarschuwing, niet op runtime als fout. Een onbekend veld dat een build laat opvallen is
+nuttig; een onbekend veld dat een gebruiker een lege pagina geeft, niet.
+
+---
+
+## De drie tolerantie-eisen
+
+Een additieve wijziging in 1.1.0 hoort jullie niet te breken. Dat vraagt drie dingen, en ze
+zitten alle drie vóór de schemavalidatie:
+
+| | Regel |
+|---|---|
+| Onbekend **veld** | negeren |
+| Onbekend **berichttype** | overslaan — `soortIndex` kent hem niet, dus stil verder |
+| Onbekende **enum-waarde** | niet fataal — val terug op een standaard, gooi niets |
+
+**En je kunt het draaien in plaats van beloven:**
+
+```sh
+TOLERANTIE=ja node stub.js
+```
+
+Dan stuurt de stream alle drie tegelijk: een onbekend veld op elk bericht, een zevende
+berichtsoort ertussen, en een onbekende `reden` op de gestopte run. Blijft jullie client
+draaien, dan klopt het. Klapt hij eruit, dan zou hij dat bij onze eerste additieve wijziging
+ook doen — alleen dan in productie in plaats van nu.
 
 ---
 

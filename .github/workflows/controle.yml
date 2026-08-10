@@ -1,0 +1,12 @@
+# Dun met opzet: geen logica in yaml, alleen een aanroep naar ci/. Wat er gecontroleerd
+# wordt en waarom staat in ci/controle.sh, zodat het ook zonder GitHub te draaien is.
+name: controle
+
+on: [push, pull_request]
+
+jobs:
+  controle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ci/controle.sh

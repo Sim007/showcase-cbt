@@ -33,12 +33,45 @@ const routes = data.routes.map((r) => ({
   keur: r.verzoekSchema ? ajv.compile({ ...data.componenten, ...r.verzoekSchema }) : null,
 }));
 
-// De drie opgenomen runs, om en om bij elke verbinding — net als de WireMock-stub. Zo
-// komt de gestopte run vanzelf aan de beurt, en die heeft de consumer het hardst nodig.
+// De drie fixtures, om en om bij elke verbinding — net als de WireMock-stub. Zo komt de
+// gestopte run vanzelf aan de beurt, en die heeft de consumer het hardst nodig.
 const RUNS = ['voltooid', 'gestopt', 'midden'].map((naam) =>
   fs.readFileSync(path.join(HIER, 'runs', `${naam}.jsonl`), 'utf8').trim().split('\n')
 );
 let beurt = 0;
+
+// TOLERANTIE=ja stuurt wat een volgende contractversie zou kunnen sturen. Niet omdat 1.0.0
+// dat doet, maar omdat een stub die alleen de huidige versie spreekt een tolerantiefout
+// niet kán tonen: alles past, dus alles lijkt goed — tot de eerste additieve wijziging.
+//
+// Alle drie de vormen tegelijk, want een schakelaar die een derde van de belofte toetst en
+// groen meldt is hetzelfde patroon als een lus die na één bericht stopt.
+const TOLERANT = process.env.TOLERANTIE === 'ja';
+
+function toekomstig(regels) {
+  if (!TOLERANT) return regels;
+
+  const uit = regels.map((regel) => {
+    const b = JSON.parse(regel);
+    b.herkomst = 'toekomstige-versie';                       // 1 — onbekend veld
+    if (b.soort === 'run-afgerond' && b.reden === 'gestopt') {
+      b.reden = 'gestopt-door-beheerder';                    // 3 — onbekende enum-waarde
+    }
+    return JSON.stringify(b);
+  });
+
+  // 2 — onbekend berichttype, vlak voor het einde zodat het midden in de verwerking valt
+  const laatste = JSON.parse(uit[uit.length - 1]);
+  uit.splice(uit.length - 1, 0, JSON.stringify({
+    soort: 'deelsysteem-overgeslagen',
+    tijd: laatste.tijd,
+    runId: laatste.runId,
+    deelsysteem: 'order',
+    herkomst: 'toekomstige-versie',
+  }));
+
+  return uit;
+}
 
 function lees(verzoek) {
   return new Promise((klaar) => {
@@ -51,7 +84,7 @@ function lees(verzoek) {
 // De stream: één bericht per SSE-event, met dezelfde tussenpozen als de opname. Dit is het
 // hele replaymechanisme — het toetst niets en beslist niets.
 function stream(antwoord) {
-  const regels = RUNS[beurt++ % RUNS.length];
+  const regels = toekomstig(RUNS[beurt++ % RUNS.length]);
   antwoord.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -106,5 +139,10 @@ http.createServer(async (verzoek, antwoord) => {
 }).listen(POORT, () => {
   console.log(`stub van showcase-CBT luistert op http://localhost:${POORT}`);
   console.log(`  ${routes.length} operaties uit het contract`);
-  console.log(`  stream op ${data.streampad} — drie runs, om en om per verbinding`);
+  console.log(`  stream op ${data.streampad} — drie fixtures, om en om per verbinding`);
+  if (TOLERANT) {
+    console.log('  TOLERANTIE=ja — de stream stuurt een onbekend veld, een onbekend');
+    console.log('    berichttype en een onbekende enum-waarde. Alle drie horen jouw');
+    console.log('    client niet te breken. Zie README.md.');
+  }
 });

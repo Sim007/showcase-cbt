@@ -99,6 +99,44 @@ eindig en precies maken.
 Hoofdstuk 1 is de referentie: die schrijft de opzet volledig uit, de andere vullen aan.
 Hoofdstuk 0 varieert niets — het laat zien waar de rest vandaan komt.
 
+## De stubbundel voor showcase-website
+
+Naast de scenario's loopt een echte grens: showcase-CBT levert `scenario-api` en
+`run-stream` aan de squad die showcase-website bouwt. Die krijgt een bundel om tegen te
+bouwen — uitpakken en starten, verder niets.
+
+```sh
+ci/bouw-stubbundel.sh showcase-cbt scenario-api run-stream 1.0.0
+```
+
+Levert `build/scenario-api-stubbundel-1.0.0.tgz` op, ongeveer 330 KB.
+
+**Twee draaiwijzen, allebei getoetst.** Ze horen hetzelfde te doen; de eerste is er omdat
+de ontvanger geen Docker heeft, de tweede omdat wij die aanname niet nóg een keer willen
+maken zonder hem te controleren.
+
+| | Nodig | Commando |
+|---|---|---|
+| **Lokaal** | Node 20 of nieuwer, geen netwerk | `tar -xzf …tgz && cd bundel && node stub.js` |
+| **Docker** | Docker, geen netwerk nodig | `docker run --rm --network none -v "$PWD:/w" -w /w node:22.23.2-alpine sh -c 'tar -xzf *.tgz && cd bundel && node stub.js'` |
+
+**Wat je in beide gevallen hoort te zien:**
+
+```
+preflight (OPTIONS /v1/runs)            204
+POST /v1/runs met een onbekend veld     400
+stream, verbinding 1                    21 berichten, eindigt op run-afgerond voltooid
+stream, verbinding 2                    12 berichten, eindigt op run-afgerond gestopt
+stream, verbinding 3                    14 berichten, begint met een momentopname
+```
+
+Die 400 is de reden dat de bundel bestaat: hij weigert wat niet in de spec staat, net als de
+echte kant. Krijg je een 201, dan draait er iets anders dan deze bundel.
+
+Met `TOLERANTIE=ja` stuurt de stream wat een volgende contractversie zou kunnen sturen — een
+onbekend veld, een onbekend berichttype en een onbekende enum-waarde. Zie
+[ci/stubbundel/README.md](ci/stubbundel/README.md).
+
 ## Vereenvoudigingen
 
 Bewuste versimpelingen voor de demo. Ze staan hier bij elkaar zodat niemand ze aanziet

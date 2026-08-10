@@ -130,6 +130,7 @@ while IFS= read -r regel; do
   AANTAL=$((AANTAL + 1))
 done < "${TMP}/werklijst.jsonl"
 
+verwacht_minstens "${AANTAL}" 1 "mappings uit de spec"
 echo "stap 3-5: ${AANTAL} mappings gegenereerd uit ${GROEP}/${ARTIFACT} ${VERSIE}"
 
 # --- stap 6: scenario-mappings --------------------------------------------------------

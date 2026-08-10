@@ -255,6 +255,7 @@ for verloop in "${V1}" "${V2}" "${V3}"; do
   done 3< "${verloop}"
 done
 
+verwacht_minstens "${GEVALIDEERD}" 1 "berichten gevalideerd"
 echo "stap 4: ${GEVALIDEERD} berichten voldoen aan hun payloadschema"
 
 # --- stap 5: de mappings wegschrijven ----------------------------------------------------

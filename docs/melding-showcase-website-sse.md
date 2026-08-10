@@ -113,7 +113,7 @@ liet Order dan als "nog niet gestart" staan, en dat is na `run-afgerond` misleid
 
 Dat het geval bestond en niemand het zag, kwam doordat ons eigen scenario-example geen
 enkele Order-stap had terwijl het Order wel als deelsysteem noemde. Dat is gerepareerd; de
-opgenomen runs bevatten nu een deelsysteem dat nooit aan de beurt kwam, zodat jullie er
+fixtures bevatten nu een deelsysteem dat nooit aan de beurt kwam, zodat jullie er
 tegen kunnen testen.
 
 Wat wél blijft: een stap die door een stop nooit gestart is, levert geen bericht. "Niet

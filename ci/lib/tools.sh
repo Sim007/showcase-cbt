@@ -256,3 +256,33 @@ info_endpoints() {
     printf '%s\n' "${_info}"
   done
 }
+
+# verwacht_minstens <gevonden> <ondergrens> <omschrijving>
+#
+# Elke gate declareert hiermee hoeveel hij verwachtte te zien. Dat is geen assertie erbij
+# maar de kern van wat een gate is: een controle die nul dingen bekeek en toch groen meldt,
+# heeft niets vastgesteld — hij heeft alleen niet gefaald.
+#
+# Dat is deze week drie keer gebeurd in eigen gereedschap: een validatielus die na één
+# bericht stopte, dezelfde lus in een andere vorm, en een schemacontrole die op het
+# verkeerde niveau keek en nul bodies zag. Alle drie meldden succes. De notities staan in
+# docs/besluiten.md onder Geleerd.
+#
+# De ondergrens mag nul zijn — leeg is soms legitiem. Maar dan staat die nul er als
+# bewering, opgeschreven door wie het script maakte, in plaats van als bijproduct van een
+# lus die niets vond. Dat is het hele verschil.
+verwacht_minstens() {
+  _gevonden="$1"
+  _ondergrens="$2"
+  _wat="$3"
+
+  case "${_gevonden}" in
+    ''|*[!0-9]*) echo "verwacht_minstens: '${_gevonden}' is geen aantal (${_wat})" >&2; exit 1 ;;
+  esac
+
+  if [ "${_gevonden}" -lt "${_ondergrens}" ]; then
+    echo "verwacht_minstens: ${_gevonden} ${_wat}, en er werden er minstens ${_ondergrens} verwacht." >&2
+    echo "  Dit is geen groen maar een controle die te weinig heeft gezien." >&2
+    exit 1
+  fi
+}

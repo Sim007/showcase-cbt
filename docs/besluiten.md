@@ -718,12 +718,12 @@ naar deze repo verhuist.
 een uitzondering met een grens eromheen — geen versoepeling van de regel.
 
 **Waarvoor.** Uitsluitend voor `contracts/showcase-cbt/run-stream/1.0.0/runs/*.jsonl`: de
-drie opgenomen runs. Niet voor gegenereerde bestanden in het algemeen, niet voor
+drie fixtures. Niet voor gegenereerde bestanden in het algemeen, niet voor
 stubmappings, niet voor `build/`.
 
 **Waarom.** De consumer moest de drie runs reconstrueren uit `ci/generate-stream-stub.sh`,
 want als bestand bestonden ze niet. Er was dus niets om naar te verwijzen en niets om tegen
-te valideren. Een opgenomen run is een artefact dat we léveren, geen tussenproduct van een
+te valideren. Een fixture is een artefact dat we léveren, geen tussenproduct van een
 build.
 
 **Onder welke voorwaarde.** `ci/generate-stream-stub.sh --controleer` genereert opnieuw en
@@ -733,12 +733,82 @@ gegenereerd bestand veroudert stil. Met die controle kan dat niet.
 **Zonder die controle vervalt de uitzondering.** Verdwijnt `--controleer` uit de pipeline,
 dan horen deze bestanden ook te verdwijnen.
 
-**En wanneer hij hoe dan ook vervalt:** zodra de runs als release-asset gepubliceerd worden.
-Dan is er een plek waar ze per versie staan met een checksum, en is een kopie in de
-werkboom overbodig. Dat moment is de volgende stap — Releases, checksum en Spectral.
+**En wanneer hij hoe dan ook vervalt:** zodra de fixtures als release-asset gepubliceerd
+worden. Dan is er een plek waar ze per versie staan met een checksum, en is een kopie in de
+werkboom overbodig.
+
+**Herzien op 2026-09-10.** Geen vervaldatum — die zou verzonnen zijn, want Releases staat
+niet in scope en heeft dus geen opleverdatum. Dit is een verplichting om te kijken: op die
+dag wordt de uitzondering opnieuw verantwoord of gaan de bestanden eruit. Een uitzondering
+die niemand meer bekijkt, is er geen meer maar een gewoonte.
+
+**Het zijn fixtures en geen opnames.** Ze zijn bit-voor-bit reproduceerbaar: de tijdstempels
+komen van een vaste basis, het `runId` is vast. Er is niets opgenomen — er is iets
+uitgerekend. Dat maakt de vervalvoorwaarde ook bereikbaar: iets dat volledig uit de generator
+volgt, hoeft niet gecommit te blijven zodra het elders per versie op te halen is.
+
+**En het maakt duidelijk wat de controle wél aantoont.** `--controleer` regenereert en
+vergelijkt, en dat toont aan dat *de generator niet is gedrift* — niet dat de inhoud klopt.
+Dat laatste is het werk van de spec en van de schemavalidatie binnen de generator. Het
+verschil is klein om op te schrijven en groot als iemand er later op vertrouwt.
 
 Dit staat er zo uitgebreid bij omdat een uitzondering zonder vervaldatum over drie maanden
 een precedent is waar iemand naar wijst.
+
+## 2026-08-10 — Eén schema kan niet twee rollen doen
+
+`additionalProperties: false` op de payloadschema's is een **ware en nuttige** uitspraak over
+wat wij versturen: hij vangt onze eigen typefouten. Diezelfde regel is **schadelijk** voor
+wat de ontvanger valideert: voegen wij in 1.1.0 een optioneel veld toe, dan klapt zijn client
+eruit — terwijl scenario 02 van deze showcase precies dat een niet-brekende wijziging noemt.
+
+Wij leverden alleen de strenge variant mee. **Wij gaven de ontvanger dus het gereedschap om
+zichzelf te breken bij onze eerste additieve wijziging** — en hij zou het niet merken, want
+onze 1.0.0-stub stuurt nooit een extra veld.
+
+**Het besluit.** Twee schema's uit één bron. Streng blijft hier, voor uitgaand verkeer.
+Alleen het ontvangstschema gaat mee in de bundel — twee sets naast elkaar zou betekenen dat
+de verkeerde nog steeds te pakken valt, en dan is de val verplaatst in plaats van weg.
+
+Wat eruit gaat, in de volgorde van de drie tolerantie-eisen:
+
+| Tolerantie | Wat er weg moet |
+|---|---|
+| onbekend veld negeren | `additionalProperties: false` |
+| onbekend berichttype overslaan | de enum op `Soort`, plus een index van soort naar schema |
+| onbekende enum-waarde niet fataal | de enums op `Uitkomst` en `reden` |
+
+**Wat het ontvangstschema daarna nog toetst is vorm en geen woordenschat.** Verplichte velden
+aanwezig, types kloppen, structuur klopt. Een `soort` met een typefout komt er doorheen. Dat
+is de prijs, en hij is te betalen omdat zo'n typefout van ons komt en aan onze verzendkant
+door het strenge schema wordt gevangen. Het staat in de bundel-README zodat niemand over een
+half jaar denkt dat het meer controleert dan het doet.
+
+**En de tolerantie is te draaien in plaats van te beloven.** `TOLERANTIE=ja` laat de stub
+alle drie tegelijk sturen. Alle drie, want een schakelaar die een derde van de belofte toetst
+en groen meldt is hetzelfde patroon als een lus die na één bericht stopt.
+
+## 2026-08-10 — De lege-verzamelingseis, en waarom hij niet alleen in CLAUDE.md staat
+
+De regel: **een gate faalt bij een lege verzameling, tenzij het verwachte aantal expliciet is
+opgeschreven.** Dan is nul een bewering in plaats van een bijproduct.
+
+"Faalt altijd bij nul" was te grof. Waar leeg legitiem is, levert dat een gate op die mensen
+uitzetten — en dan ben je terug bij stil groen met een stap ertussen.
+
+**Maar een regel in CLAUDE.md is een afspraak**, en dit hele project betoogt dat een afspraak
+te zwak is: hij staat in een document, hij wordt gelezen door wie hem leest, en als hij
+gebroken wordt merkt niemand dat op het moment zelf. Een regel over stil groen die zelf
+alleen als afspraak bestaat, is de zwakke vorm van wat we laten zien.
+
+Daarom allebei. In `CLAUDE.md` voor wie bouwt, en toetsbaar in `ci/controle-gates.sh`: elk
+script in `ci/` moet `verwacht_minstens` aanroepen of met een reden in de vrijstellingslijst
+staan. De richting is met opzet omgekeerd — een nieuw script moet iets declareren of expliciet
+worden vrijgesteld. Vergeten is geen optie meer.
+
+**Wat dit niet bereikt:** showcase-website heeft een eigen `CLAUDE.md`, en deze regel komt
+daar niet. Dat is de hoofdstukvraag in het klein — een standaard die per repository is
+vastgelegd, geldt niet tribebreed. Niet opgelost, wel vastgelegd.
 
 ---
 
@@ -849,5 +919,28 @@ linter voor "wat je hier belooft, komt verderop niet voor".
 
 Wat het gekost heeft was klein — de consumer merkte het op en de reparatie was een paar
 regels. Wat het had kunnen kosten is groter: hun afleidlogica was gebouwd tegen een geval
-dat de opgenomen runs niet bevatten, en dat blijkt dan pas bij de eerste echte run.
+dat de fixtures niet bevatten, en dat blijkt dan pas bij de eerste echte run.
+
+## 2026-08-10 — De eerste workflow van dit project is een controle op een uitzondering
+
+Deze repository gaat over pipelines en gates, en had er zelf geen: `.github/workflows/`
+bestond niet. De eerste die er komt draait geen tests en bouwt geen artefact — hij controleert
+of een uitzondering op een eigen regel nog aan zijn voorwaarde voldoet.
+
+Dat is geen ironie maar een aanwijzing. Wat je aan anderen laat zien, richt je voor jezelf
+het laatst in.
+
+## 2026-08-10 — Een stub die alleen de huidige versie spreekt, kan een tolerantiefout niet tonen
+
+De stub serveerde 1.0.0 en niets anders. Alles paste, dus alles leek goed — maar een consumer
+die bij een onbekend veld, een onbekend berichttype of een onbekende enum-waarde omvalt, viel
+daarmee niet door de mand. Dat blijkt pas bij de eerste additieve wijziging, in productie.
+
+`TOLERANTIE=ja` laat de stub sturen wat een volgende versie zou kunnen sturen. Daarmee is
+tolerantie iets om te draaien in plaats van te beloven.
+
+**Deze week de derde keer dat de aanname in het gereedschap zat en niet in het contract.**
+Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu een stub die
+alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
+staat nergens in een spec.
 

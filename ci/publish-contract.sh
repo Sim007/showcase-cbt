@@ -132,6 +132,17 @@ else
   fi
 fi
 
+# Een spec zonder operaties of kanalen is geldig YAML en beschrijft niets. Zonder deze
+# regel publiceert de gate hem net zo vrolijk, en dan staat er een lege belofte in het
+# register waar een consumer op kan pinnen.
+if [ "${ARTEFACT_TYPE}" = "OPENAPI" ]; then
+  INHOUD="$(yq -o=json '.' "${SPECPAD#"${CBT_ROOT}/"}" | jq -r '[.paths // {} | keys[]] | length')"
+  verwacht_minstens "${INHOUD}" 1 "paden in ${SPECPAD}"
+else
+  INHOUD="$(yq -o=json '.' "${SPECPAD#"${CBT_ROOT}/"}" | jq -r '[.channels // {} | keys[]] | length')"
+  verwacht_minstens "${INHOUD}" 1 "kanalen in ${SPECPAD}"
+fi
+
 # --- stap 3: publiceren -------------------------------------------------------------
 
 PAYLOAD="${WERKMAP}/${ARTIFACT}-${VERSIE}.payload.json"

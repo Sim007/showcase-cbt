@@ -95,21 +95,52 @@ ROUTES="$(jq -r '.routes | length' "${REL}/stub-data.json")"
 [ "${ROUTES}" -gt 0 ] || fout "geen routes uit de spec gehaald"
 echo "stap 2: ${ROUTES} routes, waarvan $(jq -r '[.routes[] | select(.verzoekSchema)] | length' "${REL}/stub-data.json") met een requestschema"
 
-# --- stap 3: de opgenomen runs ----------------------------------------------------------
+# --- stap 3: de fixtures ----------------------------------------------------------
 
 RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${VERSIE}/runs"
 [ -d "${RUNS}" ] || fout "geen runs in ${RUNS}. Draai eerst ci/generate-stream-stub.sh"
 cp "${RUNS}"/*.jsonl "${BUNDEL}/runs/"
-echo "stap 3: $(ls "${BUNDEL}/runs" | wc -l | tr -d ' ') opgenomen runs"
+echo "stap 3: $(ls "${BUNDEL}/runs" | wc -l | tr -d ' ') fixtures"
 
-# --- stap 4: de payloadschema's, apart ---------------------------------------------------
+# --- stap 4: het ontvangstschema ---------------------------------------------------------
 #
-# De replayer toetst niets. Deze schema's zijn er zodat de consumer de berichten in zijn
-# eigen testsuite wél kan valideren — met ajv, die toch al in de bundel zit.
+# De replayer toetst niets. Dit schema is er zodat de consumer de berichten in zijn eigen
+# testsuite wél kan valideren — met ajv, die toch al in de bundel zit.
+#
+# Nadrukkelijk niet de gepubliceerde schema's zelf. Die staan streng: additionalProperties
+# op false en enums met vaste waarden. Dat is een ware uitspraak over wat wij versturen en
+# een nuttige controle aan ónze kant, maar aan de ontvangende kant maakt hij elke additieve
+# wijziging brekend — en dat is precies wat scenario 02 niet-brekend noemt.
+#
+# Er gaat er dus maar één mee, en dat is deze. Twee schemasets naast elkaar zou betekenen
+# dat er nog steeds een verkeerde te pakken valt; dan is de val verplaatst en niet weg.
+#
+# Wat eruit gaat en waarom, in de volgorde van de drie tolerantie-eisen:
+#   additionalProperties  een onbekend veld mag geen fout zijn
+#   enum op Soort         een onbekend berichttype mag geen fout zijn
+#   enum op de rest       een onbekende waarde in een bekend veld mag geen fout zijn
+#
+# Wat overblijft toetst de vorm en niet de woordenschat. Zie de README van de bundel.
 
-jq '{ components: { schemas: .components.schemas } }' "${REL}/tmp/stream.json" \
-  > "${BUNDEL}/schemas/berichten.json"
-echo "stap 4: $(jq -r '.components.schemas | keys | length' "${REL}/schemas/berichten.json") berichtschema's apart meegeleverd"
+jq '{ components: { schemas: (.components.schemas
+       | walk(if type == "object" then del(.additionalProperties, .enum) else . end)) } }' \
+  "${REL}/tmp/stream.json" > "${BUNDEL}/tmp/ontvangst.json"
+
+# De index: van de waarde die in het bericht staat naar het schema dat erbij hoort. Zonder
+# dit moet de consumer zelf een switch bijhouden, en die vergeet hij bij te werken zodra er
+# een berichtsoort bij komt — terwijl "onbekend type overslaan" juist een opzoeking hoort te
+# zijn die vanzelf goed gaat.
+jq '.components.messages
+    | to_entries
+    | map({ key: .value.name, value: (.value.payload["$ref"] | split("/") | last) })
+    | from_entries' "${REL}/tmp/stream.json" > "${BUNDEL}/tmp/index.json"
+
+jq --slurpfile idx "${REL}/tmp/index.json" '. + { soortIndex: $idx[0] }' \
+  "${REL}/tmp/ontvangst.json" > "${BUNDEL}/schemas/berichten-ontvangst.json"
+
+AANTAL_SCHEMAS="$(jq -r '.components.schemas | keys | length' "${REL}/schemas/berichten-ontvangst.json")"
+verwacht_minstens "${AANTAL_SCHEMAS}" 6 "berichtschema's in het ontvangstschema"
+echo "stap 4: ${AANTAL_SCHEMAS} berichtschema's als ontvangstvariant, met een index op soort"
 
 # --- stap 5: de afhankelijkheden mee ------------------------------------------------------
 

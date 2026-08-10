@@ -59,8 +59,8 @@ sleutels "${MET}"    > "${KB}"
 TOTAAL_ZONDER="$(wc -l < "${KA}" | tr -d ' ')"
 TOTAAL_MET="$(wc -l < "${KB}" | tr -d ' ')"
 
-[ "${TOTAAL_ZONDER}" -gt 0 ] || fout "geen stappen gevonden in ${ZONDER}"
-[ "${TOTAAL_MET}" -gt 0 ]    || fout "geen stappen gevonden in ${MET}"
+verwacht_minstens "${TOTAAL_ZONDER}" 1 "stappen in ${ZONDER}"
+verwacht_minstens "${TOTAAL_MET}" 1 "stappen in ${MET}"
 
 echo "vergelijk-rapporten: $(basename "${ZONDER}") tegen $(basename "${MET}")"
 

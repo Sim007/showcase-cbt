@@ -102,11 +102,13 @@ while IFS="$(printf '\t')" read -r groep artifact versie consument; do
   fi
 done < "${PINS}"
 
-if [ "${GECONTROLEERD}" -eq 0 ]; then
-  echo "  geen enkele pin gevonden op ${OMGEVING}"
-  echo "versieconformiteit: niets te controleren"
-  exit 0
-fi
+# Nul pins was groen, en dat was fout. Een omgeving waar geen enkel deelsysteem een grens
+# declareert, is geen omgeving die in orde is — het is er een waar de check niets vond, en
+# dat kan net zo goed betekenen dat er niets draait of dat de info-endpoints stuk zijn.
+#
+# Wil je hier ooit legitiem nul verwachten, zet dan CBT_VERWACHTE_PINS=0 en zeg daarmee dat
+# het een bewering is en geen bijproduct.
+verwacht_minstens "${GECONTROLEERD}" "${CBT_VERWACHTE_PINS:-1}" "pins gevonden op ${OMGEVING}"
 
 if [ "${ROOD}" -gt 0 ]; then
   echo "versieconformiteit: ${ROOD} van ${GECONTROLEERD} pins wordt hier niet geserveerd"
