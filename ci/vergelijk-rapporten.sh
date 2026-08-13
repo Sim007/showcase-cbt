@@ -28,6 +28,8 @@
 set -euo pipefail
 
 CBT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=lib/tools.sh
+. "${CBT_ROOT}/ci/lib/tools.sh"
 
 fout() {
   echo "vergelijk-rapporten: $*" >&2
