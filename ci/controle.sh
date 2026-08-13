@@ -94,6 +94,52 @@ echo "  ${GECONTROLEERD} berichten, tijd loopt overal vooruit"
 
 "${CBT_ROOT}/ci/toets-tolerantie.sh" "${GROEP}" "${STREAM}" "${VERSIE}" | sed 's/^/  /'
 
+# --- 6: de stubbundel bouwt nog -----------------------------------------------------------
+#
+# De bundel is de levering aan de andere squad, en hij is al twee keer gestrand op een
+# aanname over gereedschap dat aan de andere kant niet bleek te staan. Dat hij hier op een
+# schone runner nog bouwt, vangt precies die soort drift — en dit is de enige plek waar dat
+# automatisch gebeurt.
+
+"${CBT_ROOT}/ci/bouw-stubbundel.sh" "${GROEP}" "${SCENARIO}" "${STREAM}" "${VERSIE}" \
+  >/dev/null || fout "de stubbundel bouwt niet meer"
+
+echo "  stubbundel gebouwd"
+
 docker compose -f "${CBT_ROOT}/compose/registry.yml" down >/dev/null 2>&1 || true
+
+# --- 7: de aftrekking van hoofdstuk 0 en 1 ------------------------------------------------
+#
+# vergelijk-rapporten.sh draagt de bewering waar hoofdstuk 0 en 1 samen op rusten, en werd
+# tot nu toe alleen door de demo van hoofdstuk 1 aangeroepen. Die draait niet in CI, en
+# daardoor bleef een exitcode 127 in dat script maanden onzichtbaar.
+#
+# De invoer zijn twee fixtures en geen echte rapporten: die staan in <hoofdstuk>/rapport/,
+# horen bij een run, en zijn er op een runner dus niet. Zie docs/besluiten.md.
+
+"${CBT_ROOT}/ci/vergelijk-rapporten.sh" \
+  "${CBT_ROOT}/ci/fixtures/rapport-zonder-cbt.md" \
+  "${CBT_ROOT}/ci/fixtures/rapport-met-cbt.md" | sed 's/^/  /'
+
+# Waaraan te zien is dat de fixtures verouderd zijn: ze zijn met de hand uitgerekend, dus
+# een wijziging in het rapportformaat laat ze stil achter. Daarom schrijft tools.sh hier één
+# vers rapport en wordt de kop ernaast gelegd. Wijkt die af, dan lijken de fixtures niet meer
+# op wat een pipeline oplevert, en toont de vergelijking niets meer over de echte rapporten.
+KOP='^| Tijd | Onderdeel | Stap | Uitkomst | Bijzonderheden |$'
+VERSMAP="$(mktemp -d)"
+CBT_RAPPORT="${VERSMAP}/rapport-cbt-99.md" rapport_start "controle"
+grep -q "${KOP}" "${VERSMAP}/rapport-cbt-99.md" \
+  || fout "tools.sh schrijft een andere rapportkop dan deze controle verwacht"
+rm -rf "${VERSMAP}"
+
+ACTUEEL=0
+for fixture in "${CBT_ROOT}"/ci/fixtures/rapport-*.md; do
+  grep -q "${KOP}" "${fixture}" \
+    || fout "$(basename "${fixture}") heeft niet meer de kop die tools.sh schrijft; de fixture is verouderd"
+  ACTUEEL=$((ACTUEEL + 1))
+done
+verwacht_minstens "${ACTUEEL}" 2 "fixtures met een actuele rapportkop"
+
+echo "  fixtures hebben nog de kop die tools.sh schrijft"
 
 echo "== controle: groen =="

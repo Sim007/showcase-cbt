@@ -4,12 +4,18 @@
 #
 #   controle-gates.sh
 #
-#   1  telling        elk script declareert met verwacht_minstens hoeveel het verwachtte
-#   2  oplosbaarheid  elk commandowoord lost ergens naar op
+#   1  telling         elk script declareert met verwacht_minstens hoeveel het verwachtte
+#   2  oplosbaarheid   elk commandowoord lost ergens naar op
+#   3  uitvoering      controle.sh draait elk script dat zonder deelsystemen kan draaien
+#   4  bereikbaarheid  elk script wordt ergens aangeroepen
 #
-# Beide regels zijn omgekeerd geformuleerd: niet "wie wil meedoen meldt zich", maar
-# "iedereen doet mee tenzij hij met reden is vrijgesteld". Vergeten is dan geen optie meer,
-# en dat is het enige wat werkt.
+# Alle vier zijn omgekeerd geformuleerd: niet "wie wil meedoen meldt zich", maar "iedereen
+# doet mee tenzij hij met reden is vrijgesteld". Vergeten is dan geen optie meer, en dat is
+# het enige wat werkt.
+#
+# Regel 3 en 4 bestaan omdat een script dat nergens draait geen gate is maar een voornemen
+# in een andere vorm. vergelijk-rapporten.sh werd alleen door de demo van hoofdstuk 1
+# aangeroepen, en die draait niet in CI — daarom bleef exitcode 127 maanden onzichtbaar.
 #
 # Regel 2 bestaat omdat regel 1 een voornemen toetste. Hij keek of de tekst
 # `verwacht_minstens` in het bestand vóórkwam, niet of die aanroep ook iets zou doen.
@@ -39,28 +45,110 @@ SCRIPTS="$(ls "${CBT_ROOT}"/ci/*.sh "${CBT_ROOT}"/*/demo/demo.sh 2>/dev/null)"
 SLEUTELWOORDEN=" if then else elif fi for while until do done case esac in function
 select time return break continue local export readonly shift set trap exit eval exec "
 
-# Vrijgesteld van regel 1, met de reden erbij. Een script hoort hier alleen te staan als het
-# geen oordeel velt over een verzameling — dan valt er niets te tellen.
+VANDAAG="$(date -u '+%Y-%m-%d')"
+
+# --- vrijstellingen -----------------------------------------------------------------------
+#
+# Elke vrijstelling heeft een reden én een moment waarop hij opnieuw beoordeeld wordt. Zonder
+# dat wordt vrijstellen de standaardroute: de eerste is altijd verdedigbaar, en op de tiende
+# komt niemand terug. Staat de datum in het verleden, dan wordt dit script rood met de vraag
+# om opnieuw te beslissen — niet omdat er iets stuk is, maar omdat de reden aan herijking toe
+# is. Dezelfde behandeling als de uitzondering op de gegenereerde runbestanden.
+#
+# Dit raakt de demo's niet: controle-gates.sh draait in controle.sh en nergens anders, dus
+# een verlopen datum maakt een push rood en geen presentatie.
+#
+# Vorm: "reden|jjjj-mm-dd".
+
+# Regel 1: dit script velt geen oordeel over een verzameling, dus er valt niets te tellen.
 vrijstelling_telling() {
   case "$1" in
-    controle-gates.sh)        echo "toetst de gates zelf; zijn verzameling is deze lijst" ;;
-    controle.sh)              echo "roept andere controles aan en velt zelf geen oordeel" ;;
-    deploy.sh)                echo "zet iets neer, telt niets" ;;
-    opruimen.sh)              echo "ruimt op, telt niets" ;;
-    opruimen-alles.sh)        echo "ruimt op, telt niets" ;;
-    get-contract.sh)          echo "haalt één bestand op; ontbreken is al een fout" ;;
-    rapport-html.sh)          echo "zet een rapport om; een leeg rapport is geen fout" ;;
-    toon-versies.sh)          echo "toont wat er draait en oordeelt niet" ;;
-    wacht-op-gezond.sh)       echo "wacht op één toestand, geen verzameling" ;;
-    demo.sh)                  echo "vertelt een verhaal; de gates zitten in wat het aanroept" ;;
-    pipeline-acceptatie.sh)   echo "deployt en checkt health; de gates zitten in de aangeroepen scripts" ;;
-    pipeline-contract.sh)     echo "roept publish- en get-contract aan; die gates zitten daar" ;;
-    pipeline-microservice.sh) echo "roept Maven en Docker aan; die melden zelf hun aantallen" ;;
-    pipeline-test.sh)         echo "roept versieconformiteit en smoke aan; de gates zitten daar" ;;
-    pipeline-ci.sh)           echo "roept stub, drift en verificatie aan; de gates zitten daar" ;;
-    pipeline-gebruikersflows.sh) echo "roept gebruikersflow aan; de gate zit daar" ;;
+    controle-gates.sh)        echo "toetst de gates zelf; zijn verzameling is deze lijst|2027-02-13" ;;
+    controle.sh)              echo "roept andere controles aan en velt zelf geen oordeel|2027-02-13" ;;
+    deploy.sh)                echo "zet iets neer, telt niets|2027-02-13" ;;
+    opruimen.sh)              echo "ruimt op, telt niets|2027-02-13" ;;
+    opruimen-alles.sh)        echo "ruimt op, telt niets|2027-02-13" ;;
+    get-contract.sh)          echo "haalt één bestand op; ontbreken is al een fout|2027-02-13" ;;
+    rapport-html.sh)          echo "zet een rapport om; een leeg rapport is geen fout|2027-02-13" ;;
+    toon-versies.sh)          echo "toont wat er draait en oordeelt niet|2027-02-13" ;;
+    wacht-op-gezond.sh)       echo "wacht op één toestand, geen verzameling|2027-02-13" ;;
+    demo.sh)                  echo "vertelt een verhaal; de gates zitten in wat het aanroept|2027-02-13" ;;
+    pipeline-acceptatie.sh)   echo "deployt en checkt health; de gates zitten in de aangeroepen scripts|2027-02-13" ;;
+    pipeline-contract.sh)     echo "roept publish- en get-contract aan; die gates zitten daar|2027-02-13" ;;
+    pipeline-microservice.sh) echo "roept Maven en Docker aan; die melden zelf hun aantallen|2027-02-13" ;;
+    pipeline-test.sh)         echo "roept versieconformiteit en smoke aan; de gates zitten daar|2027-02-13" ;;
+    pipeline-ci.sh)           echo "roept stub, drift en verificatie aan; de gates zitten daar|2027-02-13" ;;
+    pipeline-gebruikersflows.sh) echo "roept gebruikersflow aan; de gate zit daar|2027-02-13" ;;
     *) echo "" ;;
   esac
+}
+
+# Regel 3: dit script kan niet draaien zonder dat er deelsystemen staan. controle.sh draait
+# bij elke push en heeft geen gebouwde images, geen gedeployde containers en geen omgeving.
+# Alles wat hieronder staat wordt dus alleen door een demo gedraaid, en dát gat staat als
+# openstaand punt in docs/besluiten.md.
+vrijstelling_uitvoering() {
+  case "$1" in
+    deploy.sh)                echo "zet een deelsysteem neer; vraagt gebouwde images|2027-02-13" ;;
+    drift.sh)                 echo "bevraagt een draaiend deelsysteem|2027-02-13" ;;
+    gebruikersflow.sh)        echo "Playwright tegen een draaiende keten|2027-02-13" ;;
+    smoke.sh)                 echo "Playwright tegen een draaiend deelsysteem|2027-02-13" ;;
+    verify-contract.sh)       echo "toetst een gedeployd deelsysteem tegen de spec|2027-02-13" ;;
+    versieconformiteit.sh)    echo "leest info-endpoints van een omgeving|2027-02-13" ;;
+    toon-versies.sh)          echo "leest info-endpoints van een omgeving|2027-02-13" ;;
+    opruimen.sh)              echo "ruimt een omgeving op die er bij een push niet is|2027-02-13" ;;
+    opruimen-alles.sh)        echo "ruimt omgevingen op die er bij een push niet zijn|2027-02-13" ;;
+    rapport-html.sh)          echo "zet een rapport om dat bij een demorun hoort|2027-02-13" ;;
+    pipeline-acceptatie.sh)   echo "deployt; vraagt gebouwde images|2027-02-13" ;;
+    pipeline-ci.sh)           echo "deployt; vraagt gebouwde images|2027-02-13" ;;
+    pipeline-test.sh)         echo "deployt; vraagt gebouwde images|2027-02-13" ;;
+    pipeline-microservice.sh) echo "bouwt met Maven en Docker; te zwaar voor elke push|2027-02-13" ;;
+    pipeline-gebruikersflows.sh) echo "vraagt een complete keten|2027-02-13" ;;
+    pipeline-contract.sh)     echo "publiceert vanuit een demo; controle.sh publiceert zelf al|2027-02-13" ;;
+    demo.sh)                  echo "draait de hele showcase; zie het openstaande punt in besluiten.md|2027-02-13" ;;
+    *) echo "" ;;
+  esac
+}
+
+# Splitst "reden|datum" en meldt zodra de datum verstreken is.
+toets_vervalmoment() {
+  _wat="$1"
+  _naam="$2"
+  _waarde="$3"
+  _datum="${_waarde##*|}"
+  case "${_datum}" in
+    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+    *) fout "vrijstelling ${_wat} voor ${_naam} heeft geen herzieningsdatum" ;;
+  esac
+  if [ "${VANDAAG}" \> "${_datum}" ]; then
+    VERVALLEN="${VERVALLEN}
+    ${_naam} (${_wat}) — te herzien sinds ${_datum}: ${_waarde%|*}"
+  fi
+}
+
+# Alles wat controle.sh direct of indirect aanroept. Transitief, want get-contract.sh draait
+# wel degelijk mee bij elke push — via generate-stub.sh. Alleen naar de directe aanroepen
+# kijken zou hem als niet-gedraaid melden en om een vrijstelling vragen die onwaar is.
+bereik_van_controle() {
+  _bereik="controle.sh"
+  _ronde=1
+  while [ "${_ronde}" -eq 1 ]; do
+    _ronde=0
+    for _s in ${SCRIPTS}; do
+      _n="$(basename "${_s}")"
+      case " ${_bereik} " in *" ${_n} "*) continue ;; esac
+      for _b in ${_bereik}; do
+        _p="${CBT_ROOT}/ci/${_b}"
+        [ -f "${_p}" ] || continue
+        if grep -qF "/${_n}" "${_p}"; then
+          _bereik="${_bereik} ${_n}"
+          _ronde=1
+          break
+        fi
+      done
+    done
+  done
+  echo "${_bereik}"
 }
 
 # --- regel 2: oplosbaarheid ---------------------------------------------------------------
@@ -101,8 +189,15 @@ onoplosbaar() {
 TOTAAL=0
 DECLAREERT=0
 VRIJ_TELLING=0
+DRAAIT=0
+VRIJ_UITVOERING=0
 MIST_TELLING=""
 MIST_OPLOSSING=""
+MIST_UITVOERING=""
+MIST_BEREIK=""
+VERVALLEN=""
+
+BEREIK="$(bereik_van_controle)"
 
 for script in ${SCRIPTS}; do
   NAAM="$(basename "${script}")"
@@ -116,6 +211,7 @@ for script in ${SCRIPTS}; do
     REDEN="$(vrijstelling_telling "${NAAM}")"
     if [ -n "${REDEN}" ]; then
       VRIJ_TELLING=$((VRIJ_TELLING + 1))
+      toets_vervalmoment telling "${KORT}" "${REDEN}"
     else
       MIST_TELLING="${MIST_TELLING} ${KORT}"
     fi
@@ -127,6 +223,40 @@ for script in ${SCRIPTS}; do
     MIST_OPLOSSING="${MIST_OPLOSSING}
     ${KORT}: ${ONBEKEND}"
   fi
+
+  # --- 3: uitvoering door controle.sh ---
+  if echo " ${BEREIK} " | grep -qF " ${NAAM} " && [ "${script}" = "${CBT_ROOT}/ci/${NAAM}" ]; then
+    DRAAIT=$((DRAAIT + 1))
+  else
+    REDEN="$(vrijstelling_uitvoering "${NAAM}")"
+    if [ -n "${REDEN}" ]; then
+      VRIJ_UITVOERING=$((VRIJ_UITVOERING + 1))
+      toets_vervalmoment uitvoering "${KORT}" "${REDEN}"
+    else
+      MIST_UITVOERING="${MIST_UITVOERING} ${KORT}"
+    fi
+  fi
+
+  # --- 4: bereikbaarheid ---
+  #
+  # Een demo en controle.sh zijn aanroeppunten: daar begint iemand, dus die hoeven niet zelf
+  # te worden aangeroepen. Al het andere moet ergens vandaan komen.
+  #
+  # Dit bestand telt niet mee als aanroeper: de namen in de vrijstellingslijsten zijn een
+  # declaratie en geen aanroep, en zonder die uitzondering houdt de lijst zichzelf in stand.
+  case "${KORT}" in
+    ci/controle.sh|*/demo/demo.sh) ;;
+    *)
+      AANROEPERS=0
+      for kandidaat in ${SCRIPTS}; do
+        [ "${kandidaat}" = "${script}" ] && continue
+        [ "$(basename "${kandidaat}")" = "controle-gates.sh" ] && continue
+        grep -qF "/${NAAM}" "${kandidaat}" && AANROEPERS=$((AANROEPERS + 1))
+      done
+      grep -qF "${NAAM}" "${CBT_ROOT}/ci/lib/tools.sh" && AANROEPERS=$((AANROEPERS + 1))
+      [ "${AANROEPERS}" -eq 0 ] && MIST_BEREIK="${MIST_BEREIK} ${KORT}"
+      ;;
+  esac
 done
 
 verwacht_minstens "${TOTAAL}" 20 "scripts nagelopen"
@@ -150,8 +280,35 @@ if [ -n "${MIST_OPLOSSING}" ]; then
   echo >&2
 fi
 
+if [ -n "${MIST_UITVOERING}" ]; then
+  MELD=1
+  echo "controle-gates: deze scripts worden door controle.sh niet gedraaid:" >&2
+  for n in ${MIST_UITVOERING}; do echo "    ${n}" >&2; done
+  echo "  Roep ze aan in ci/controle.sh, of zet ze in vrijstelling_uitvoering met reden." >&2
+  echo "  Een gate die nergens draait is een voornemen in een andere vorm." >&2
+  echo >&2
+fi
+
+if [ -n "${MIST_BEREIK}" ]; then
+  MELD=1
+  echo "controle-gates: deze scripts worden nergens aangeroepen:" >&2
+  for n in ${MIST_BEREIK}; do echo "    ${n}" >&2; done
+  echo "  Dood gewicht of een gat. Hier is geen vrijstelling voor." >&2
+  echo >&2
+fi
+
+if [ -n "${VERVALLEN}" ]; then
+  MELD=1
+  echo "controle-gates: deze vrijstellingen zijn aan herziening toe:" >&2
+  printf '%s\n' "${VERVALLEN}" >&2
+  echo "  Beslis opnieuw en zet een nieuwe datum, of hef de vrijstelling op." >&2
+  echo >&2
+fi
+
 [ "${MELD}" -eq 0 ] || exit 1
 
 echo "controle-gates: ${TOTAAL} scripts"
-echo "  telling        ${DECLAREERT} declareren een verwachting, ${VRIJ_TELLING} vrijgesteld met reden"
-echo "  oplosbaarheid  elk commandowoord lost op"
+echo "  telling         ${DECLAREERT} declareren een verwachting, ${VRIJ_TELLING} vrijgesteld met reden"
+echo "  oplosbaarheid   elk commandowoord lost op"
+echo "  uitvoering      ${DRAAIT} draaien mee in controle.sh, ${VRIJ_UITVOERING} vragen een omgeving"
+echo "  bereikbaarheid  elk script wordt aangeroepen"
