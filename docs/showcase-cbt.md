@@ -146,7 +146,7 @@ Hoofdstuk 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de co
 | Licentie | MIT: vrij te gebruiken, zonder garantie en zonder aansprakelijkheid |
 | Gebruiksmodel | referentie om te bekijken en te draaien; fork of template voor wie er zelf mee wil spelen |
 
-**Eén uitzondering: de site.** `showcase-site` is een eigen repository, opgenomen in deze als subrepo. Hij heeft een andere levensloop dan de showcase — hij wordt gepubliceerd, niet gedraaid — en een eigen historie is daar prettiger bij. Het script dat hem maakt blijft in `ci/`, zoals elk script. Zolang de subrepo alleen bevat wat regenereerbaar is, is dat geen tweede plek waar de waarheid staat; de afweging staat in `docs/showcase-site.md`.
+**Eén uitzondering: de site.** `showcase-website` staat in een eigen repository en is niet in deze opgenomen. Hij is van een andere squad, met een eigen backlog en een eigen tempo, en wat de twee verbindt is het contract op de grens ertussen en verder niets. Dat is geen praktische keuze maar de opzet: dit is de enige grens in de showcase waar het eigenaarschap werkelijk wisselt, en hem in deze repository trekken zou precies weghalen wat hem de moeite waard maakt. De afweging staat in `docs/showcase-site.md`, de rolverdeling in `docs/context.md` deel B.
 
 **Eén repository.** Niet negen repositories: dan ontstaan negen kopieën van dezelfde scripts die uit elkaar lopen, en toont de showcase onbedoeld aan dat het niet standaardiseerbaar is. Binnen die ene repository staat wat gedeeld is op de hoofdmap en heeft elk hoofdstuk daarnaast een eigen genummerde map.
 
@@ -208,7 +208,9 @@ Losstaand te draaien is daarmee elke genummerde map, mits de deelsystemen die hi
 
 **Draaien.** Docker en een shell zijn de enige vereisten; op Windows via WSL2, niet via Git Bash. Extern gereedschap zoals oasdiff draait als container achter een functie in `ci/lib/tools.sh`, zodat de versie op een laptop en op een runner identiek is.
 
-**CI.** Er zijn twee wrappers — GitLab CI en GitHub Actions — die uitsluitend de scripts uit `ci/` aanroepen: `pipeline-microservice.sh`, `pipeline-ci.sh`, `pipeline-test.sh` en `pipeline-acceptatie.sh`. Geen stap of conditie mag in één van de twee bestanden staan en in het andere niet. De standaard zit in de scripts, niet in het CI-platform; dat is ook het argument voor een team dat ooit naar een ander platform migreert.
+**CI.** Er is één wrapper: `.github/workflows/controle.yml`, en die roept `ci/controle.sh` aan — de controles die bij elke push horen, niet de pipelines. De pipelines uit 1.4 draaien nu vanuit de demoscripts en niet vanuit een CI-platform; dat gat staat als O15 in 1.13.
+
+**Een tweede wrapper voor GitLab CI is uitgesteld, niet gebouwd.** Er is geen besluit dat dit project op twee CI-systemen draait, en één wrapper schrijven die niemand tegen een echte GitLab-runner houdt, levert een bestand op dat groen lijkt omdat niemand het draait. Komt hij er, dan geldt vanaf dat moment: geen stap of conditie mag in het ene bestand staan en in het andere niet. De standaard zit hoe dan ook in de scripts en niet in het CI-platform — dat is wat zo'n migratie goedkoop houdt, en het is nu al waar: elk yaml-bestand hier is dun en roept uitsluitend `ci/` aan.
 
 ---
 
@@ -359,7 +361,7 @@ De implementatie houdt dezelfde regels aan en accepteert niet meer dan hij beloo
 
 **Wat er dan aan semantiek overblijft** is één ding: dat een bedrag boven 500,00 wordt afgewezen. En dat is geen invoercontrole maar een businessuitkomst — 201 met `DECLINED`, geen 400. Daarmee staat het onderscheid uit 1.2 er scherper: alles wat over de *geldigheid* van een verzoek gaat, staat in het contract; wat over de *uitkomst* gaat, niet.
 
-> Dit is een correctie op de baseline en geen contractwijziging: v1.0.0 was nog niet uitgeleverd. Was hij dat wel geweest, dan was `pattern` toevoegen breaking geweest — de diff-gate meldt dat ook zo — en had het een major gekost. Een regel die je in het schema had kunnen zetten, is later duur om er alsnog in te krijgen.
+> Dit is een correctie op de baseline en geen contractwijziging: v1.0.0 was nog niet uitgeleverd. Was hij dat wel geweest, dan was `minimum`, `exclusiveMinimum`, `maximum` of `enum` toevoegen breaking geweest — de diff-gate meldt dat ook zo — en had het een major gekost. Een grens die je meteen in het schema had kunnen zetten, is later duur om er alsnog in te krijgen.
 
 ---
 
@@ -465,8 +467,10 @@ Een eigen rapport, `00-start/rapport/rapport-cbt-00`, naast dat van hoofdstuk 1.
 | Deelsystemen | order en payment | order en payment |
 | Versies | alle 1.0.0 | alle 1.0.0 |
 | Omgevingen | CI, Test, Acceptatie | CI, Test, Acceptatie |
-| Pipelines | 5 per deelsysteem | 5 per deelsysteem, plus die van het contract |
+| Pipelines | 4 per deelsysteem | 4 per deelsysteem, plus die van het contract |
 | Regels in het rapport | 28 | 37 |
+
+**Vier en niet vijf.** 1.4 beschrijft er zes: één voor het contract, één voor de microservice, en vier voor het deelsysteem onderweg naar productie. De laatste daarvan — pipeline 6, naar Productie — is bewust niet gebouwd, want een vierde omgeving op een laptop toont hetzelfde als Acceptatie zonder de koppelingen (1.12). Wat er per deelsysteem draait is dus: microservice, CI, Test, Acceptatie.
 
 **Negen regels verschil, en ze zijn met naam te noemen:**
 
@@ -798,8 +802,6 @@ Geen van beide is een pipelinestap. De controles draaien na **elke** deploy, ong
 | versieconformiteit | welke contractversies draaien samen |
 | smoke over de echte keten | de technische integratie werkt |
 
-Elk deelsysteem meldt op zijn info-endpoint **beide** versies: zijn eigen serviceversie, en de contractversies waar hij aan hangt — bij de provider de versies die hij serveert, bij de consumer zijn pin. Dat onderscheid moet zichtbaar zijn, anders leest niemand af of `1.1.0` over het deelsysteem of over de grens gaat.
-
 **De check vergelijkt niet met een verwachte samenstelling, maar met zichzelf** (O2, gesloten). De vraag is tweeledig: staat elke pin die op deze omgeving voorkomt als gepubliceerde versie in het register, en wordt hij op deze omgeving ook geserveerd? Dat is uit de omgeving zelf af te leiden — de consumers melden hun pins, de providers melden wat ze serveren — en er is dus geen bestand dat bijgehouden moet worden.
 
 Dat is niet de goedkoopste oplossing maar de enige juiste, want een *verwachte* samenstelling bestaat hier niet: elk deelsysteem schuift op zijn eigen tempo op, dus er is geen moment waarop een bepaalde combinatie de bedoelde is. Een lijst met verwachte versies zou randvoorwaarde 4 tegenspreken en zou bij elke release van iemand anders verouderen. De vraag "draait hier de bedoelde combinatie" is daarmee de verkeerde vraag; "sluit alles hier op elkaar aan" is de goede.
@@ -1009,6 +1011,7 @@ De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het cont
 | O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
 | O13 | **De diff-gate werkt niet op AsyncAPI.** oasdiff leest OpenAPI en niets anders, dus voor `run-stream` valt de gate uit 1.9 weg. Bij 1.0.0 merk je dat niet — er is niets om mee te vergelijken — maar bij de eerste wijziging wel. Tot dat moment leunt die grens op de compatibility rule van het register alleen, en dat is één net in plaats van twee. Op te lossen in hoofdstuk 6, dat toch een AsyncAPI-grens uitwerkt; te overwegen valt een tweede vergelijker naast oasdiff of de gate expliciet als niet-van-toepassing markeren in plaats van hem stil over te slaan |
 | O14 | **Twee dingen lopen door elkaar: de scenario's en het realiseren van de showcase.** De scenario's tonen een fictieve grens tussen Order en Payment; het realiseren gebeurt over een echte grens tussen showcase-CBT en showcase-website, met twee squads en een echte PO. Nu delen die twee één register, één `besluiten.md` en dezelfde begrippen, zonder dat ergens staat dát het twee dingen zijn — dit document noemt showcase-website geen enkele keer. Dat gaat wringen bij het dashboard, dat het register leest om te tonen welke grenzen er zijn en dan een verzonnen grens naast een echte zet. Waar ze samenkomen staat al vast: scenario 10 maakt van de echte grens een gedemonstreerde. Te bepalen is of ze tot dat moment in deze repo uit elkaar moeten, of dat het genoeg is dat de documenten het onderscheid benoemen. Geparkeerd op 2026-08-07 |
+| O15 | **De demo's van hoofdstuk 0 en 1 draaien nergens automatisch.** Van de 28 scripts in `ci/` en de demomappen draaien er 10 mee bij elke push; de andere 18 vragen gebouwde images, gedeployde containers of een omgeving en worden alleen gedraaid als iemand een demo start. Voor die 18 is de enige verificatie dat een mens kijkt. Dat is geen theoretisch gat: het hield een exitcode 127 in `vergelijk-rapporten.sh` maandenlang onzichtbaar — het script wérd aangeroepen, alleen door een demo, en een demo draait niet in CI. De pipelines uit 1.4 hangen daarmee aan een demoscript in plaats van aan een CI-platform. Oplossen betekent Maven, `docker build`, deploys en Playwright bij elke push, en dat vraagt een eigen afweging over wat een push mag kosten — laptopbudget is een ontwerpeis. Tot die tijd staan de 18 met reden en herzieningsdatum in `vrijstelling_uitvoering` in `ci/controle-gates.sh`. De afweging staat in `besluiten.md`, 2026-08-13 |
 
 ---
 
