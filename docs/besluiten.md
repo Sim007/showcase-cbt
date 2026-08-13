@@ -810,6 +810,69 @@ worden vrijgesteld. Vergeten is geen optie meer.
 daar niet. Dat is de hoofdstukvraag in het klein — een standaard die per repository is
 vastgelegd, geldt niet tribebreed. Niet opgelost, wel vastgelegd.
 
+## 2026-08-13 — Twee rapportfixtures, met dezelfde behandeling als de runbestanden
+
+`ci/vergelijk-rapporten.sh` draait vanaf nu bij elke push. Hij vraagt twee rapporten, en die
+zijn er op een runner niet: echte rapporten staan in `<hoofdstuk>/rapport/`, die map staat in
+`.gitignore`, en testbewijs hoort bij een run. Er moest dus invoer komen.
+
+**Waarvoor.** Uitsluitend voor `ci/fixtures/rapport-zonder-cbt.md` en
+`ci/fixtures/rapport-met-cbt.md`: acht stappen en dertien stappen, genoeg om de vergelijker
+door al zijn gevallen te sturen — gelijke stappen, toegevoegde stappen, en een oordeelregel
+waarvan de tekst verschilt terwijl de sleutel gelijk blijft.
+
+**Waarom geen `--zelftest`.** Een vergelijker toetsen tegen invoer die hij zelf verzint,
+toetst niets. De fixtures komen van buiten het script.
+
+**Het zijn verwachtingen en geen opnames.** Dat is het verschil met de runbestanden: die zijn
+uitgerekend door een generator en bit-voor-bit reproduceerbaar, deze zijn met de hand
+geschreven. Daarmee is hun zwakte een andere. Ze kunnen niet drift ten opzichte van een
+generator, maar wel ten opzichte van het rapportformaat.
+
+**Waaraan te zien is dat ze verouderd zijn.** Verandert `rapport_start` of `_rapport_regel` in
+`ci/lib/tools.sh` de kolommen, dan blijven deze bestanden staan zoals ze zijn en meldt de
+vergelijking groen over iets wat niet meer op een echt rapport lijkt. Dat is precies het
+patroon dat dit hoofdstuk bestrijdt, dus is het geen aantekening maar een controle:
+`controle.sh` laat `tools.sh` ter plekke één vers rapport schrijven en legt de kopregel naast
+die van beide fixtures. Wijken ze af, dan is het rood met de mededeling dat de fixture
+verouderd is.
+
+**Wat die controle niet dekt.** Alleen de kopregel, dus de kolommen. Verandert de vorm van een
+stapregel zonder dat de kop meebeweegt, dan ziet hij het niet. Dat is bewust smal gehouden:
+de vergelijker leest zelf ook alleen veld 3 en 4, dus verder reikt zijn afhankelijkheid niet.
+
+**Herzien op 2027-02-13**, samen met de vrijstellingen in `controle-gates.sh`. Vervalt eerder
+als de demo's van hoofdstuk 0 en 1 automatisch gaan draaien: dan zijn er echte rapporten en
+zijn deze twee overbodig.
+
+## 2026-08-13 — De demo's draaien nergens automatisch, en dat is het gat eromheen
+
+Nu vastgelegd omdat er anders alleen een reparatie zou staan en niet het gat dat de reparatie
+mogelijk maakte.
+
+**Wat er staat.** Van de 28 scripts in `ci/` en de demomappen draaien er **10** mee bij elke
+push. De andere **18** — 16 in `ci/` plus de twee demoscripts — vragen gebouwde images,
+gedeployde containers of een omgeving, en vallen daarom alleen onder de bereikbaarheidsregel:
+er is aangetoond dát ze ergens worden aangeroepen, niet dát ze werken.
+
+**Wat dat betekent.** Voor die 18 is de enige verificatie dat iemand de demo draait en kijkt.
+Dat is een workaround en geen oplossing, en het is precies wat een exitcode 127 in
+`vergelijk-rapporten.sh` maandenlang onzichtbaar hield: het script wérd aangeroepen, alleen
+door een demo, en een demo draait niet in CI.
+
+**Waarom het nu niet is opgelost.** De demo's in CI hangen betekent Maven, `docker build`,
+deploys en Playwright bij elke push. Dat is een eigen opdracht met een eigen looptijd en een
+eigen afweging over wat een push mag kosten — laptopbudget is een ontwerpeis, en een runner
+die de hele showcase draait is een andere belofte dan deze repository nu doet.
+
+**Wat er tot die tijd geldt.** De 18 staan met reden en herzieningsdatum in
+`vrijstelling_uitvoering` in `ci/controle-gates.sh`. Loopt die datum af, dan is de vraag niet
+"waarom staat dit hier" maar "kan het inmiddels wel".
+
+**Dit hoort een O-nummer te krijgen** in `docs/showcase-cbt.md` 1.13, naast O3 tot en met
+O14. Dat is nog niet gedaan: dit document beschrijft de afweging, de openstaandepuntenlijst
+in de showcasebeschrijving is een andere plek en die wordt in een eigen wijziging bijgewerkt.
+
 ---
 
 # Geleerd
@@ -943,4 +1006,59 @@ tolerantie iets om te draaien in plaats van te beloven.
 Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu een stub die
 alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
 staat nergens in een spec.
+
+## 2026-08-13 — Een gate die op tekst toetst, toetst een voornemen
+
+`ci/controle-gates.sh` is geschreven om stil groen uit te roeien. Zijn regel was: elk script
+in `ci/` moet `verwacht_minstens` aanroepen. Zijn toets was: komt de tekst `verwacht_minstens`
+in het bestand voor.
+
+Dat is niet dezelfde vraag. `ci/vergelijk-rapporten.sh` riep hem aan zonder
+`ci/lib/tools.sh` te sourcen. De aanroep stond er, de functie bestond niet, en onder
+`set -euo pipefail` is dat exitcode 127 op de regel zelf. De gate zag de tekst en meldde
+groen.
+
+**Een tekstmatch toetst dat iemand het van plan was.** Of het ook gebeurt, staat er los van.
+Dat is hetzelfde patroon als de lus die groen meldde over veertien berichten die niemand
+bekeek: in beide gevallen was er een controle, en in beide gevallen ging er nul werk doorheen.
+De vorm verschilt, de fout is dezelfde.
+
+**Drie dingen maken dit geval scherper dan de vorige twee.**
+
+*Hij brak in dezelfde commit wat hij moest bewaken.* De lege-verzamelingseis werd in één
+commit aan negen scripts toegevoegd. Acht daarvan sourcete `tools.sh` al; de negende niet. De
+gate die bij diezelfde commit hoorde, keurde het resultaat goed.
+
+*Hij is geschreven door wie het patroon kende.* Niet uit onwetendheid — er lagen al twee
+gedateerde notities over stil groen, van dezelfde hand, en de aanleiding staat in de
+scriptkop. Kennis van het patroon beschermt niet tegen het patroon. Alleen een controle die
+iets uitvoert doet dat.
+
+*Het bleef maanden onzichtbaar omdat het enige dat hem draait buiten CI valt.*
+`vergelijk-rapporten.sh` werd wél aangeroepen — door de demo van hoofdstuk 1, als laatste
+inhoudelijke scène. Die demo draait op een laptop wanneer iemand hem start, en niet bij een
+push. De aftrekking waar hoofdstuk 0 en 1 samen op rusten, was in de praktijk stuk: de scène
+drukte zijn kop af en viel om, vlak voor het slotbeeld. Een gate zonder pipeline eromheen is
+een script dat toevallig bestaat.
+
+**Wat ervoor in de plaats komt.** Een oplosbaarheidstoets: elk commandowoord moet oplossen
+naar een builtin, iets in PATH, een functie in het script zelf, of een functie uit een bestand
+dat het script sourcet. Haal de source-regel weg en het antwoord verandert — dat is wat een
+tekstmatch niet doet. Plus twee regels eromheen: `controle.sh` draait elk script dat zonder
+deelsystemen kan draaien, en elk script moet ergens worden aangeroepen.
+
+**En toen deed de nieuwe toets het ook zelf.** De eerste versie draaide de resolutie in een
+subshell. `controle-gates.sh` sourcet zelf `tools.sh`, dus die subshell erfde precies de
+functie die het onderzochte script miste — en de tegenproef meldde groen. De toets keek naar
+zijn eigen omgeving in plaats van naar die van het script. Zichtbaar geworden doordat de
+tegenproef er was; zonder die tegenproef was er een tweede gate bijgekomen die niets deed.
+
+**Dat is de les, en hij is ongemakkelijker dan "schrijf betere gates".** Bij elk van deze
+vier gevallen was er een controle, en bij elk ging er niets doorheen. Het onderscheid dat
+telt is niet streng of soepel, maar: heeft deze controle werk verzet, en waar is dat te zien.
+Vandaar `verwacht_minstens`, vandaar de tegenproef als vaste stap, en vandaar dat een gate
+die nergens draait geen gate is.
+
+**Wat nog openstaat.** 18 van de 28 scripts draaien nog steeds alleen in een demo, en dus
+alleen als iemand kijkt. Zie het besluit van dezelfde datum hierboven.
 
