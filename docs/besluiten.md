@@ -1070,6 +1070,37 @@ Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu
 alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
 staat nergens in een spec.
 
+## 2026-08-13 — Het document beschrijft iets dat er nog niet is, in de tegenwoordige tijd
+
+Twee keer nu in één doorloop gevonden, en allebei op dezelfde manier: door het document naast
+de repository te leggen, niet door een gate.
+
+`showcase-cbt.md` beschreef twee CI-wrappers, GitLab en GitHub, die de vier pipelines
+aanroepen. Er is er één, en die roept `ci/controle.sh` aan. En het beschreef Acceptatie als
+"alle deelsystemen + `extern.yml`", terwijl `compose/extern.yml` niet bestaat.
+
+**Geen van beide is een leugen.** Het zijn allebei ontwerpbesluiten die kloppen en die nog
+niet gebouwd zijn. Het probleem zit in de werkwoordstijd: geschreven in de tegenwoordige tijd
+leest een voornemen als een beschrijving, en dan gaat iemand ernaar handelen — een script
+zoeken dat er niet is, of aannemen dat een omgeving een koppeling heeft die er niet is.
+
+**Waarom dit hier hoort en niet bij de correcties zelf.** Het is een klasse en geen incident.
+Dit document loopt bewust vooruit op de bouw: 1.13 zegt met zoveel woorden dat het de spec is
+en de code de implementatie. Precies dáárdoor is de tegenwoordige tijd de standaardfout, en
+niet de uitzondering. Wat schema-first oplevert aan scherpte, kost dit aan
+onderhoudsdiscipline.
+
+**Wat eraan te doen is, en wat niet.** Een gate is er niet: er bestaat geen controle die
+"dit bestand wordt genoemd maar bestaat niet" scheidt van "dit bestand wordt genoemd als
+toekomst". De enige maatregel is de formulering — *nog niet*, met de reden en waar het
+vandaan komt — en de doorloop van document tegen repo als terugkerende handeling. Beide
+gevallen zijn zo gecorrigeerd.
+
+**En het is een aanwijzing bij de vorige notitie.** Daar bleek een deel van het contract
+buiten elke gate te liggen; hier blijkt een deel van het ontwerp dat ook. Wat je niet kunt
+afdwingen, moet je opschrijven op de plek waar iemand het leest — en dat blijft zwakker dan
+een gate, altijd.
+
 ## 2026-08-13 — Een deel van dit contract ligt buiten de repo, en dus buiten elke gate
 
 Squad 2 krijgt `ci/get-contract.sh` niet. Wat ze wél krijgen is een URL-vorm die ze zelf
