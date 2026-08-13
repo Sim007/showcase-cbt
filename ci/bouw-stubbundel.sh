@@ -2,7 +2,13 @@
 #
 # Bouwt de stubbundel voor showcase-website: uitpakken, starten, klaar.
 #
-#   bouw-stubbundel.sh <groep> <scenario-artifact> <stream-artifact> <versie>
+#   bouw-stubbundel.sh <groep> <scenario-artifact> <scenario-versie> \
+#                      <stream-artifact> <stream-versie> <bundelversie>
+#
+# Drie versies en niet één. De twee specs zijn twee contracten met twee eigen
+# levenscycli: één nummer voor allebei betekent dat de eerste wijziging van alleen
+# `run-stream` de ander een versie geeft die niets betekent. De bundel heeft daarnaast een
+# eigen nummer, want hij is afgeleid van beide en is gereedschap en geen contract.
 #
 # De consumer heeft Node en verder niets: geen Docker, geen JDK, en geen betrouwbaar pad
 # naar de npm-registry — `npx @stoplight/prism-cli` bleef daar hangen. De bundel bevat
@@ -26,12 +32,14 @@ fout() {
   exit 1
 }
 
-[ "$#" -eq 4 ] || fout "gebruik: bouw-stubbundel.sh <groep> <scenario-artifact> <stream-artifact> <versie>"
+[ "$#" -eq 6 ] || fout "gebruik: bouw-stubbundel.sh <groep> <scenario-artifact> <scenario-versie> <stream-artifact> <stream-versie> <bundelversie>"
 
 GROEP="$1"
 SCENARIO="$2"
-STREAM="$3"
-VERSIE="$4"
+SCENARIO_VERSIE="$3"
+STREAM="$4"
+STREAM_VERSIE="$5"
+BUNDELVERSIE="$6"
 
 BUNDEL="${CBT_ROOT}/build/bundel"
 REL="build/bundel"
@@ -40,8 +48,8 @@ mkdir -p "${BUNDEL}/runs" "${BUNDEL}/schemas" "${BUNDEL}/tmp"
 
 # --- stap 1: de specs uit het register --------------------------------------------------
 
-SCENARIO_SPEC="$("${CBT_ROOT}/ci/get-contract.sh" "${GROEP}" "${SCENARIO}" "${VERSIE}")"
-STREAM_SPEC="$("${CBT_ROOT}/ci/get-contract.sh" "${GROEP}" "${STREAM}" "${VERSIE}")"
+SCENARIO_SPEC="$("${CBT_ROOT}/ci/get-contract.sh" "${GROEP}" "${SCENARIO}" "${SCENARIO_VERSIE}")"
+STREAM_SPEC="$("${CBT_ROOT}/ci/get-contract.sh" "${GROEP}" "${STREAM}" "${STREAM_VERSIE}")"
 
 yq -o=json '.' "${SCENARIO_SPEC#"${CBT_ROOT}/"}" > "${BUNDEL}/tmp/scenario.json"
 yq -o=json '.' "${STREAM_SPEC#"${CBT_ROOT}/"}"   > "${BUNDEL}/tmp/stream.json"
@@ -49,7 +57,7 @@ yq -o=json '.' "${STREAM_SPEC#"${CBT_ROOT}/"}"   > "${BUNDEL}/tmp/stream.json"
 cp "${SCENARIO_SPEC}" "${BUNDEL}/openapi.yaml"
 cp "${STREAM_SPEC}"   "${BUNDEL}/asyncapi.yaml"
 
-echo "stap 1: ${SCENARIO} en ${STREAM} ${VERSIE} opgehaald uit het register"
+echo "stap 1: ${SCENARIO} ${SCENARIO_VERSIE} en ${STREAM} ${STREAM_VERSIE} opgehaald uit het register"
 
 # --- stap 2: de routes, met hun requestschema -------------------------------------------
 #
@@ -97,7 +105,7 @@ echo "stap 2: ${ROUTES} routes, waarvan $(jq -r '[.routes[] | select(.verzoekSch
 
 # --- stap 3: de fixtures ----------------------------------------------------------
 
-RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${VERSIE}/runs"
+RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/runs"
 [ -d "${RUNS}" ] || fout "geen runs in ${RUNS}. Draai eerst ci/generate-stream-stub.sh"
 cp "${RUNS}"/*.jsonl "${BUNDEL}/runs/"
 echo "stap 3: $(ls "${BUNDEL}/runs" | wc -l | tr -d ' ') fixtures"
@@ -155,8 +163,40 @@ rm -rf "${BUNDEL}/tmp" "${BUNDEL}/.npm"
 
 echo "stap 5: afhankelijkheden meegepakt ($(du -sh "${BUNDEL}/node_modules" | cut -f1))"
 
-# --- stap 6: inpakken ---------------------------------------------------------------------
+# --- stap 6: het manifest ------------------------------------------------------------------
+#
+# De bundel is afgeleid van twee specs die vanaf nu los bewegen. Zonder manifest zegt
+# `stubbundel-0.9.0` niet wélke versies erin zitten — precies de dubbelzinnigheid die één
+# gedeeld versienummer opleverde, één niveau lager terug.
+#
+# De checksums zijn er niet voor ons maar voor de consumer: daarmee stelt hij vast dat deze
+# bundel hoort bij de spec die hij zelf uit de release heeft gehaald. Dat is een gate aan
+# zijn kant, zonder dat hij ons gereedschap krijgt.
+#
+# Als laatste vóór het inpakken, zodat hij de bundel beschrijft zoals die de deur uit gaat.
 
-UIT="${CBT_ROOT}/build/${SCENARIO}-stubbundel-${VERSIE}.tgz"
+SCENARIO_SOM="$(sha256 "${REL}" openapi.yaml | cut -d' ' -f1)"
+STREAM_SOM="$(sha256 "${REL}" asyncapi.yaml | cut -d' ' -f1)"
+
+jq -n \
+  --arg bundelversie "${BUNDELVERSIE}" \
+  --arg groep "${GROEP}" \
+  --arg scenario "${SCENARIO}" --arg scenarioversie "${SCENARIO_VERSIE}" --arg scenariosom "${SCENARIO_SOM}" \
+  --arg stream "${STREAM}" --arg streamversie "${STREAM_VERSIE}" --arg streamsom "${STREAM_SOM}" \
+  '{
+     bundelversie: $bundelversie,
+     groep: $groep,
+     specs: [
+       { artifact: $scenario, versie: $scenarioversie, bestand: "openapi.yaml",  sha256: $scenariosom },
+       { artifact: $stream,   versie: $streamversie,   bestand: "asyncapi.yaml", sha256: $streamsom }
+     ]
+   }' > "${BUNDEL}/manifest.json"
+
+verwacht_minstens "$(jq -r '.specs | length' "${REL}/manifest.json")" 2 "specs in het manifest"
+echo "stap 6: manifest met ${SCENARIO} ${SCENARIO_VERSIE} en ${STREAM} ${STREAM_VERSIE}"
+
+# --- stap 7: inpakken ---------------------------------------------------------------------
+
+UIT="${CBT_ROOT}/build/stubbundel-${BUNDELVERSIE}.tgz"
 tar -czf "${UIT}" -C "${CBT_ROOT}/build" bundel
-echo "stap 6: ${UIT#"${CBT_ROOT}/"} ($(du -h "${UIT}" | cut -f1))"
+echo "stap 7: ${UIT#"${CBT_ROOT}/"} ($(du -h "${UIT}" | cut -f1))"

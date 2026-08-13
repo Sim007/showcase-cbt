@@ -101,7 +101,7 @@ echo "  ${GECONTROLEERD} berichten, tijd loopt overal vooruit"
 # schone runner nog bouwt, vangt precies die soort drift — en dit is de enige plek waar dat
 # automatisch gebeurt.
 
-"${CBT_ROOT}/ci/bouw-stubbundel.sh" "${GROEP}" "${SCENARIO}" "${STREAM}" "${VERSIE}" \
+"${CBT_ROOT}/ci/bouw-stubbundel.sh" "${GROEP}" "${SCENARIO}" "${VERSIE}" "${STREAM}" "${VERSIE}" "${VERSIE}" \
   >/dev/null || fout "de stubbundel bouwt niet meer"
 
 echo "  stubbundel gebouwd"

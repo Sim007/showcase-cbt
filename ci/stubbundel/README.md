@@ -3,12 +3,24 @@
 Uitpakken en starten. Geen Docker, geen JDK, geen `npx`, en na het uitpakken geen netwerk.
 
 ```sh
-tar -xzf scenario-api-stubbundel-0.9.0.tgz
+tar -xzf stubbundel-0.9.0.tgz
 cd bundel
 node stub.js
 ```
 
 Luistert op **8090**, of op `POORT=9000 node stub.js`.
+
+**Welke specversies hierin zitten, staat in `manifest.json`** — met de checksum van elk van
+de twee. Haal je de spec ook los uit de release, dan is dat te vergelijken:
+
+```sh
+sha256sum openapi.yaml          # macOS: shasum -a 256 openapi.yaml
+cat manifest.json
+```
+
+Komen die niet overeen, dan hoort deze bundel bij een andere versie van de spec dan je denkt.
+Het bundelnummer zegt dat niet — de twee contracten hebben hun eigen levenscyclus en bewegen
+los van elkaar en van de bundel.
 
 ---
 
@@ -17,6 +29,7 @@ Luistert op **8090**, of op `POORT=9000 node stub.js`.
 | | |
 |---|---|
 | `openapi.yaml` · `asyncapi.yaml` | de twee contracten, zoals gepubliceerd |
+| `manifest.json` | welke artifactversies erin zitten, met de checksum van elk |
 | `stub.js` | de stub — REST en stream in één proces |
 | `stub-data.json` | de routes, gegenereerd uit `openapi.yaml` |
 | `runs/*.jsonl` | drie fixtures |
