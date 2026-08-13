@@ -106,6 +106,19 @@ echo "  ${GECONTROLEERD} berichten, tijd loopt overal vooruit"
 
 echo "  stubbundel gebouwd"
 
+# --- 6b: de release-assets zijn te bouwen -------------------------------------------------
+#
+# Publiceren kan hier niet — dat vraagt een tag en een token. Bouwen wél, want de asset komt
+# uit het werkregister en dat staat op dit moment omhoog. Daarmee is bij elke push aangetoond
+# dat de weg naar een release begaanbaar is, inclusief de controle dat het manifest van de
+# bundel klopt met wat de gates hebben gezien.
+
+"${CBT_ROOT}/ci/bouw-release.sh" spec "${GROEP}" "${SCENARIO}" "${VERSIE}" >/dev/null
+"${CBT_ROOT}/ci/bouw-release.sh" spec "${GROEP}" "${STREAM}" "${VERSIE}" >/dev/null
+"${CBT_ROOT}/ci/bouw-release.sh" bundel "${VERSIE}" >/dev/null
+
+echo "  release-assets gebouwd en tegen het werkregister gehouden"
+
 docker compose -f "${CBT_ROOT}/compose/registry.yml" down >/dev/null 2>&1 || true
 
 # --- 7: de aftrekking van hoofdstuk 0 en 1 ------------------------------------------------

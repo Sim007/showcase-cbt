@@ -1,0 +1,25 @@
+# Dun met opzet: geen logica in yaml, alleen een aanroep naar ci/. Wat er gebeurt en waarom
+# staat in ci/pipeline-release.sh, zodat het ook zonder GitHub te lezen is.
+#
+# Draait op een tag en niet op een push naar main: een release hoort te wijzen naar een
+# commit die iemand bewust heeft gemarkeerd.
+name: release
+
+on:
+  push:
+    tags:
+      - 'scenario-api-*'
+      - 'run-stream-*'
+      - 'stubbundel-*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ci/pipeline-release.sh "${GITHUB_REF_NAME}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

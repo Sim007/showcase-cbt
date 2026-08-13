@@ -79,6 +79,7 @@ vrijstelling_telling() {
     pipeline-test.sh)         echo "roept versieconformiteit en smoke aan; de gates zitten daar|2027-02-13" ;;
     pipeline-ci.sh)           echo "roept stub, drift en verificatie aan; de gates zitten daar|2027-02-13" ;;
     pipeline-gebruikersflows.sh) echo "roept gebruikersflow aan; de gate zit daar|2027-02-13" ;;
+    pipeline-release.sh)      echo "roept bouw- en publiceer-release aan; de gates zitten daar|2027-02-13" ;;
     *) echo "" ;;
   esac
 }
@@ -106,6 +107,8 @@ vrijstelling_uitvoering() {
     pipeline-gebruikersflows.sh) echo "vraagt een complete keten|2027-02-13" ;;
     pipeline-contract.sh)     echo "publiceert vanuit een demo; controle.sh publiceert zelf al|2027-02-13" ;;
     demo.sh)                  echo "draait de hele showcase; zie het openstaande punt in besluiten.md|2027-02-13" ;;
+    publiceer-release.sh)     echo "vraagt een bestaande tag en een token; publiceren hoort niet bij elke push|2027-02-13" ;;
+    pipeline-release.sh)      echo "draait op een tag, niet op een push; roept publiceer-release aan|2027-02-13" ;;
     *) echo "" ;;
   esac
 }
@@ -254,6 +257,12 @@ for script in ${SCRIPTS}; do
         grep -qF "/${NAAM}" "${kandidaat}" && AANROEPERS=$((AANROEPERS + 1))
       done
       grep -qF "${NAAM}" "${CBT_ROOT}/ci/lib/tools.sh" && AANROEPERS=$((AANROEPERS + 1))
+      # De workflows tellen mee als aanroeper: pipeline-release.sh wordt door niets anders
+      # gestart dan een tag, en zonder deze regel leest dat als dood gewicht.
+      for wf in "${CBT_ROOT}"/.github/workflows/*.yml; do
+        [ -f "${wf}" ] || continue
+        grep -qF "${NAAM}" "${wf}" && AANROEPERS=$((AANROEPERS + 1))
+      done
       [ "${AANROEPERS}" -eq 0 ] && MIST_BEREIK="${MIST_BEREIK} ${KORT}"
       ;;
   esac
