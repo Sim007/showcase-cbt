@@ -533,11 +533,17 @@ Het gedrag is bewust minimaal en volledig deterministisch: een demo mag niet afh
 
 | Situatie | Uitkomst |
 |---|---|
-| `amount <= 0` | 400, `INVALID_AMOUNT` |
+| `orderId` is `null` | 400, `INVALID_REQUEST` |
+| `amount` ontbreekt of is `<= 0` | 400, `INVALID_AMOUNT` |
+| `amount > 999999999.99` | 400, `INVALID_AMOUNT` |
 | onbekende valutacode | 400, `UNKNOWN_CURRENCY` |
 | `amount > 500.00` | 201, `status: DECLINED` |
 | overige | 201, `status: ACCEPTED` |
 | GET op onbekend id | 404, `PAYMENT_NOT_FOUND` |
+
+**De eerste drie regels zijn niet bedacht maar overgeschreven uit het schema.** `orderId` is `type: string`, en JSON-`null` voldoet wel aan `required` en niet aan het type; zonder die controle lift een `null` mee tot in de response, die daarmee zijn eigen schema schendt. `maximum: 999999999.99` staat in de spec omdat een bedrag daarboven niet op te slaan is — zonder die grens werd dat een 500 op een verzoek dat volgens de spec geldig was. Beide zijn door de contractverificatie gevonden en niet door een eigen test: die stuurt alles wat het contract toestaat, en dat is meer dan iemand met de hand bedenkt.
+
+Ze staan hier omdat een consumer erop stukloopt. Ongeschreven gedrag aan een grens is precies wat een contract hoort weg te nemen, en gedrag dat wél in het schema staat maar niet in de beschrijving ernaast, is de helft van dat werk.
 
 **Order** neemt een bestelling aan, roept Payment aan en verwerkt de uitkomst: `ACCEPTED` wordt `CONFIRMED`, `DECLINED` wordt `CANCELLED`. Order heeft een eigen minimale API (`POST /orders`, `GET /orders/{id}`) die geen grens is — daar wisselt geen eigenaarschap — en die dus niet in het register staat.
 
