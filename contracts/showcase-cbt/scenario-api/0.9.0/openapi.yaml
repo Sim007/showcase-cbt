@@ -89,7 +89,7 @@ paths:
                     deelsysteem: payment
                     testsoort: geen
                     gereedschap: oasdiff
-                    cli: ci/pipeline-contract.sh order-payment payment-api 1.0.0 contracts/order-payment/v1.0.0/openapi.yaml
+                    cli: ci/pipeline-contract.sh payment payment-api 1.0.0 contracts/payment/payment-api/1.0.0/openapi.yaml
                   - nummer: 2
                     type: actie
                     omschrijving: Unittests van payment-api

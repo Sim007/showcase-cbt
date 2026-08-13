@@ -185,7 +185,7 @@ vandaag uit te halen valt.
 
 ```json
 {"deelsysteem":{"naam":"order","versie":"1.0.0"},
- "contract":{"groep":"order-payment","artifact":"payment-api","pin":"1.0.0"},
+ "contract":{"groep":"payment","artifact":"payment-api","pin":"1.0.0"},
  "build":{"artifact":"order-api","version":"1.0.0","time":"2026-08-02T09:17:42.878Z","group":"cbt"}}
 ```
 

@@ -41,7 +41,7 @@ info:
     naam: ${DEELSYSTEEM:onbekend}
     versie: ${DEELSYSTEEM_VERSIE:onbekend}
   contract:
-    groep: order-payment
+    groep: payment
     artifact: payment-api
     # Komma-gescheiden en geen lijst: een YAML-lijst komt via het info-endpoint naar
     # buiten als {"0": "1.0.0"}, en dat is voor de versieconformiteitscheck lastiger te

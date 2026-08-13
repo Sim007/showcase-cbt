@@ -57,8 +57,8 @@ en dat is met opzet.
 ### 0 — het schema naar het register
 
 ```sh
-ci/pipeline-contract.sh order-payment payment-api 1.0.0 \
-  contracts/order-payment/v1.0.0/openapi.yaml
+ci/pipeline-contract.sh payment payment-api 1.0.0 \
+  contracts/payment/payment-api/1.0.0/openapi.yaml
 ```
 
 De diff-gate met de publicatie, en daarna terughalen ter controle. Het contract heeft een
@@ -91,8 +91,8 @@ Wat deze pipeline doet, leidt hij af uit `deelsystemen/<naam>/grenzen.env`:
 
 | | Payment | Order |
 |---|---|---|
-| `SERVEERT` | `order-payment payment-api 1.0.0` | — |
-| `PINT` | — | `order-payment payment-api 1.0.0` |
+| `SERVEERT` | `payment payment-api 1.0.0` | — |
+| `PINT` | — | `payment payment-api 1.0.0` |
 
 Serveert een deelsysteem een contract, dan volgen de drift-check en de providerverificatie.
 Pint hij er een, dan een stub en de consumerverificatie in beide richtingen. Payment doet

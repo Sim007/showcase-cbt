@@ -171,7 +171,7 @@ showcase-cbt/
 │   ├── fixtures/             twee rapporten als invoer voor de aftrekking
 │   └── lib/                  tools.sh, en commandowoorden.awk voor de gates
 ├── contracts/                alle specs, per grens en versie
-│   ├── order-payment/        de grens uit de showcase: Order → Payment
+│   ├── payment/             de grens uit de showcase: Order → Payment
 │   └── showcase-cbt/         de grens uit de realisatie: scenario-api, run-stream
 ├── compose/                  wat van geen enkel deelsysteem is
 │   ├── registry.yml          Apicurio, gedeeld
@@ -201,7 +201,7 @@ showcase-cbt/
 └── 09-frontend-shell/
 ```
 
-**Onder `contracts/` staan twee soorten grenzen, en dat is geen slordigheid.** `order-payment/` is de grens uit de showcase: verzonnen, tussen twee verzonnen deelsystemen, en het onderwerp van hoofdstuk 1 tot en met 5. `showcase-cbt/` is de grens uit de realisatie: `scenario-api` en `run-stream`, tussen deze repository en showcase-website, met twee squads die er werkelijk aan weerszijden zitten. Dezelfde opzet, hetzelfde register, hetzelfde gereedschap — maar de een wordt getóónd en de ander wordt geléést. Of ze in deze repository uit elkaar moeten, is O14; wat hier vastligt is dát het er twee zijn, zodat niemand `scenario-api` voor een scenariogrens aanziet.
+**Onder `contracts/` staan twee soorten grenzen, en dat is geen slordigheid.** `payment/` is de grens uit de showcase: verzonnen, tussen twee verzonnen deelsystemen, en het onderwerp van hoofdstuk 1 tot en met 5. `showcase-cbt/` is de grens uit de realisatie: `scenario-api` en `run-stream`, tussen deze repository en showcase-website, met twee squads die er werkelijk aan weerszijden zitten. Dezelfde opzet, hetzelfde register, hetzelfde gereedschap — maar de een wordt getóónd en de ander wordt geléést. Of ze in deze repository uit elkaar moeten, is O14; wat hier vastligt is dát het er twee zijn, zodat niemand `scenario-api` voor een scenariogrens aanziet.
 
 **Wat hier nog niet staat**, is wat qua structuur nog beweegt: `omgevingen/*.env`, `deelsystemen/*/grenzen.env` en `deelsystemen/*/releases/`. Die horen bij de showcase en niet bij de realisatie, en ze worden hier opgenomen zodra de versieafspraak vaststaat — ook dat valt onder O14.
 
@@ -258,11 +258,11 @@ Dit is de standaard. Wijkt een hoofdstuk hiervan af, dan is dat een bevinding en
 
 De hele showcase gebruikt hetzelfde fictieve systeem: **Order → Payment → Notification**, met Payment als centraal deelsysteem. Hoofdstuk 1 gebruikt de grens Order → Payment.
 
-**Naamgeving in het register:** groep `order-payment` (de grens), artifact `payment-api` (de spec).
+**Naamgeving in het register:** groep `payment` (de aanbieder), artifact `payment-api` (de interface). De groep is het deelsysteem dat het contract bezit en niet de grens: een grens heeft twee kanten en één eigenaar, en die eigenaar is de provider. Zo staat een tweede grens van hetzelfde deelsysteem — Payment → Notification in hoofdstuk 6 — vanzelf in dezelfde groep.
 
 **Versie in het pad.** De provider moet bij een major twee versies naast elkaar serveren. Een padprefix maakt dat zichtbaar — in een demo zie je letterlijk twee routes draaien — waar een versieheader onzichtbaar blijft.
 
-Dit is de spec zoals hij als v1.0.0 wordt gepubliceerd. Hij is hier met de hand ontworpen en wordt ongewijzigd overgenomen in `contracts/order-payment/v1.0.0/openapi.yaml`; het bestand in de repository is de werkkopie, deze tekst de herkomst.
+Dit is de spec zoals hij als v1.0.0 wordt gepubliceerd. Hij is hier met de hand ontworpen en wordt ongewijzigd overgenomen in `contracts/payment/payment-api/1.0.0/openapi.yaml`; het bestand in de repository is de werkkopie, deze tekst de herkomst.
 
 ```yaml
 openapi: 3.0.3

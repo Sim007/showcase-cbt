@@ -81,7 +81,7 @@ docker compose -f compose/registry.yml up -d >/dev/null 2>&1
 ci/wacht-op-gezond.sh registry compose/registry.yml >/dev/null 2>&1 || sleep 10
 toon_pagina
 
-ci/pipeline-contract.sh order-payment payment-api 1.0.0 contracts/order-payment/v1.0.0/openapi.yaml
+ci/pipeline-contract.sh payment payment-api 1.0.0 contracts/payment/payment-api/1.0.0/openapi.yaml
 
 echo
 opmerking "Hetzelfde schema dat in hoofdstuk 0 ongelezen bleef, nu gepubliceerd als"

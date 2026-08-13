@@ -37,7 +37,7 @@ info:
     naam: ${DEELSYSTEEM:onbekend}
     versie: ${DEELSYSTEEM_VERSIE:onbekend}
   contract:
-    groep: order-payment
+    groep: payment
     artifact: payment-api
     # De pin van de consumer: hij volgt geen latest. Eén waarde, want een consumer pint op
     # één versie tegelijk.

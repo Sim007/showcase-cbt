@@ -164,7 +164,7 @@ net in plaats van twee, en dat moet iemand elke keer bewust accepteren.
 
 **De contractpaden volgen twee conventies.** Deze grens staat onder
 `contracts/showcase-cbt/<artifact>/<versie>/`, met het artifact expliciet in het pad. De
-oudere grens staat onder `contracts/order-payment/v<versie>/`, waar het artifact nergens
+oudere grens staat onder `contracts/payment/payment-api/<versie>/`, waar het artifact nergens
 in het pad voorkomt. De nieuwe indeling is de betere; `order-payment` verhuist mee zodra
 daar toch aan gewerkt wordt.
 
