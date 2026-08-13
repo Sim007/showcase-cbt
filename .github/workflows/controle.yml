@@ -2,7 +2,15 @@
 # wordt en waarom staat in ci/controle.sh, zodat het ook zonder GitHub te draaien is.
 name: controle
 
-on: [push, pull_request]
+# Alleen op main en op pull requests, en nadrukkelijk niet op tags. Een tag-push is ook een
+# push, dus zonder deze beperking draaide deze controle mee op elke release — en een groene
+# controle op een tag stelt niets vast: hij toetst een werkboom die op dat moment al
+# gepubliceerd is. Dat is dezelfde omkering als bij het register: een gate hoort vóór
+# publicatie. Zie docs/besluiten.md, 2026-08-13.
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   controle:
