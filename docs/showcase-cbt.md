@@ -155,8 +155,27 @@ showcase-cbt/
 ├── README.md
 ├── LICENSE
 ├── ci/                       gedeelde scripts, één exemplaar
+│   ├── pipeline-*.sh         de pipelines uit 1.4, één script per soort
+│   ├── get-contract.sh       de enige weg naar een spec; nooit van schijf
+│   ├── publish-contract.sh   de diff-gate en de publicatie
+│   ├── generate-stub.sh      stub uit de spec, plus de validatie erop
+│   ├── drift.sh              biedt de service aan wat het contract belooft
+│   ├── verify-contract.sh    contractverificatie, beide rollen
+│   ├── versieconformiteit.sh sluit alles op deze omgeving op elkaar aan
+│   ├── controle.sh           wat bij elke push draait
+│   ├── controle-gates.sh     de gates over de gates: zie 1.13, O15
+│   ├── toets-tolerantie.sh   weigert streng en accepteert tolerant
+│   ├── bouw-stubbundel.sh    de levering aan showcase-website
+│   ├── vergelijk-rapporten.sh  de aftrekking van hoofdstuk 0 en 1
+│   ├── stubbundel/           wat mee de bundel in gaat, zonder netwerkpad
+│   ├── fixtures/             twee rapporten als invoer voor de aftrekking
+│   └── lib/                  tools.sh, en commandowoorden.awk voor de gates
 ├── contracts/                alle specs, per grens en versie
-├── compose/registry.yml      Apicurio, gedeeld
+│   ├── order-payment/        de grens uit de showcase: Order → Payment
+│   └── showcase-cbt/         de grens uit de realisatie: scenario-api, run-stream
+├── compose/                  wat van geen enkel deelsysteem is
+│   ├── registry.yml          Apicurio, gedeeld
+│   └── stub.yml              de stub die in de CI-omgeving de buur vervangt
 ├── playwright/               config en gedeelde specs: smoke, later UI
 ├── deelsystemen/             één map per deelsysteem, daaronder één per service
 │   ├── order/
@@ -181,6 +200,10 @@ showcase-cbt/
 ├── 08-frontend-binnenkant/
 └── 09-frontend-shell/
 ```
+
+**Onder `contracts/` staan twee soorten grenzen, en dat is geen slordigheid.** `order-payment/` is de grens uit de showcase: verzonnen, tussen twee verzonnen deelsystemen, en het onderwerp van hoofdstuk 1 tot en met 5. `showcase-cbt/` is de grens uit de realisatie: `scenario-api` en `run-stream`, tussen deze repository en showcase-website, met twee squads die er werkelijk aan weerszijden zitten. Dezelfde opzet, hetzelfde register, hetzelfde gereedschap — maar de een wordt getóónd en de ander wordt geléést. Of ze in deze repository uit elkaar moeten, is O14; wat hier vastligt is dát het er twee zijn, zodat niemand `scenario-api` voor een scenariogrens aanziet.
+
+**Wat hier nog niet staat**, is wat qua structuur nog beweegt: `omgevingen/*.env`, `deelsystemen/*/grenzen.env` en `deelsystemen/*/releases/`. Die horen bij de showcase en niet bij de realisatie, en ze worden hier opgenomen zodra de versieafspraak vaststaat — ook dat valt onder O14.
 
 Twee regels dragen deze indeling. **Wat gedeeld is, staat op de hoofdmap en bestaat één keer**: `ci/`, `contracts/`, `playwright/` en `deelsystemen/`. Zodra een hoofdstuk een eigen kopie van `get-contract.sh` of van Payment krijgt, is de claim dat het mechanisme uniform is niet meer waar. En **de genummerde mappen bevatten geen services, maar tests**: een compose die de juiste deelsystemen samenstelt, een demoscript, hoofdstukspecifieke specs en een README die het argument uitlegt.
 
