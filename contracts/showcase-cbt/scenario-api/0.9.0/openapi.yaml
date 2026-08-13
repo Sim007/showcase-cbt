@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Scenario API
-  version: 1.0.0
+  version: 0.9.0
   description: >
     De structuur van een scenario, en de besturing van een run. Alles hier is bekend
     vóórdat er iets draait.

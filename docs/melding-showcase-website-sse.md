@@ -1,5 +1,10 @@
 # Melding aan de squad van showcase-website — de stream wordt SSE
 
+> **Naschrift 2026-08-13.** De nummers hieronder zijn achterhaald: beide specs staan sinds
+> die datum op **0.9.0**. De tekst blijft zoals hij verstuurd is — een melding herschrijven
+> maakt van een verslag een bewering. Waarom het nummer omlaag ging, staat in
+> `besluiten.md`.
+
 > Dit gaat naar jullie toe voordat er iets van jullie kant wordt verwacht, en niet als
 > mededeling achteraf bij een publicatie. Showcase-CBT bepaalt het contract, maar dat is
 > geen reden om jullie het als voldongen feit te laten vinden.

@@ -149,7 +149,7 @@ Het veld `soort` onderscheidt ze binnen één stroom.
 ## 9. Wat er nog niet klopt
 
 **De diff-gate werkt niet op AsyncAPI** (O13). oasdiff leest OpenAPI en niets anders, dus
-`run-stream` komt bij een wijziging niet langs de gate. Bij 1.0.0 valt er niets te
+`run-stream` komt bij een wijziging niet langs de gate. Bij 0.9.0 valt er niets te
 vergelijken en merk je het niet; bij 1.1.0 wel.
 
 `publish-contract.sh` **faalt** daarop, en waarschuwt niet: een waarschuwing scrollt voorbij
@@ -175,13 +175,13 @@ daar toch aan gewerkt wordt.
 ```sh
 docker compose -f compose/registry.yml up -d
 
-ci/pipeline-contract.sh showcase-cbt scenario-api 1.0.0 \
-  contracts/showcase-cbt/scenario-api/1.0.0/openapi.yaml
-ci/pipeline-contract.sh showcase-cbt run-stream 1.0.0 \
-  contracts/showcase-cbt/run-stream/1.0.0/asyncapi.yaml
+ci/pipeline-contract.sh showcase-cbt scenario-api 0.9.0 \
+  contracts/showcase-cbt/scenario-api/0.9.0/openapi.yaml
+ci/pipeline-contract.sh showcase-cbt run-stream 0.9.0 \
+  contracts/showcase-cbt/run-stream/0.9.0/asyncapi.yaml
 
-ci/generate-stub.sh        showcase-cbt scenario-api 1.0.0
-ci/generate-stream-stub.sh showcase-cbt run-stream 1.0.0 scenario-api 1.0.0
+ci/generate-stub.sh        showcase-cbt scenario-api 0.9.0
+ci/generate-stream-stub.sh showcase-cbt run-stream 0.9.0 scenario-api 0.9.0
 ```
 
 De stub draait op WireMock met `build/stub/mappings` eronder. Beide generatoren schrijven

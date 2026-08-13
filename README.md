@@ -106,10 +106,10 @@ Naast de scenario's loopt een echte grens: showcase-CBT levert `scenario-api` en
 bouwen — uitpakken en starten, verder niets.
 
 ```sh
-ci/bouw-stubbundel.sh showcase-cbt scenario-api run-stream 1.0.0
+ci/bouw-stubbundel.sh showcase-cbt scenario-api run-stream 0.9.0
 ```
 
-Levert `build/scenario-api-stubbundel-1.0.0.tgz` op, ongeveer 330 KB.
+Levert `build/scenario-api-stubbundel-0.9.0.tgz` op, ongeveer 330 KB.
 
 **Twee draaiwijzen, allebei getoetst.** Ze horen hetzelfde te doen; de eerste is er omdat
 de ontvanger geen Docker heeft, de tweede omdat wij die aanname niet nóg een keer willen

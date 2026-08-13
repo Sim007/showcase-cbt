@@ -717,7 +717,7 @@ naar deze repo verhuist.
 `CLAUDE.md` zegt: nooit committen wat gegenereerd is. Hier wijken we daarvan af, en dat is
 een uitzondering met een grens eromheen — geen versoepeling van de regel.
 
-**Waarvoor.** Uitsluitend voor `contracts/showcase-cbt/run-stream/1.0.0/runs/*.jsonl`: de
+**Waarvoor.** Uitsluitend voor `contracts/showcase-cbt/run-stream/0.9.0/runs/*.jsonl`: de
 drie fixtures. Niet voor gegenereerde bestanden in het algemeen, niet voor
 stubmappings, niet voor `build/`.
 
@@ -810,6 +810,66 @@ worden vrijgesteld. Vergeten is geen optie meer.
 daar niet. Dat is de hoofdstukvraag in het klein — een standaard die per repository is
 vastgelegd, geldt niet tribebreed. Niet opgelost, wel vastgelegd.
 
+## 2026-08-13 — De geleefde grens gaat naar 0.9.0, de getoonde blijft op 1.0.0
+
+Twee soorten grenzen in één repository, en ze hebben tegengestelde versiebehoeften. Dat
+onderscheid is nu ook in de nummers zichtbaar.
+
+**De getoonde grens houdt 1.0.0.** `payment-api` 1.0.0, 1.1.0 en 2.0.0 zijn de inhoud van de
+scenario's: hoofdstuk 2 gaat over een additieve wijziging naar 1.1.0, hoofdstuk 3 over een
+major naar 2.0.0. Die nummers zijn script. Ze beloven niets aan niemand en ze mogen daarom
+niet meebewegen met hoe af de showcase is.
+
+**De geleefde grens gaat naar 0.9.0.** `scenario-api` en `run-stream` zijn een belofte aan
+squad 2, en de hoofdstuk-sweep staat nog open. 1.0.0 zou zeggen: hier mag je op bouwen en
+wij breken dit niet meer. Dat is niet waar zolang er nog hoofdstukken langskomen die de
+scenariostructuur kunnen raken. `0.x.y` zegt wat er werkelijk geldt — er mag nog gebroken
+worden — en dat is de eerlijke stand.
+
+**Wat het kost.** Vrijwel niets: `contract-showcase-website.md` noemde beide specs
+uitdrukkelijk een voorstel dat "nergens daarbuiten" stond, dus er is niets gepind dat nu
+breekt. Eén ding wél: de bundel die squad 2 heeft heet `scenario-api-stubbundel-1.0.0.tgz`
+en wordt `stubbundel-0.9.0.tgz`. Naamswijziging én versieverlaging in één stap, en dat is
+een melding en geen voetnoot.
+
+**Waarom niet gewoon 1.0.0 laten staan en later breken.** Omdat dat precies de gewoonte is
+die contracttesten bestrijdt: een nummer dat iets belooft wat de eigenaar niet van plan is na
+te komen. Een grens waar je nog aan sleutelt hoort een nummer te dragen dat dat zegt.
+
+## 2026-08-13 — Een gate leest uit de werkboom, nooit uit het kanaal
+
+Dit is een regel voor elke gate die er nog bij komt, en hij is ontstaan uit een fout die
+bijna gemaakt werd.
+
+Het voorstel was: het register hangt af van de groep — Apicurio voor de getoonde grenzen,
+GitHub Releases voor de geleefde. Dat klinkt sluitend en het breekt `controle.sh`. Die
+publiceert de spec **van schijf** naar een leeg register en regenereert de fixtures daaruit.
+Leest `get-contract.sh` voor die groep uit Releases, dan haalt de controle bij elke push de
+laatst **uitgegeven** spec op in plaats van die in de werkboom. Wijzig je de spec en push je,
+dan vergelijkt hij de oude release met de oude fixtures en meldt groen. De wijziging is dan
+door geen enkele gate gekomen.
+
+**Twee rollen die één woord deelden.**
+
+| | Wat | Wie leest het | Wanneer |
+|---|---|---|---|
+| werkregister | Apicurio, gevuld uit de werkboom, per run weggegooid | onze pipeline | vóór de gates |
+| distributiekanaal | GitHub Releases, onveranderlijk | squad 2 | ná de gates |
+
+**De regel:** *een gate hoort vóór publicatie, dus leest uit de werkboom en nooit uit het
+kanaal.* Wie een gate toevoegt die uit een kanaal leest, toetst wat er al is uitgegeven — en
+dat is per definitie niet wat er beoordeeld moet worden.
+
+Dat de regel andersom ook geldt, staat er niet voor niets bij: een consumer leest juist wél
+uit het kanaal, want die moet hebben wat er is uitgegeven en niet wat wij in onze werkboom
+hebben staan. Dezelfde spec, twee bronnen, en welke de juiste is hangt af van of je vóór of
+ná de gate staat.
+
+**Waarom dit hier staat en niet in een scriptcommentaar.** Het is de vierde keer in deze
+reeks dat stil groen bijna binnenkwam, en de eerste keer dat het zou zijn binnengekomen via
+de reparatie van stil groen. Een regel in een script bewaakt dat script; een regel hier
+bindt de volgende.
+
 ## 2026-08-13 — Twee rapportfixtures, met dezelfde behandeling als de runbestanden
 
 `ci/vergelijk-rapporten.sh` draait vanaf nu bij elke push. Hij vraagt twee rapporten, en die
@@ -901,6 +961,9 @@ regels leest van een eigen bestandsdescriptor. En breder: een groene toets zonde
 aantal gecontroleerde items zegt niets.
 
 ## 2026-08-07 — Publiceren zonder afnemer is geen publiceren
+
+*(Het nummer is op 2026-08-13 verlaagd naar 0.9.0; zie het besluit van die datum. De tekst
+hieronder beschrijft de situatie van 2026-08-07 en blijft zoals hij is.)*
 
 `run-stream` draagt het nummer 1.0.0 en is na de eerste keer in het register zetten tweemaal
 gewijzigd: de uitkomst-enum, en de server-url die het pad dubbel bevatte.
