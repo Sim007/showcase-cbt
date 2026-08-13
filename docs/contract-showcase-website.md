@@ -162,11 +162,68 @@ CBT_ZONDER_DIFF_GATE=akkoord ci/publish-contract.sh showcase-cbt run-stream 1.1.
 Tot O13 opgelost is leunt die grens op de compatibility rule van het register alleen — één
 net in plaats van twee, en dat moet iemand elke keer bewust accepteren.
 
-**De contractpaden volgen twee conventies.** Deze grens staat onder
-`contracts/showcase-cbt/<artifact>/<versie>/`, met het artifact expliciet in het pad. De
-oudere grens staat onder `contracts/payment/payment-api/<versie>/`, waar het artifact nergens
-in het pad voorkomt. De nieuwe indeling is de betere; `order-payment` verhuist mee zodra
-daar toch aan gewerkt wordt.
+**De contractpaden volgen één conventie:** `contracts/<groep>/<artifact>/<versie>/`, met het
+artifact expliciet in het pad en zonder `v`-prefix. Dat geldt sinds 2026-08-13 voor beide
+grenzen.
+
+---
+
+## Ophalen — de URL-vorm hoort bij de grens
+
+De specs staan als **release-asset** op GitHub. Bouw de URL zelf op uit artifact en versie;
+er is geen lijst die je moet raadplegen en er is geen script van ons dat je nodig hebt.
+
+```
+https://github.com/Sim007/showcase-cbt/releases/download/<artifact>-<versie>/<artifact>-<versie>.yaml
+https://github.com/Sim007/showcase-cbt/releases/download/<artifact>-<versie>/SHA256SUMS
+```
+
+Ophalen en verifiëren:
+
+```sh
+A=scenario-api; V=0.9.0
+B=https://github.com/Sim007/showcase-cbt/releases/download/$A-$V
+curl -fsSLO "$B/$A-$V.yaml"
+curl -fsSLO "$B/SHA256SUMS"
+sha256sum -c SHA256SUMS      # macOS: shasum -a 256 -c SHA256SUMS
+```
+
+Let op `-L`: GitHub stuurt de download door naar een opslag-URL. En op de hoofdletter in
+`Sim007`.
+
+**Deze vorm is onderdeel van het contract.** Wijzigt hij, dan is dat een breaking change —
+ook als de spec zelf geen letter verandert. Dat geldt ook voor de eigenaarsnaam en de
+reponaam, want die zitten in de URL. Wij behandelen een hernoeming op GitHub daarom als wat
+het is: een wijziging aan de grens, met een aankondiging vooraf.
+
+**Waarom jullie `ci/get-contract.sh` niet krijgen.** Dat is ons gereedschap voor onze eigen
+pipeline. Zouden we het meeleveren, dan wordt onze ophaalmethode onderdeel van de afspraak en
+kunnen jullie breken doordat wij een script wijzigen terwijl de spec identiek blijft. Dat is
+voor de derde keer dezelfde fout — eerst Docker, toen `npx` — en die maken we niet nog eens.
+Drie regels `curl` in jullie eigen taal is de hele koppeling.
+
+**De checksum is geen formaliteit.** Een release-tag is bij GitHub te verwijderen en opnieuw
+te zetten; onveranderlijkheid is daar discipline en geen eigenschap. Ons script weigert op een
+bestaande release, en dat is het maximale dat wij kunnen afdwingen. Wordt een asset tóch
+vervangen, dan is `SHA256SUMS` de plek waar dat opvalt — en dan valt het op bij jullie en niet
+bij ons. Bewaar de checksum die je bij het pinnen hebt gezien.
+
+**De stubbundel is hernoemd én verlaagd.** Wat jullie hebben heet
+`scenario-api-stubbundel-1.0.0.tgz`. Dat wordt:
+
+```
+https://github.com/Sim007/showcase-cbt/releases/download/stubbundel-0.9.0/stubbundel-0.9.0.tgz
+```
+
+Twee wijzigingen in één stap. De naam, omdat de bundel niet van `scenario-api` is maar van
+allebei de specs. En het nummer omlaag, omdat 1.0.0 zou beloven dat er niet meer gebroken
+wordt terwijl de hoofdstuk-sweep nog loopt — zie `besluiten.md`, 2026-08-13. De inhoud is
+gelijk gebleven, op één toevoeging na: `manifest.json` noemt nu per spec de versie en de
+checksum die erin zit, zodat je kunt vaststellen dat de bundel hoort bij de spec die je zelf
+hebt opgehaald.
+
+Vanaf nu bewegen de drie nummers los van elkaar: `scenario-api`, `run-stream` en de bundel
+hebben elk hun eigen reeks.
 
 ---
 

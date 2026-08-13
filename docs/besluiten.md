@@ -1070,6 +1070,38 @@ Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu
 alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
 staat nergens in een spec.
 
+## 2026-08-13 — Een deel van dit contract ligt buiten de repo, en dus buiten elke gate
+
+Squad 2 krijgt `ci/get-contract.sh` niet. Wat ze wél krijgen is een URL-vorm die ze zelf
+opbouwen:
+
+```
+https://github.com/Sim007/showcase-cbt/releases/download/<artifact>-<versie>/<artifact>-<versie>.yaml
+```
+
+Dat is de juiste keuze — geef je het script mee, dan wordt onze ophaalmethode onderdeel van
+de afspraak en kan de consumer breken doordat wij een script wijzigen terwijl de spec
+onveranderd is. Maar er zit een gevolg aan dat groter is dan het lijkt.
+
+**In die URL staan de eigenaarsnaam en de reponaam.** Die zijn nu onderdeel van de belofte, en
+ze staan buiten de repository. Een hernoeming op GitHub — van eigenaar, van reponaam, of alleen
+van hoofdlettergebruik — is daarmee een breaking change die in geen enkele commit terug te
+vinden is en die geen enkele gate ziet. Er verandert niets aan de spec, niets aan de code,
+niets aan een bestand; de grens breekt in een instellingenscherm.
+
+Dat is geen theoretisch geval. De repository is ooit van `sim007` naar `Sim007` gegaan;
+GitHub stuurde nog door, en dat is precies waarom het niemand opviel.
+
+**Wat we eraan doen:** de vorm staat expliciet in `contract-showcase-website.md`, met erbij
+dat wijziging ervan breaking is, en `RELEASE_REPO` staat in `ci/registers.env` met dezelfde
+waarschuwing. Meer is er niet: dit is niet af te dwingen vanuit een repository die zelf
+verhuist.
+
+**Wat het algemeen maakt:** elk contract heeft een deel dat buiten het artefact ligt. Bij een
+REST-grens is dat de hostnaam, bij een queue de naam van de topic, hier de URL-vorm. Dat deel
+is even bindend als het schema en wordt door niets bewaakt. De diff-gate ziet het schema; wie
+de omgeving eromheen verandert, komt langs geen enkele controle.
+
 ## 2026-08-13 — Een gate die op tekst toetst, toetst een voornemen
 
 `ci/controle-gates.sh` is geschreven om stil groen uit te roeien. Zijn regel was: elk script
