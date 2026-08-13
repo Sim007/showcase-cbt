@@ -5,11 +5,18 @@
 # oordelen.
 #
 # Dit is een benadering en geen volledige shell-parser. Wat er niet in zit: commando's
-# bínnen $(), en commando's waarvan de naam pas bij expansie ontstaat. Die vallen buiten
-# beeld en leveren dus geen valse melding op — de toets is smal met opzet, want een gate die
-# ruis produceert wordt uitgezet of krijgt een negeerlijst, en dan bewaakt hij niets meer.
+# waarvan de naam pas bij expansie ontstaat. Die vallen buiten beeld en leveren dus geen
+# valse melding op — de toets is smal met opzet, want een gate die ruis produceert wordt
+# uitgezet of krijgt een negeerlijst, en dan bewaakt hij niets meer.
 #
-# Wat er wel in zit, kostte vijf rondes:
+# Commando's bínnen $() stonden hier eerst óók bij als blinde vlek, en dat is één ronde later
+# rechtgezet. In get-contract.sh kwam een aanroep van `sha256` te staan zonder dat het script
+# tools.sh sourcette — exact de fout waarvoor deze toets bestaat — en hij stond binnen $(),
+# dus de gate meldde groen. Een gedocumenteerde beperking is nog steeds een gat: wie de
+# beperking niet leest, krijgt stil groen. Nu wordt de inhoud van $() als eigen
+# commandopositie gelezen.
+#
+# Wat er wel in zit, kostte zes rondes:
 #
 #   1  Een meerregelige echo leest zonder quote-toestand als een rij commando's, en levert
 #      tientallen Nederlandse woorden op als "onvindbaar commando".
@@ -50,19 +57,39 @@ function schoon(regel,    uit, i, L, c, n) {
       i++
       continue
     }
+    # $(( ... )) is rekenen en geen commando. Twee niveaus tegelijk erin, zodat de twee
+    # sluithaken er ook weer twee af halen.
+    if (ctx[top] != "sq" && c == "$" && n == "(" && substr(regel, i + 2, 1) == "(") {
+      top++; ctx[top] = "rekenen"
+      top++; ctx[top] = "rekenen"
+      uit = uit "\001"
+      i += 3
+      continue
+    }
+    if (ctx[top] == "rekenen") {
+      if (c == "(") { top++; ctx[top] = "rekenen" }
+      else if (c == ")") top--
+      i++
+      continue
+    }
+
     if (ctx[top] == "dq") {
       if (c == "\\") { i += 2; continue }
-      if (c == "$" && n == "(") { top++; ctx[top] = "cmd"; i += 2; continue }
+      # Binnen een string is $( ) alsnog een commandopositie: de inhoud wordt uitgevouwen
+      # op een eigen regel, zodat het eerste woord ervan wordt gelezen.
+      if (c == "$" && n == "(") { top++; ctx[top] = "cmd"; uit = uit "\n"; i += 2; continue }
       if (c == "\"") top--
       i++
       continue
     }
     if (ctx[top] == "cmd") {
-      if (c == "\\") { i += 2; continue }
-      if (c == "'")  { top++; ctx[top] = "sq";  i++; continue }
-      if (c == "\"") { top++; ctx[top] = "dq";  i++; continue }
-      if (c == "(")  { top++; ctx[top] = "cmd"; i++; continue }
-      if (c == ")") top--
+      if (c == "\\") { uit = uit " "; i += 2; continue }
+      if (c == "'")  { top++; ctx[top] = "sq";  uit = uit "\001"; i++; continue }
+      if (c == "\"") { top++; ctx[top] = "dq";  uit = uit "\001"; i++; continue }
+      if (c == "$" && n == "(") { top++; ctx[top] = "cmd"; uit = uit "\n"; i += 2; continue }
+      if (c == "(")  { top++; ctx[top] = "cmd"; uit = uit "\n"; i++; continue }
+      if (c == ")")  { top--; uit = uit "\n"; i++; continue }
+      uit = uit c
       i++
       continue
     }
@@ -71,7 +98,7 @@ function schoon(regel,    uit, i, L, c, n) {
     if (c == "\\") { uit = uit " "; i += 2; continue }
     if (c == "'")  { top++; ctx[top] = "sq";  uit = uit "\001"; i++; continue }
     if (c == "\"") { top++; ctx[top] = "dq";  uit = uit "\001"; i++; continue }
-    if (c == "$" && n == "(") { top++; ctx[top] = "cmd"; uit = uit "\001"; i += 2; continue }
+    if (c == "$" && n == "(") { top++; ctx[top] = "cmd"; uit = uit "\n"; i += 2; continue }
     uit = uit c
     i++
   }

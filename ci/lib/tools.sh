@@ -67,7 +67,7 @@ spectral() {
   _tools_run "$SPECTRAL_IMAGE" "$@"
 }
 
-# sha256 <werkmap-relatief-aan-de-hoofdmap> <bestand...>
+# sha256som <werkmap-relatief-aan-de-hoofdmap> <bestand...>
 #
 # In een container en niet op de host: macOS heeft `shasum -a 256` en Linux `sha256sum`, met
 # een andere uitvoervorm. Een checksumbestand dat per laptop anders is, is als controle
@@ -76,7 +76,7 @@ spectral() {
 #
 # De werkmap staat apart zodat de bestandsnamen in SHA256SUMS zonder pad blijven: dat bestand
 # hoort naast de assets in een release, waar geen mappen zijn.
-sha256() {
+sha256som() {
   _werkmap="$1"
   shift
   docker run --rm --network none \

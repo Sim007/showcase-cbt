@@ -73,7 +73,7 @@ else
   # hier tegen het werkregister gehouden: zonder deze vergelijking is "de bundel hoort bij
   # de specs die de gates gezien hebben" een aanname in plaats van een controle.
   # Binnen build/ en niet in /tmp: het gereedschap draait in containers met alleen de
-  # hoofdmap gemount, dus wat daarbuiten ligt bestaat voor jq en sha256 niet.
+  # hoofdmap gemount, dus wat daarbuiten ligt bestaat voor jq en sha256som niet.
   UITPAK="${CBT_ROOT}/build/release/uitpak-${TAG}"
   UITPAK_REL="build/release/uitpak-${TAG}"
   rm -rf "${UITPAK}"
@@ -88,7 +88,7 @@ else
   while IFS=' ' read -r m_artifact m_versie m_bestand m_som; do
     [ -n "${m_artifact}" ] || continue
     REGISTERSPEC="$("${CBT_ROOT}/ci/get-contract.sh" "${GROEP}" "${m_artifact}" "${m_versie}")"
-    REGISTERSOM="$(sha256 "$(dirname "${REGISTERSPEC#"${CBT_ROOT}/"}")" "$(basename "${REGISTERSPEC}")" | cut -d' ' -f1)"
+    REGISTERSOM="$(sha256som "$(dirname "${REGISTERSPEC#"${CBT_ROOT}/"}")" "$(basename "${REGISTERSPEC}")" | cut -d' ' -f1)"
     [ "${REGISTERSOM}" = "${m_som}" ] \
       || fout "${m_artifact} ${m_versie} in de bundel wijkt af van het werkregister: ${m_som} tegen ${REGISTERSOM}"
     echo "  ok  ${m_artifact} ${m_versie} (${m_bestand}) komt overeen met het werkregister"
@@ -112,7 +112,7 @@ fi
 # omleiding, en anders staat SHA256SUMS met de checksum van een leeg bestand in zichzelf.
 ASSETS="$( cd "${DOELMAP}" && ls )"
 for bestand in ${ASSETS}; do
-  sha256 "${DOEL_REL}" "${bestand}"
+  sha256som "${DOEL_REL}" "${bestand}"
 done > "${DOELMAP}/SHA256SUMS"
 
 AANTAL="$(grep -c '' "${DOELMAP}/SHA256SUMS")"

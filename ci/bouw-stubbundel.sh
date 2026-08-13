@@ -175,8 +175,8 @@ echo "stap 5: afhankelijkheden meegepakt ($(du -sh "${BUNDEL}/node_modules" | cu
 #
 # Als laatste vóór het inpakken, zodat hij de bundel beschrijft zoals die de deur uit gaat.
 
-SCENARIO_SOM="$(sha256 "${REL}" openapi.yaml | cut -d' ' -f1)"
-STREAM_SOM="$(sha256 "${REL}" asyncapi.yaml | cut -d' ' -f1)"
+SCENARIO_SOM="$(sha256som "${REL}" openapi.yaml | cut -d' ' -f1)"
+STREAM_SOM="$(sha256som "${REL}" asyncapi.yaml | cut -d' ' -f1)"
 
 jq -n \
   --arg bundelversie "${BUNDELVERSIE}" \

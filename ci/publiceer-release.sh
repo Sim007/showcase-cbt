@@ -110,7 +110,7 @@ while read -r som bestand; do
   curl -fsSL -o "${CONTROLE}/${bestand}" \
     "https://github.com/${REPO}/releases/download/${TAG}/${bestand}" \
     || fout "${bestand} is niet op te halen langs de URL die squad 2 krijgt"
-  TERUGSOM="$(sha256 "${CONTROLE_REL}" "${bestand}" | cut -d' ' -f1)"
+  TERUGSOM="$(sha256som "${CONTROLE_REL}" "${bestand}" | cut -d' ' -f1)"
   [ "${TERUGSOM}" = "${som}" ] \
     || fout "${bestand} in de release wijkt af van wat er is gebouwd: ${TERUGSOM} tegen ${som}"
   echo "  ok      ${bestand} komt terug zoals hij is gebouwd"
