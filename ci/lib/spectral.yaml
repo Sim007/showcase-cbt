@@ -1,0 +1,9 @@
+# De regelset voor de geldigheidsgate op elke spec, ongeacht de grens.
+#
+# Beide standaardregelsets erin: Spectral kiest per document op formaat welke regels gelden,
+# dus een OpenAPI krijgt de oas-regels en een AsyncAPI de asyncapi-regels.
+#
+# Er staat hier met opzet niets eigens bij. De gate toetst geldigheid — is dit een spec die
+# klopt volgens zijn eigen standaard — en geen huisstijl. Zodra hier een eigen regel bij komt
+# gaat de gate over smaak, en dan is falen een mening en geen feit.
+extends: ["spectral:oas", "spectral:asyncapi"]

@@ -66,6 +66,50 @@ hoogste_versie() {
 curl -fsS "${API}/system/info" >/dev/null 2>&1 \
   || fout "register niet bereikbaar op ${REGISTRY_URL} — staat compose/registry.yml omhoog?"
 
+# --- stap 0: is dit überhaupt een geldige spec ------------------------------------
+#
+# Vóór de diff-gate, want vergelijken met een spec die niet klopt zegt niets. En vóór de
+# publicatie, want alles erachter — stubgeneratie, contractverificatie, de consumer —
+# gaat ervan uit dat wat in het register staat geldig is.
+#
+# Deze gate geldt voor élke grens, de getoonde en de geleefde. Een validator die alleen
+# voor de ene soort geldt, weerspreekt de stelling dat het mechanisme er één is.
+#
+# Falen op error en niet op warning: de standaardregelsets klagen over ontbrekende
+# `contact`, `license` en `tags`, en daar is geen enkele spec hier op geschreven. Dat is
+# huisstijl en geen geldigheid.
+
+# Spectral draait in een container met de wortel op /work; paden dus relatief, net als bij
+# oasdiff verderop.
+SPECPAD_REL="${SPECPAD#"${CBT_ROOT}/"}"
+REGELSET="ci/lib/spectral.yaml"
+KANARIE="ci/fixtures/spectral-canary.yaml"
+
+# Eerst de kanarie. Spectral zonder geladen regelset meldt "No ruleset has been found" en
+# geeft exitcode 0 — dan keurt deze gate elke spec goed zonder er één regel op los te
+# laten. De kanarie is met opzet kapot: levert hij geen error op, dan kijkt Spectral
+# nergens naar en is het oordeel over de echte spec waardeloos.
+#
+# De exitcode van die lint zegt niets: de kanarie hóórt te falen, dus 1 is de verwachte
+# uitkomst en niet het signaal. Het aantal errors is het signaal.
+[ -f "${CBT_ROOT}/${REGELSET}" ] || fout "regelset ontbreekt: ${REGELSET}"
+[ -f "${CBT_ROOT}/${KANARIE}" ]  || fout "kanarie ontbreekt: ${KANARIE}"
+
+KANARIE_UITVOER="$(spectral lint --ruleset "${REGELSET}" --format json "${KANARIE}" 2>/dev/null || true)"
+KANARIE_ERRORS="$(printf '%s' "${KANARIE_UITVOER}" | jq '[.[] | select(.severity == 0)] | length' 2>/dev/null)"
+# Geen getal betekent dat Spectral geen JSON teruggaf — meestal omdat de regelset niet laadde.
+# Nul is dan het eerlijke antwoord, en verwacht_minstens hieronder weigert het.
+[ -n "${KANARIE_ERRORS}" ] || KANARIE_ERRORS=0
+verwacht_minstens "${KANARIE_ERRORS}" 1 "errors op de kanarie — bewijst dat de regelset laadt"
+
+if ! spectral lint --ruleset "${REGELSET}" --fail-severity error "${SPECPAD_REL}" >"${WERKMAP}/spectral.log" 2>&1; then
+  echo "publish-contract: ${SPECPAD_REL} is geen geldige spec." >&2
+  sed 's/^/    /' "${WERKMAP}/spectral.log" >&2
+  fout "geldigheidsgate rood; er is niets gepubliceerd"
+fi
+
+echo "spectral: geldig (${KANARIE_ERRORS} errors op de kanarie, dus de regelset laadt)"
+
 # --- stap 1: hoogste gepubliceerde versie -----------------------------------------
 
 VERSIES_JSON="$(curl -sS "${ARTEFACT_URL}/versions?limit=500" || true)"

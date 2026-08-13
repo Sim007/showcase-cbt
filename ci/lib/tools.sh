@@ -6,6 +6,11 @@
 # `set -euo pipefail` hoort in het aanroepende script.
 
 OASDIFF_IMAGE="tufin/oasdiff:v1.11.7"
+# Spectral toetst of een spec geldig is volgens zijn eigen standaard — OpenAPI én AsyncAPI,
+# waar oasdiff alleen OpenAPI leest. Nodig omdat een spec die niet valideert nooit het
+# register in mag: alles erachter, van stubgeneratie tot contractverificatie, gaat ervan uit
+# dat hij klopt.
+SPECTRAL_IMAGE="stoplight/spectral:6.15.0"
 JQ_IMAGE="ghcr.io/jqlang/jq:1.8.1"
 MAVEN_IMAGE="maven:3.9.16-eclipse-temurin-21"
 YQ_IMAGE="mikefarah/yq:4.53.3"
@@ -50,6 +55,35 @@ jq() {
 # kan alleen JSON lezen. yq doet verder niets in deze opzet.
 yq() {
   _tools_run "$YQ_IMAGE" "$@"
+}
+
+# spectral <argumenten...>
+#
+# De geldigheidsgate. Draait met de regelset uit ci/lib/spectral.yaml; die staat er expliciet
+# bij omdat Spectral zonder regelset "No ruleset has been found" meldt en exitcode 0 geeft.
+# Dat is stil groen in zijn zuiverste vorm, en de reden dat publish-contract.sh eerst een
+# kanarie lint.
+spectral() {
+  _tools_run "$SPECTRAL_IMAGE" "$@"
+}
+
+# sha256 <werkmap-relatief-aan-de-hoofdmap> <bestand...>
+#
+# In een container en niet op de host: macOS heeft `shasum -a 256` en Linux `sha256sum`, met
+# een andere uitvoervorm. Een checksumbestand dat per laptop anders is, is als controle
+# waardeloos. De alpine-image levert overal dezelfde regels, en die zijn te controleren met
+# `sha256sum -c` én met `shasum -a 256 -c`.
+#
+# De werkmap staat apart zodat de bestandsnamen in SHA256SUMS zonder pad blijven: dat bestand
+# hoort naast de assets in een release, waar geen mappen zijn.
+sha256() {
+  _werkmap="$1"
+  shift
+  docker run --rm --network none \
+    --user "$(id -u):$(id -g)" \
+    --volume "${CBT_ROOT}:/work:ro" \
+    --workdir "/work/${_werkmap}" \
+    "$NODE_IMAGE" sha256sum "$@"
 }
 
 # ajv <argumenten...>

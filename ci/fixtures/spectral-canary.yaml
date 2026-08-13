@@ -1,0 +1,17 @@
+# Kanarie voor de Spectral-gate. Deze spec is met opzet kapot.
+#
+# Spectral zonder regelset meldt "No ruleset has been found" en geeft exitcode 0. Een gate
+# die daarop bouwt, keurt elke spec goed zodra de regelset niet laadt — stil groen, precies
+# het patroon dat deze repository bestrijdt.
+#
+# Daarom lint publish-contract.sh eerst dit bestand. Levert het geen enkele error op, dan
+# kijkt Spectral nergens naar en wordt de publicatie geweigerd. Pas als de kanarie valt,
+# telt het oordeel over de echte spec.
+#
+# Wat er kapot aan is: `paths` hoort een object te zijn en is hier een string, en de
+# verplichte `info.version` ontbreekt. Beide zijn error-severity in spectral:oas.
+# Repareer dit bestand nooit.
+openapi: 3.0.3
+info:
+  title: Kanarie
+paths: dit-hoort-een-object-te-zijn
