@@ -149,7 +149,7 @@ Het veld `soort` onderscheidt ze binnen één stroom.
 ## 9. Wat er nog niet klopt
 
 **De diff-gate werkt niet op AsyncAPI** (O13). oasdiff leest OpenAPI en niets anders, dus
-`run-stream` komt bij een wijziging niet langs de gate. Bij 0.9.0 valt er niets te
+`run-stream` komt bij een wijziging niet langs de gate. Bij 0.10.0 valt er niets te
 vergelijken en merk je het niet; bij 1.1.0 wel.
 
 `publish-contract.sh` **faalt** daarop, en waarschuwt niet: een waarschuwing scrollt voorbij
@@ -218,7 +218,7 @@ bij ons. Bewaar de checksum die je bij het pinnen hebt gezien.
 `scenario-api-stubbundel-1.0.0.tgz`. Dat wordt:
 
 ```
-https://github.com/Sim007/showcase-cbt/releases/download/stubbundel-0.9.0/stubbundel-0.9.0.tgz
+https://github.com/Sim007/showcase-cbt/releases/download/stubbundel-0.10.0/stubbundel-0.10.0.tgz
 ```
 
 Twee wijzigingen in één stap. De naam, omdat de bundel niet van `scenario-api` is maar van
@@ -238,13 +238,13 @@ hebben elk hun eigen reeks.
 ```sh
 docker compose -f compose/registry.yml up -d
 
-ci/pipeline-contract.sh showcase-cbt scenario-api 0.9.0 \
-  contracts/showcase-cbt/scenario-api/0.9.0/openapi.yaml
-ci/pipeline-contract.sh showcase-cbt run-stream 0.9.0 \
-  contracts/showcase-cbt/run-stream/0.9.0/asyncapi.yaml
+ci/pipeline-contract.sh showcase-cbt scenario-api 0.10.0 \
+  contracts/showcase-cbt/scenario-api/0.10.0/openapi.yaml
+ci/pipeline-contract.sh showcase-cbt run-stream 0.10.0 \
+  contracts/showcase-cbt/run-stream/0.10.0/asyncapi.yaml
 
-ci/generate-stub.sh        showcase-cbt scenario-api 0.9.0
-ci/generate-stream-stub.sh showcase-cbt run-stream 0.9.0 scenario-api 0.9.0
+ci/generate-stub.sh        showcase-cbt scenario-api 0.10.0
+ci/generate-stream-stub.sh showcase-cbt run-stream 0.10.0 scenario-api 0.10.0
 ```
 
 De stub draait op WireMock met `build/stub/mappings` eronder. Beide generatoren schrijven

@@ -7,9 +7,9 @@
 # De tagnaam bepaalt wat er uitgegeven wordt, en niets anders — dat is dezelfde regel als
 # bij `get-contract`: de aanroeper zegt wát, het script weet hóé.
 #
-#   scenario-api-0.9.0   een spec uit groep showcase-cbt
-#   run-stream-0.9.0     idem
-#   stubbundel-0.9.0     de bundel, afgeleid van beide specs
+#   scenario-api-0.10.0   een spec uit groep showcase-cbt
+#   run-stream-0.10.0     idem
+#   stubbundel-0.10.0     de bundel, afgeleid van beide specs
 #
 # Het werkregister gaat hier omhoog omdat de asset dáár vandaan komt en niet van schijf.
 # Wat de gates hebben gezien staat in het register; wat in contracts/ staat is de werkkopie.

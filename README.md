@@ -106,10 +106,10 @@ Naast de scenario's loopt een echte grens: showcase-CBT levert `scenario-api` en
 bouwen — uitpakken en starten, verder niets.
 
 ```sh
-ci/bouw-stubbundel.sh showcase-cbt scenario-api 0.9.0 run-stream 0.9.0 0.9.0
+ci/bouw-stubbundel.sh showcase-cbt scenario-api 0.10.0 run-stream 0.10.0 0.10.0
 ```
 
-Levert `build/stubbundel-0.9.0.tgz` op, ongeveer 300 KB. De drie versies staan er los in:
+Levert `build/stubbundel-0.10.0.tgz` op, ongeveer 300 KB. De drie versies staan er los in:
 de twee specs bewegen elk op hun eigen tempo, en de bundel heeft een eigen nummer omdat hij
 van allebei is afgeleid. Welke versies erin zitten staat in `manifest.json`, met checksum.
 

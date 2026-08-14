@@ -1,7 +1,7 @@
 asyncapi: 2.6.0
 info:
   title: Run Stream
-  version: 0.9.0
+  version: 0.10.0
   description: >
     Wat er tijdens een run gebeurt, als losse feiten. Eén kant op: showcase-CBT vertelt,
     de aanroeper luistert. Starten en afbreken lopen over scenario-api, want een commando

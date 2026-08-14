@@ -166,7 +166,7 @@ echo "stap 5: afhankelijkheden meegepakt ($(du -sh "${BUNDEL}/node_modules" | cu
 # --- stap 6: het manifest ------------------------------------------------------------------
 #
 # De bundel is afgeleid van twee specs die vanaf nu los bewegen. Zonder manifest zegt
-# `stubbundel-0.9.0` niet wélke versies erin zitten — precies de dubbelzinnigheid die één
+# `stubbundel-0.10.0` niet wélke versies erin zitten — precies de dubbelzinnigheid die één
 # gedeeld versienummer opleverde, één niveau lager terug.
 #
 # De checksums zijn er niet voor ons maar voor de consumer: daarmee stelt hij vast dat deze

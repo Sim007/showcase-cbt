@@ -1,7 +1,7 @@
 # Melding aan de squad van showcase-website — de stream wordt SSE
 
 > **Naschrift 2026-08-13.** De nummers hieronder zijn achterhaald: beide specs staan sinds
-> die datum op **0.9.0**. De tekst blijft zoals hij verstuurd is — een melding herschrijven
+> die datum op **0.9.0**, en sinds 2026-08-14 op **0.10.0**. De tekst blijft zoals hij verstuurd is — een melding herschrijven
 > maakt van een verslag een bewering. Waarom het nummer omlaag ging, staat in
 > `besluiten.md`.
 

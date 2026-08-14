@@ -3,7 +3,7 @@
 Uitpakken en starten. Geen Docker, geen JDK, geen `npx`, en na het uitpakken geen netwerk.
 
 ```sh
-tar -xzf stubbundel-0.9.0.tgz
+tar -xzf stubbundel-0.10.0.tgz
 cd bundel
 node stub.js
 ```
