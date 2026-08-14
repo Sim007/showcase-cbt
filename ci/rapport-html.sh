@@ -172,4 +172,10 @@ Dit is het testbewijs van één run en hoort daarom niet in de repository.
 HTML
 } > "${DOEL}"
 
-[ -n "${CBT_LIVE:-}" ] || echo "rapport: ${DOEL#"${CBT_ROOT}/"}"
+# Beide paden, en één keer. Zonder CBT_LIVE is de terminal het enige wat je hebt, en dan wil
+# je weten waar het testbewijs staat — maar dit script draait aan het eind van een demo en
+# niet na elke pipeline, dus het blijft bij één regel per stuk.
+[ -n "${CBT_LIVE:-}" ] || {
+  echo "rapport: ${BRON#"${CBT_ROOT}/"}"
+  echo "rapport: ${DOEL#"${CBT_ROOT}/"}"
+}

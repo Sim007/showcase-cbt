@@ -261,8 +261,11 @@ rapport_oordeel() {
   printf '| %s | %s | — | **oordeel** | %s |\n' \
     "$(date -u '+%H:%M:%S')" "${RAPPORT_ONDERDEEL}" "$1" >> "${RAPPORT_BESTAND}"
   _live
-  [ -n "${CBT_LIVE:-}" ] || echo "rapport: ${RAPPORT_BESTAND#"${CBT_ROOT}/"}"
 }
+
+# Waar het rapport staat, meldt ci/rapport-html.sh aan het eind van een demo — één keer,
+# beide paden. Dat stond hier eerst, in rapport_oordeel, en dan kwam dezelfde regel na elke
+# pipeline voorbij: negen keer in één doorloop van hoofdstuk 0.
 
 # info_endpoints <omgeving>
 #
