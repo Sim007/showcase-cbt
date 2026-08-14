@@ -7,6 +7,12 @@ Het besluit zelf staat kort in `showcase-cbt.md`. Dit bestand bevat het bewijs: 
 geprobeerd, wat eruit kwam, en wat er is opgegeven. Zonder dat leest een keuze als een
 voorkeur, en dan gaat iemand hem over een half jaar opnieuw voeren.
 
+> **Naschrift 2026-08-14 — "hoofdstuk" heet overal "scenario".** De showcase spreekt sinds
+> die datum consequent van scenario's; `context.md` deed dat al. De notities hieronder zijn
+> níét herschreven: ze zijn gedateerd, en een verslag dat je aanpast is geen verslag meer.
+> Waar hieronder "hoofdstuk 0 en 1" staat, lees "scenario 00 en 01" — dat geldt ook voor de
+> regels die nog gelden, zoals de uitzondering op de gegenereerde runbestanden.
+
 ---
 
 ## 2026-08-02 — Wat de drift-check vergelijkt
@@ -1069,6 +1075,62 @@ tolerantie iets om te draaien in plaats van te beloven.
 Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu een stub die
 alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
 staat nergens in een spec.
+
+## 2026-08-14 — De consumer vond wat onze eigen verificatiestap niet zag
+
+Alle drie de releases leverden een bestand dat `SHA256SUMS` heette. Wie ze naar dezelfde map
+haalt, overschrijft stil de vorige — en `sha256sum -c` verifieert daarna het verkeerde
+bestand en meldt `OK`. Stil groen, in de verificatiestap zelf.
+
+**Wij hebben dat niet gezien, en we hadden het kunnen zien.** Ons eigen release-script haalt
+elke asset terug langs de publieke URL en vergelijkt de checksum. Dat werkt — maar het doet
+het per release, in een eigen map, één tegelijk. De fout ontstaat pas bij wat een consumer
+doet en wij niet: drie releases naast elkaar ophalen. Onze verificatie was juist en
+onvolledig, en die twee zijn van buiten niet te onderscheiden.
+
+**Showcase-website loste het aan hun kant op**, met een submap per artifact. Dat is een
+correcte reparatie van ons probleem op de verkeerde plek: elke volgende consumer moet hem
+opnieuw bedenken, en wie hem niet bedenkt krijgt een groene verificatie van het verkeerde
+bestand. Aan onze kant is het één bestandsnaam.
+
+**Dat dit de eerste bevinding van de consumer is, telt.** De vorige vier kwamen uit eigen
+gereedschap of een eigen doorloop. Deze kwam van de andere kant van de grens, en precies
+daar waar wij niet kijken omdat wij nooit twee contracten tegelijk ophalen. Een consumer
+gebruikt een grens anders dan de provider hem test — dat is geen tekortkoming van onze tests
+maar een eigenschap van grenzen, en het is het argument om er één te hebben die je kunt
+bevragen in plaats van een afspraak.
+
+**En het raakt de versie.** De URL-vorm is onderdeel van de grens; dat staat sinds
+2026-08-13 zo in `contract-showcase-website.md`. Een assetnaam wijzigen is dus breaking, ook
+al verandert er geen letter aan de spec — vandaar 0.10.0 op beide specs terwijl hun inhoud
+gelijk blijft. Het contract is de grens en niet alleen het schema.
+
+## 2026-08-14 — Een bewering die iedereen doorgeeft omdat niemand hem meet
+
+De opdracht voor de sweep zei: `/api/hoofdstukken` wordt `/api/scenarios`, plus de schema's
+`Hoofdstuk` en `hoofdstukId` — breaking op een gepubliceerd contract, dus showcase-website
+moet meebewegen.
+
+Geen van die drie bestaat. `scenario-api` heeft `/v1/scenarios`, `ScenarioId` en
+`ScenarioSamenvatting`, en heeft dat altijd gehad. In de hele repository komt `hoofdstukId`
+nul keer voor. Wat er wél stond is één woord in een beschrijving.
+
+**De bewering kwam uit een overdrachtsdocument van dag één** en is sindsdien in elke prompt
+meegereisd — inclusief de prompt waarin showcase-website werd opgedragen mee te bewegen met
+een wijziging die niet bestond. Niemand heeft hem tegen de spec gehouden, omdat iedereen
+aannam dat iemand anders dat had gedaan.
+
+**Dat is precies wat een contract oplost, en de reden dat het meetbaar moet zijn.** Een
+afspraak over een grens verwatert; een gepubliceerde spec is te bevragen. Hier ging het mis
+op de laag erboven: niet het contract was onduidelijk, maar wat iedereen dácht dat erin
+stond. `grep` op de spec kostte vijftien seconden en had de hele coördinatieronde
+overbodig gemaakt.
+
+**De les is niet "meet je aannames".** Die kent iedereen. De les is dat een bewering
+gevaarlijker wordt naarmate hij vaker is doorgegeven: bij de vijfde herhaling klinkt hij als
+vastgesteld feit, en juist dan kijkt niemand meer. Wat dit had gevangen is een gewoonte:
+elke uitspraak over het contractoppervlak wordt geciteerd uit de spec, met bestandsnaam en
+regelnummer, of hij geldt niet.
 
 ## 2026-08-14 — Eén commit, twee stille regressies, en het was de commit tegen stil groen
 
