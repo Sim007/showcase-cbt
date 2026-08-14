@@ -56,6 +56,17 @@ docker compose -f "${CBT_ROOT}/compose/registry.yml" up -d >/dev/null 2>&1
 
 echo "  specs gepubliceerd"
 
+# --- 2b: de ontvangstvariant van run-stream, en het net eronder ----------------------------
+#
+# Op payloadniveau heeft de AsyncAPI zelf geen compatibiliteitsnet — gemeten, zie
+# docs/besluiten.md. De afleiding hieronder registreert de payloads als JSON-artifacts, waar
+# de regel wél werkt, en toetst met vier kanaries dat de transformatie niet te gul is.
+#
+# Bij elke push levert dit één ding op dat altijd waar is: de afleiding klopt nog. Het net
+# zelf vuurt pas bij een tweede versie, en die is er in deze run niet.
+
+"${CBT_ROOT}/ci/ontvangstschemas.sh" "${GROEP}" "${STREAM}" "${VERSIE}" | sed 's/^/  /'
+
 # --- 3: de fixtures lopen niet uit de pas -------------------------------------------------
 
 "${CBT_ROOT}/ci/generate-stub.sh" "${GROEP}" "${SCENARIO}" "${VERSIE}" >/dev/null
