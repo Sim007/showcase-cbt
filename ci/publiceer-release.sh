@@ -8,7 +8,7 @@
 # de gate-regel: bouwen en controleren kan zonder token en zonder netwerk, publiceren is de
 # stap daarna en nooit ervoor.
 #
-# GitHub Releases is het **distributiekanaal** en niet het werkregister. Squad 2 leest hier,
+# GitHub Releases is het **distributiekanaal** en niet het werkregister. showcase-website leest hier,
 # ná de gates; onze eigen pipeline leest Apicurio, vóór de gates. Zie docs/besluiten.md,
 # 2026-08-13.
 #
@@ -16,7 +16,7 @@
 # opnieuw te zetten, en geen enkele controle van ons ziet dat. Dit script weigert daarom te
 # publiceren op een release die al bestaat — dat is het maximale wat wij kunnen afdwingen.
 # Wat er tegenover staat is de checksum: wordt een asset toch vervangen, dan valt dat op bij
-# squad 2 en niet bij ons. Daarom draagt elke asset een eigen .sha256 en staat in de
+# showcase-website en niet bij ons. Daarom draagt elke asset een eigen .sha256 en staat in de
 # contractdocumentatie dat verifiëren geen formaliteit is.
 #
 # Het token komt uit de omgeving en staat nooit op de commandoregel.
@@ -98,7 +98,7 @@ verwacht_minstens "${GEUPLOAD}" 2 "assets geüpload (minstens de asset zelf en z
 # --- 4: terughalen en vergelijken -----------------------------------------------------------
 #
 # Zonder deze stap is "de release bevat wat de gates gezien hebben" een aanname. Wat er nu
-# in het kanaal staat wordt opgehaald langs precies de URL die squad 2 krijgt, en tegen de
+# in het kanaal staat wordt opgehaald langs precies de URL die showcase-website krijgt, en tegen de
 # checksums gehouden die hier zijn uitgerekend.
 
 CONTROLE="${CBT_ROOT}/build/release/${TAG}-terug"
@@ -110,7 +110,7 @@ for sompad in "${MAP}"/*.sha256; do
   read -r som bestand < "${sompad}"
   curl -fsSL -o "${CONTROLE}/${bestand}" \
     "https://github.com/${REPO}/releases/download/${TAG}/${bestand}" \
-    || fout "${bestand} is niet op te halen langs de URL die squad 2 krijgt"
+    || fout "${bestand} is niet op te halen langs de URL die showcase-website krijgt"
   TERUGSOM="$(sha256som "${CONTROLE_REL}" "${bestand}" | cut -d' ' -f1)"
   [ "${TERUGSOM}" = "${som}" ] \
     || fout "${bestand} in de release wijkt af van wat er is gebouwd: ${TERUGSOM} tegen ${som}"

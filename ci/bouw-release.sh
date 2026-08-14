@@ -108,7 +108,7 @@ fi
 # Eén bestand per asset, met de assetnaam erin: `scenario-api-0.10.0.yaml.sha256`. Niet één
 # `SHA256SUMS` per release.
 #
-# Die naam kwam van squad 2. Alle drie de releases leverden een bestand met dezelfde naam,
+# Die naam kwam van showcase-website. Alle drie de releases leverden een bestand met dezelfde naam,
 # dus wie ze naar één map haalde overschreef stil de vorige — en `sha256sum -c` verifieerde
 # daarna het verkeerde bestand zónder foutmelding. Stil groen, in de verificatiestap zelf.
 # Zij losten het op met een submap per artifact; dat is hún reparatie van ons probleem. Met

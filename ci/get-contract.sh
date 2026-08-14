@@ -76,7 +76,7 @@ case "${BRON}" in
     ;;
 
   release)
-    # Langs precies de URL-vorm die squad 2 gebruikt, en met dezelfde verificatie. Doen we
+    # Langs precies de URL-vorm die showcase-website gebruikt, en met dezelfde verificatie. Doen we
     # dat anders, dan toetsen we een pad dat niemand anders loopt.
     BASIS="https://github.com/${RELEASE_REPO}/releases/download/${ARTIFACT}-${VERSIE}"
     curl -fsSL -o "${DOEL}" "${BASIS}/${ARTIFACT}-${VERSIE}.yaml" \
