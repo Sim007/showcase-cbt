@@ -1070,6 +1070,58 @@ Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu
 alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
 staat nergens in een spec.
 
+## 2026-08-14 — Eén commit, twee stille regressies, en het was de commit tegen stil groen
+
+`5975384` heette *de lege-verzamelingseis toetsbaar*. Hij bracht `verwacht_minstens`, de
+gate die eist dat een controle zegt hoeveel hij verwachtte te zien, en hij bracht twee
+manieren om stil om te vallen.
+
+De eerste is eerder gevonden: `vergelijk-rapporten.sh` riep `verwacht_minstens` aan zonder
+`tools.sh` te sourcen — exitcode 127. De tweede kwam pas bij een handmatige doorloop, weken
+later:
+
+```sh
+_n="$(grep -oE '[0-9]+ passed' "${UITVOER}" | tail -1 | cut -d' ' -f1)"
+```
+
+Maven schrijft `Tests run: 4` en nergens `passed`. De grep vindt niets en geeft 1, de pijp
+geeft 1 door `pipefail`, de toekenning geeft 1, en `set -e` beëindigt het script. Geen
+melding, geen spoor. De consumerverificatie was groen — `Tests run: 4`, `BUILD SUCCESS` — en
+de stap eromheen viel om.
+
+**De providerkant ontsnapte per toeval.** Schemathesis schrijft `1632 passed`, dus daar
+matchte de grep. Dezelfde regel, hetzelfde script, andere uitkomst omdat een gereedschap
+een ander woord koos. Scenario 01 draaide daardoor half: Payment groen, Order rood.
+
+**Drie dingen die dit typeren.**
+
+*De vorm is dodelijker dan de fout.* Een toekenning uit een falende pijp beëindigt onder
+`set -euo pipefail` het hele script. Dezelfde grep als **argument** — `bijzonderheid
+"$(grep …)"` — doet dat niet, en binnen een functie die zelf in `$( )` wordt aangeroepen
+ook niet. Van de zestien plekken die een teller grepten waren er dus vier gevaarlijk en
+twaalf ongevaarlijk. Wie de klasse ruimer stelt dan de meting, repareert twaalf plekken en
+verstopt de vier.
+
+*De comments beschreven precies de bescherming die de regel eronder ondermijnde.* Bij
+`smoke.sh` en `gebruikersflow.sh` staat er dat het aantal er als eigen bewering staat, omdat
+leunen op het standaardgedrag van het gereedschap te zwak is. De regel die dat implementeert
+kon het script stil doden.
+
+*En iemand heeft het bijna gezien.* In `pipeline-ci.sh` staat één `|| true`, precies bij de
+stap die omvalt — op de `bijzonderheid`-regel eronder, die het niet nodig had. Iemand liep
+tegen het gedrag aan, greep ernaast, en het `|| true` maakte de misgreep permanent
+onzichtbaar: het gaf het gevoel dat het afgedekt was. Een pleister op de goede plek en het
+verkeerde ding is erger dan geen pleister, want hij stopt het zoeken.
+
+**Wat ervoor in de plaats komt:** een teller in `tools.sh` die de drie bekende vormen kent,
+nooit beëindigt, en 0 teruggeeft als hij niets herkent — waarna `verwacht_minstens` oordeelt.
+De teller telt, de gate oordeelt. Komt er een vierde uitvoervorm bij, dan is dat een alarm
+en geen nul.
+
+**Wat blijft staan.** `CONTRACT_STIJL=geschreven` en `beide` draaien nergens automatisch,
+dus hun val was onzichtbaar en hun reparatie is alleen met de hand aangetoond. Dat is
+dezelfde soort schuld als O15: geen fout, wel iets dat je moet weten dat je hebt.
+
 ## 2026-08-13 — Het document beschrijft iets dat er nog niet is, in de tegenwoordige tijd
 
 Twee keer nu in één doorloop gevonden, en allebei op dezelfde manier: door het document naast
