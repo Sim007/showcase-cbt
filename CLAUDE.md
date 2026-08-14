@@ -6,11 +6,11 @@ De volledige beschrijving staat in `docs/showcase-cbt.md`. Bij twijfel over wat 
 
 ## Onwrikbaar
 
-- `ci/`, `contracts/`, `playwright/` en `deelsystemen/` staan uitsluitend op de hoofdmap. Nooit een kopie in een hoofdstukmap.
+- `ci/`, `contracts/`, `playwright/` en `deelsystemen/` staan uitsluitend op de hoofdmap. Nooit een kopie in een scenariomap.
 - Services staan alleen in `deelsystemen/`, één exemplaar per deelsysteem. Een genummerde map bevat nooit een service.
-- Een deelsysteemmap is een houder en zelf geen service. Elke service staat eronder in een eigen map: `deelsystemen/payment/payment-api/`, `deelsystemen/payment/payment-mf/`. Ook een frontend hoort daar en niet in een hoofdstukmap.
+- Een deelsysteemmap is een houder en zelf geen service. Elke service staat eronder in een eigen map: `deelsystemen/payment/payment-api/`, `deelsystemen/payment/payment-mf/`. Ook een frontend hoort daar en niet in een scenariomap.
 - Namen enkelvoud: `payment`, niet `payments`. Zo heten het deelsysteem, de map en het artifact in het register hetzelfde.
-- Een genummerde map bevat alleen tests: demoscript, hoofdstukspecifieke specs, README.
+- Een genummerde map bevat alleen tests: demoscript, scenariospecifieke specs, README.
 - Eén compose per deelsysteem: `deelsystemen/<naam>/docker-compose.yml`, met alle services van dat deelsysteem. Dat bestand is in CI, Test en Acceptatie hetzelfde. Een omgeving is een samenstelling van die bestanden (`-f` per deelsysteem), nooit een eigen beschrijving van een deelsysteem. Op de hoofdmap staat wat van geen enkel deelsysteem is: `compose/registry.yml`, `compose/stub.yml`, `compose/extern.yml`.
 - Onveranderlijkheid geldt voor elk artefact. Eén build is één versie, en die image gaat ongewijzigd door alle omgevingen. Geen hertagging, geen `-rc`-achtervoegsel: release candidate is een status, geen naam.
 - Drie versies, niet door elkaar halen. De **contractversie** is van de grens en staat in het register. De **microserviceversie** komt uit de pom en zit in de image. De **deelsysteemversie** staat in `deelsystemen/<naam>/releases/<versie>.env` en pint welke microserviceversies er samen in gaan. Alle drie staan op het info-endpoint, uit elkaar te houden.
@@ -46,7 +46,7 @@ Een contracttest heet naar het **contract** en de **rol**, niet naar het deelsys
 `PaymentApiProviderContractTest` in payment-api, `PaymentApiConsumerContractTest` in
 order-api. `payment-api` is de artifactnaam in het register, dus de testnaam wijst naar
 waar de norm staat. Dat is nodig omdat een rol bij een grens hoort en niet bij een
-deelsysteem: Payment is provider op Order → Payment, en in hoofdstuk 7 consumer van een
+deelsysteem: Payment is provider op Order → Payment, en in scenario 7 consumer van een
 externe partij.
 
 De JUnit-tags zijn `unit`, `integratie` en `contract`. Die derde tag bestaat omdat de pipeline hem op een ander moment draait, na de deploy op de CI-omgeving, en niet omdat het een aparte laag is. Gebruik die woorden overal hetzelfde: in scriptnamen, tags en pipeline-uitvoer.

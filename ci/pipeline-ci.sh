@@ -11,7 +11,7 @@
 # Wat deze pipeline doet, hangt af van de **rol op de grens** en niet van het deelsysteem:
 # serveert het deelsysteem een contract, dan volgen drift en providerverificatie; pint hij
 # er een, dan een stub en consumerverificatie. Payment doet nu het eerste, Order het
-# tweede, en vanaf hoofdstuk 6 doet Payment allebei zonder dat hier iets bij hoeft.
+# tweede, en vanaf scenario 6 doet Payment allebei zonder dat hier iets bij hoeft.
 
 set -euo pipefail
 

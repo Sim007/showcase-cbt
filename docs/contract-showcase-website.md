@@ -132,7 +132,7 @@ met een kijker die eerst een inhaalslag moet afwachten.
 afleiding — dus van de andere kant. Zou showcase-CBT "groen" sturen, dan besliste hij mee
 over het beeld.
 
-Het onderscheid lijkt klein en is dat niet: het rapport van hoofdstuk 0 en 1 gebruikt intern
+Het onderscheid lijkt klein en is dat niet: het rapport van scenario 0 en 1 gebruikt intern
 wél groen en rood, en juist daarom moet de grens die woorden niet doorgeven. Wat binnen één
 deelsysteem een prima weergave is, wordt op een grens een aanname over hoe de ander het
 toont.
@@ -223,7 +223,7 @@ https://github.com/Sim007/showcase-cbt/releases/download/stubbundel-0.9.0/stubbu
 
 Twee wijzigingen in één stap. De naam, omdat de bundel niet van `scenario-api` is maar van
 allebei de specs. En het nummer omlaag, omdat 1.0.0 zou beloven dat er niet meer gebroken
-wordt terwijl de hoofdstuk-sweep nog loopt — zie `besluiten.md`, 2026-08-13. De inhoud is
+wordt terwijl de scenario-sweep nog loopt — zie `besluiten.md`, 2026-08-13. De inhoud is
 gelijk gebleven, op één toevoeging na: `manifest.json` noemt nu per spec de versie en de
 checksum die erin zit, zodat je kunt vaststellen dat de bundel hoort bij de spec die je zelf
 hebt opgehaald.

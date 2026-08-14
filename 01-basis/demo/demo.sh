@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# De basisdemo van hoofdstuk 1. Vier scènes, in de volgorde van 1.11.
+# De basisdemo van scenario 1. Vier scènes, in de volgorde van 1.11.
 #
 #   demo.sh [--stap]     --stap wacht op een toets tussen de scènes
 #
-# Begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien, er is net een release
+# Begint waar scenario 0 ophoudt: beide deelsystemen draaien, er is net een release
 # doorheen gegaan, en er is geen register.
 #
 # Dit script bedenkt niets zelf: het roept de pipelines aan die een squad ook zou draaien.
@@ -60,13 +60,13 @@ opmerking() {
 scene "Het register erbij — en daarna de contracttesten"
 
 docker ps --format '{{.Names}}' | grep -q '^test-' || {
-  echo "  Er draait niets op Test. Draai eerst 00-start/demo/demo.sh — dit hoofdstuk" >&2
+  echo "  Er draait niets op Test. Draai eerst 00-start/demo/demo.sh — dit scenario" >&2
   echo "  begint waar dat ophoudt." >&2
   exit 1
 }
 
 # Eigen sporen opruimen, en alleen die. Test en Acceptatie blijven staan: dat is de
-# uitgangssituatie uit hoofdstuk 0 waar dit hoofdstuk op verdergaat.
+# uitgangssituatie uit scenario 0 waar dit scenario op verdergaat.
 #
 # Nodig omdat een contractversie onveranderlijk is: 1.0.0 opnieuw publiceren levert een 409
 # en dat hoort ook zo. Het register is in memory, dus omlaag en omhoog is leegmaken.
@@ -84,9 +84,9 @@ toon_pagina
 ci/pipeline-contract.sh payment payment-api 1.0.0 contracts/payment/payment-api/1.0.0/openapi.yaml
 
 echo
-opmerking "Hetzelfde schema dat in hoofdstuk 0 ongelezen bleef, nu gepubliceerd als"
+opmerking "Hetzelfde schema dat in scenario 0 ongelezen bleef, nu gepubliceerd als"
 opmerking "payment-api 1.0.0: één plek, immutable, per versie. Vanaf hier is het de norm."
-opmerking "Wat hierna volgt is dezelfde gang als in hoofdstuk 0, met dezelfde deelsystemen,"
+opmerking "Wat hierna volgt is dezelfde gang als in scenario 0, met dezelfde deelsystemen,"
 opmerking "maar nu met de contracttesten erbij."
 
 # --- payment, van code tot Acceptatie ---------------------------------------------------
@@ -99,7 +99,7 @@ ci/pipeline-test.sh         payment 1.0.0
 ci/pipeline-acceptatie.sh   payment 1.0.0
 
 echo
-opmerking "Zelfde gang als in hoofdstuk 0, met drie stappen erbij. Op de CI-omgeving keek"
+opmerking "Zelfde gang als in scenario 0, met drie stappen erbij. Op de CI-omgeving keek"
 opmerking "de drift-check of Payment niet méér aanbiedt dan zijn contract noemt, en toetste"
 opmerking "de verificatie elke operatie uit de spec — elke responsecode, happy en unhappy."
 opmerking "Op Test kwam de versieconformiteit erbij."
@@ -124,7 +124,7 @@ opmerking "deploy van Payment. Payment draait wél — op Test en op Acceptatie,
 opmerking "langsgekomen — maar niet in Order's CI-omgeving. Daar stond de stub in zijn"
 opmerking "plaats, met dezelfde servicenaam, zodat Order het verschil niet merkt."
 opmerking ""
-opmerking "In hoofdstuk 0 stond daar ook een stub. Het verschil is de herkomst: toen met de"
+opmerking "In scenario 0 stond daar ook een stub. Het verschil is de herkomst: toen met de"
 opmerking "hand geschreven door Order zelf, nu gegenereerd uit de gepubliceerde spec."
 opmerking ""
 opmerking "De verificatie toetste beide richtingen: wat Order verstuurt voldoet aan de spec,"
@@ -157,14 +157,14 @@ if [ -f "${RAPPORT_00}" ]; then
   scene "De aftrekking: wat contracttesten precies heeft toegevoegd"
   ci/vergelijk-rapporten.sh "${RAPPORT_00}" "${CBT_RAPPORT:-${CBT_ROOT}/01-basis/rapport/rapport-cbt-01.md}"
   echo
-  opmerking "Dat lijstje is niet geteld maar afgeleid: elke stap uit hoofdstuk 0 komt in"
+  opmerking "Dat lijstje is niet geteld maar afgeleid: elke stap uit scenario 0 komt in"
   opmerking "dezelfde volgorde terug, en wat overblijft is de toevoeging. Loopt er ooit"
   opmerking "iets uiteen — een deelsysteem erbij, een andere volgorde — dan wordt dit rood"
   opmerking "en klopt de vergelijking niet meer."
 else
   echo
-  opmerking "Geen rapport van hoofdstuk 0 gevonden, dus de aftrekking is niet te maken."
-  opmerking "Draai 00-start/demo/demo.sh en daarna dit hoofdstuk opnieuw."
+  opmerking "Geen rapport van scenario 0 gevonden, dus de aftrekking is niet te maken."
+  opmerking "Draai 00-start/demo/demo.sh en daarna dit scenario opnieuw."
 fi
 
 echo

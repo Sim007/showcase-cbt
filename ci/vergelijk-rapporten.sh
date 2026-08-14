@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Toetst de bewering waar hoofdstuk 0 en 1 samen op rusten.
+# Toetst de bewering waar scenario 0 en 1 samen op rusten.
 #
 #   vergelijk-rapporten.sh <rapport-zonder-cbt> <rapport-met-cbt>
 #
@@ -8,8 +8,8 @@
 # toevoegt. Dat klopt alleen zolang al het andere gelijk is — dezelfde deelsystemen,
 # dezelfde versies, dezelfde volgorde, dezelfde pipelines.
 #
-# En dat breekt stilletjes. Voegt hoofdstuk 6 een deelsysteem toe aan één van beide, of
-# hangt iemand een scène om, dan blijven allebei de hoofdstukken gewoon groen en wordt
+# En dat breekt stilletjes. Voegt scenario 6 een deelsysteem toe aan één van beide, of
+# hangt iemand een scène om, dan blijven allebei de scenario's gewoon groen en wordt
 # alleen de conclusie onwaar. Een bewering die nergens door wordt afgedwongen is precies
 # wat deze showcase aanvalt; dit script past dezelfde medicijn op de showcase zelf toe.
 #
@@ -18,7 +18,7 @@
 # niet door de schrijver.
 #
 # Vergelijken gebeurt op onderdeel en stapnaam. Tijdstip en bijzonderheden verschillen per
-# run, en de tekst van een oordeel luidt in hoofdstuk 0 anders dan in hoofdstuk 1; wat
+# run, en de tekst van een oordeel luidt in scenario 0 anders dan in scenario 1; wat
 # vergeleken wordt is de structuur en niet de formulering.
 #
 # Deze controle staat in geen van beide rapporten. Hij gaat niet over de deelsystemen maar
@@ -86,7 +86,7 @@ if [ "${GEVONDEN}" -lt "${TOTAAL_ZONDER}" ]; then
   echo "  ROOD  ${GEVONDEN} van ${TOTAAL_ZONDER} stappen teruggevonden"
   echo "        vastgelopen op: ${ONTBREEKT}"
   echo
-  echo "  De twee hoofdstukken lopen niet meer gelijk. Daarmee is het verschil tussen de"
+  echo "  De twee scenario's lopen niet meer gelijk. Daarmee is het verschil tussen de"
   echo "  rapporten niet langer alleen contracttesten, en zegt de vergelijking niets meer."
   echo "  Herstel de gelijkenis, of stel de bewering bij."
   exit 1

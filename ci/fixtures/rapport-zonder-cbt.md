@@ -1,4 +1,4 @@
-# Rapport CBT — hoofdstuk 0
+# Rapport CBT — scenario 0
 
 Begonnen op 2026-01-01 10:00:00 UTC. Alle tijden zijn UTC.
 

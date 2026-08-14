@@ -14,7 +14,7 @@
 # buur de release van dit deelsysteem.
 #
 # Wat overblijft is wat alleen over dit deelsysteem gaat: draait het, en werken zijn eigen
-# koppelingen naar buiten. Die laatste komen in hoofdstuk 7.
+# koppelingen naar buiten. Die laatste komen in scenario 7.
 
 set -euo pipefail
 

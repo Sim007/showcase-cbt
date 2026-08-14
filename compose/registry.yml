@@ -1,5 +1,5 @@
 # Apicurio Registry — het contractregister voor de hele showcase.
-# Eén exemplaar op de wortel; geen enkel hoofdstuk krijgt een eigen register.
+# Eén exemplaar op de wortel; geen enkel scenario krijgt een eigen register.
 #
 # Vereenvoudiging: opslag in memory. Het register is leeg na een herstart, en dat is
 # voor een demo precies goed: elke demo begint vanaf een schone lei. Een echte

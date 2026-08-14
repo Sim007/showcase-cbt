@@ -173,7 +173,7 @@ HTML
 # Schrijven en hernoemen, niet rechtstreeks naar het doel. `> "${DOEL}"` kapt het bestand
 # eerst af en vult het daarna: wie er tussendoor leest, krijgt een halve pagina. Tijdens een
 # demo ververst de browser elke twee seconden en wordt deze pagina na elke stap opnieuw
-# geschreven — bemeten op een run van hoofdstuk 0 zag een bemonstering de tabel van 22 rijen
+# geschreven — bemeten op een run van scenario 0 zag een bemonstering de tabel van 22 rijen
 # terugvallen naar 2 en daarna doorgaan naar 27. Dat is precies de flits die je op een groot
 # scherm niet wilt.
 #

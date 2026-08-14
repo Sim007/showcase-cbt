@@ -14,7 +14,7 @@ import { defineConfig } from '@playwright/test';
 // eigenaar, en is er niets dat kan gaan afwijken.
 //
 // Geen browsers: deze specs praten HTTP en de officiële Playwright-image is ruim twee
-// gigabyte. Laptopbudget is een ontwerpeis. Hoofdstuk 8 heeft browsers wél nodig en krijgt
+// gigabyte. Laptopbudget is een ontwerpeis. Scenario 8 heeft browsers wél nodig en krijgt
 // daar een eigen opzet voor.
 export default defineConfig({
   // Een smoke die tweemaal moet draaien om groen te worden, verbergt een probleem.

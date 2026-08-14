@@ -14,18 +14,18 @@ Licentie: [MIT](LICENSE).
 
 **Wat er is en waarom** staat in [docs/showcase-cbt.md](docs/showcase-cbt.md) — het
 ontwerp, van begrip tot pipeline. **Hoe je het draait** staat in de README van elk
-hoofdstuk. De afwegingen achter de keuzes staan in
+scenario. De afwegingen achter de keuzes staan in
 [docs/besluiten.md](docs/besluiten.md), de beveiligingsbevindingen in
 [docs/security.md](docs/security.md).
 
 | Pad | Inhoud |
 |---|---|
-| `ci/` | de gedeelde scripts, één exemplaar — nooit een kopie in een hoofdstukmap |
+| `ci/` | de gedeelde scripts, één exemplaar — nooit een kopie in een scenariomap |
 | `contracts/` | alle specs, per grens en versie |
 | `compose/` | wat van geen enkel deelsysteem is: het register, de stub, externe koppelingen |
 | `playwright/` | config en gedeelde specs: smoke, later UI |
 | `deelsystemen/` | alle services, één map per deelsysteem; daaronder een map per service |
-| `00-start/` … `09-frontend-shell/` | een map per hoofdstuk, met alleen tests: demoscript, hoofdstukspecifieke specs, README |
+| `00-start/` … `09-frontend-shell/` | een map per scenario, met alleen tests: demoscript, scenariospecifieke specs, README |
 
 ## Vereisten
 
@@ -47,20 +47,20 @@ De versie komt uit `ci/lib/tools.sh`, zodat er maar één plek is die hem vastle
 
 ## Beginnen
 
-Niets opstarten. Elk hoofdstuk zet neer wat het nodig heeft en ruimt het daarna op.
+Niets opstarten. Elk scenario zet neer wat het nodig heeft en ruimt het daarna op.
 
-**Hoofdstuk 0 heeft met opzet géén register** — dat is het hele punt van dat hoofdstuk: het
+**Scenario 0 heeft met opzet géén register** — dat is het hele punt van dat scenario: het
 schema ligt in `contracts/`, het wordt niet gelezen, en niets valt erop. Start je er tóch
 één, dan staat hij er ongebruikt bij, naast de zin dat hij er niet is.
 
-Hoofdstuk 1 zet het register zelf omhoog en laat het daarna staan, zodat je erin kunt kijken:
+Scenario 1 zet het register zelf omhoog en laat het daarna staan, zodat je erin kunt kijken:
 het draait op <http://localhost:8080>, de UI op <http://localhost:8888>. Opslag is in memory,
 dus na een herstart is hij leeg — voor een demo precies goed.
 
 Variabelen — versies, poorten, het adres van de buur — staan in
 [.env.example](.env.example). Kopieer naar `.env` als je iets wilt afwijken.
 
-Begin daarna bij hoofdstuk 0 en 1, in die volgorde. Samen zijn ze het hele verhaal: eerst
+Begin daarna bij scenario 0 en 1, in die volgorde. Samen zijn ze het hele verhaal: eerst
 wat er draait zonder contracttesten, dan wat die toevoegen.
 
 ```sh
@@ -71,19 +71,19 @@ ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
 
 Leg daarna de twee rapporten naast elkaar. **Ze dekken hetzelfde:** dezelfde twee
 deelsystemen, dezelfde versies, dezelfde omgevingen, dezelfde pipelines. Het enige verschil
-is dat hoofdstuk 1 contracttesten doet — 28 regels tegenover 37, en die negen zijn met naam
+is dat scenario 1 contracttesten doet — 28 regels tegenover 37, en die negen zijn met naam
 te noemen.
 
-> Het werk dat contracttesten toevoegt = wat hoofdstuk 1 doet − wat hoofdstuk 0 doet.
+> Het werk dat contracttesten toevoegt = wat scenario 1 doet − wat scenario 0 doet.
 
 Beide zijn groen, en dat is met opzet: deze showcase toont het mechanisme en niet het
 invoeren ervan. In een bestaande omgeving levert de eerste contractverificatie meestal een
 lijst op — en dat is het echte werk van een squad. Wat het gereedschap doet is die lijst
 eindig en precies maken.
 
-## De hoofdstukken
+## De scenario's
 
-| # | Hoofdstuk | Waar het over gaat | Staat |
+| # | Scenario | Waar het over gaat | Staat |
 |---|---|---|---|
 | 0 | [Startsituatie](00-start/) | hoe het gaat **zonder** contracttesten | **werkt** |
 | 1 | [Basis (API)](01-basis/) | hoe het gaat **met** contracttesten — Order → Payment, REST | **werkt** |
@@ -96,8 +96,8 @@ eindig en precies maken.
 | 8 | [Frontend binnen een deelsysteem](08-frontend-binnenkant/) | Angular → eigen backend | nog niet |
 | 9 | [Frontend in shell](09-frontend-shell/) | shell ↔ remote, module-API | nog niet |
 
-Hoofdstuk 1 is de referentie: die schrijft de opzet volledig uit, de andere vullen aan.
-Hoofdstuk 0 varieert niets — het laat zien waar de rest vandaan komt.
+Scenario 1 is de referentie: die schrijft de opzet volledig uit, de andere vullen aan.
+Scenario 0 varieert niets — het laat zien waar de rest vandaan komt.
 
 ## De stubbundel voor showcase-website
 

@@ -1,13 +1,13 @@
 # 1. Basis (API)
 
-> Vereist: [hoofdstuk 0](../00-start/README.md). Dit hoofdstuk begint waar dat ophoudt.
+> Vereist: [scenario 0](../00-start/README.md). Dit scenario begint waar dat ophoudt.
 
 Twee deelsystemen, één grens: Order (consumer) → Payment (provider), REST, spec-first,
-contract in Apicurio. Dit hoofdstuk is de referentie-implementatie: het beschrijft de
+contract in Apicurio. Dit scenario is de referentie-implementatie: het beschrijft de
 opzet die de andere showcases alleen nog aanvullen.
 
 **Wat het aantoont en waarom het zo werkt** staat in
-[docs/showcase-cbt.md](../docs/showcase-cbt.md), hoofdstuk 1. Hieronder staat hoe je het
+[docs/showcase-cbt.md](../docs/showcase-cbt.md), scenario 1. Hieronder staat hoe je het
 draait.
 
 ---
@@ -15,7 +15,7 @@ draait.
 ## De korte weg
 
 ```sh
-00-start/demo/demo.sh          # eerst hoofdstuk 0: de startsituatie
+00-start/demo/demo.sh          # eerst scenario 0: de startsituatie
 01-basis/demo/demo.sh          # dan dit: het register en de contracttesten erbij
 01-basis/demo/demo.sh --stap   # met een pauze ertussen, voor een presentatie
 ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
@@ -28,7 +28,7 @@ dan zie je het deelsysteem door de gang lopen en bij elke gate een oordeel krijg
 
 Alleen de terminal is ook goed: `CBT_LIVE=0 01-basis/demo/demo.sh`.
 
-De demo begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien al, en er is geen
+De demo begint waar scenario 0 ophoudt: beide deelsystemen draaien al, en er is geen
 register. Hier komt eerst het register erbij, en daarna loopt dezelfde gang nog een keer —
 dezelfde deelsystemen, dezelfde versies, nu met gate, stub en verificatie aan beide kanten.
 Zo zie je wat contracttesten toevoegt in plaats van dat je het moet geloven.
@@ -38,7 +38,7 @@ Achteraf blijven Test en Acceptatie staan om naar te kijken; `ci/opruimen-alles.
 ook die weg.
 
 **Opnieuw draaien kan meteen.** De demo ruimt eerst zijn eigen sporen op — het register en
-de CI-omgevingen — en laat staan wat hoofdstuk 0 heeft neergezet. Dat is nodig omdat een
+de CI-omgevingen — en laat staan wat scenario 0 heeft neergezet. Dat is nodig omdat een
 contractversie onveranderlijk is: `1.0.0` een tweede keer publiceren levert een 409, en dat
 hoort ook zo.
 
@@ -96,7 +96,7 @@ Wat deze pipeline doet, leidt hij af uit `deelsystemen/<naam>/grenzen.env`:
 
 Serveert een deelsysteem een contract, dan volgen de drift-check en de providerverificatie.
 Pint hij er een, dan een stub en de consumerverificatie in beide richtingen. Payment doet
-nu het eerste, Order het tweede — en in hoofdstuk 6 doet Payment allebei zonder dat er een
+nu het eerste, Order het tweede — en in scenario 6 doet Payment allebei zonder dat er een
 script bij hoeft. Een rol hoort bij een grens, niet bij een deelsysteem.
 
 De omgeving wordt na afloop opgeruimd, ook als er iets faalt.
@@ -123,9 +123,9 @@ curl -s http://localhost:8081/actuator/info
 | `build.version` | 1.0.0 | de microservice, uit de pom |
 | `contract.serveert` | 1.0.0 | de grens, uit het register |
 
-Ze staan nu alle drie op 1.0.0, en dat is opzet: tussen hoofdstuk 0 en 1 verandert er geen
+Ze staan nu alle drie op 1.0.0, en dat is opzet: tussen scenario 0 en 1 verandert er geen
 enkel versienummer, zodat het verschil tussen de twee rapporten alleen contracttesten kan
-zijn. Vanaf hoofdstuk 2 lopen ze uit elkaar, en dan is het onderscheid het punt.
+zijn. Vanaf scenario 2 lopen ze uit elkaar, en dan is het onderscheid het punt.
 
 ### 4 — het deelsysteem naar Acceptatie
 
@@ -156,7 +156,7 @@ reden om een deployvolgorde af te spreken.
 
 ## Het testbewijs
 
-Elke stap van elke pipeline komt in één rapport, bij het hoofdstuk waar het over gaat:
+Elke stap van elke pipeline komt in één rapport, bij het scenario waar het over gaat:
 
 ```
 01-basis/rapport/rapport-cbt-01.md      chronologisch, met een tijdstip per stap
@@ -182,7 +182,7 @@ Dat is wat "releasen op testbewijs" concreet maakt: niet dát het groen was, maa
 wanneer is aangetoond en tegen welke contractversie.
 
 De map `*/rapport/` staat in `.gitignore` — een testbewijs hoort bij een run en niet bij de
-broncode. Een ander hoofdstuk schrijft naar zijn eigen bestand:
+broncode. Een ander scenario schrijft naar zijn eigen bestand:
 
 ```sh
 CBT_RAPPORT="$PWD/02-wijziging-zonder-breuk/rapport/rapport-cbt-02.md" \
@@ -208,7 +208,7 @@ zien wat er gebeurt.
 | `ci/drift.sh` | biedt de service precies de operaties die het contract belooft? |
 | `ci/smoke.sh` | de smoke van een deelsysteem, of `keten` over alle grenzen |
 | `ci/gebruikersflow.sh` | de flows van één deelsysteem, of `keten` over alles |
-| `ci/vergelijk-rapporten.sh` | toetst dat hoofdstuk 0 en 1 gelijk lopen, en leidt de toevoeging af |
+| `ci/vergelijk-rapporten.sh` | toetst dat scenario 0 en 1 gelijk lopen, en leidt de toevoeging af |
 | `ci/deploy.sh` | chart + release + omgevingswaarden |
 | `ci/versieconformiteit.sh` | wordt elke pin op deze omgeving daar ook geserveerd? |
 | `ci/toon-versies.sh` | wat draait er, uitgelezen bij de containers zelf |
@@ -236,7 +236,7 @@ groen draaien. Alleen de toetsing aan de spec ziet het.
 | Scène | Waarom het ertoe doet |
 |---|---|
 | Order draait groen zonder Payment in zijn CI-omgeving | de consumer is onafhankelijk van zijn buur |
-| De stub komt uit het register, niet uit een hoofd | vergelijk met `deelsystemen/order/stub-handgeschreven/` uit hoofdstuk 0 |
+| De stub komt uit het register, niet uit een hoofd | vergelijk met `deelsystemen/order/stub-handgeschreven/` uit scenario 0 |
 | `600.00` levert `CANCELLED`, geen fout | een afgewezen betaling is geen contractschending |
 | `amount: 0` levert 400 `INVALID_AMOUNT` | dát is er wel een |
 | Geen Acceptatie-pipeline wacht op de ander | de gebruikersflow is gedeeld en geen gate |

@@ -2,7 +2,7 @@
 # deelsysteem staat één keer beschreven. Een omgeving is een samenstelling van
 # deelsysteem-bestanden, geen eigen beschrijving.
 #
-# Payment heeft binnen de scope van hoofdstuk 1 geen buren, dus zijn CI-omgeving is dit
+# Payment heeft binnen de scope van scenario 1 geen buren, dus zijn CI-omgeving is dit
 # bestand en verder niets.
 
 services:

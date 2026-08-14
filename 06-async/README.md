@@ -8,4 +8,4 @@ geen response: provider-verificatie wordt *valideer wat ik publiceer*, consumer-
 server. De kleinste stap van de drie grenstypen — Apicurio is van origine een schema
 registry.
 
-Zie `docs/showcase-cbt.md`, hoofdstuk 6.
+Zie `docs/showcase-cbt.md`, scenario 6.

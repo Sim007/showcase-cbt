@@ -324,7 +324,7 @@ components:
 
     ScenarioId:
       type: string
-      description: Twee cijfers, zoals de hoofdstuknummers van de showcase.
+      description: Twee cijfers, zoals de scenarionummers van de showcase.
       pattern: '^[0-9]{2}$'
       example: '01'
 

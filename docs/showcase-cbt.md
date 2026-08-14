@@ -1,6 +1,6 @@
 # Showcase CBT
 
-Een showcase die contract-based testing aantoonbaar maakt. Het contexthoofdstuk beschrijft wat overal gelijk is; elk hoofdstuk daarna is los te lezen.
+Een showcase die contract-based testing aantoonbaar maakt. Het contexthoofdstuk beschrijft wat overal gelijk is; elk scenario daarna is los te lezen.
 
 **Dit document beschrijft wat er is en waarom** — de opzet zoals hij nu staat, zonder versiegeschiedenis: git houdt bij wat er is veranderd. Twee andere bestanden in deze map dragen wat hier niet in past. `besluiten.md` bevat de afwegingen achter de keuzes: wat er is geprobeerd, wat eruit kwam, wat het kost en wanneer het herzien moet worden. `security.md` doet hetzelfde voor beveiligingsbevindingen. Beide zijn gedateerd, want een afweging is houdbaar zolang de omstandigheden gelijk blijven en niet langer. Wie zich bij een keuze hieronder afvraagt *waarom dan*, vindt het antwoord daar.
 
@@ -79,11 +79,11 @@ Die twee zijn precies wat de showcase toevoegt, en verder niets.
 | Handgeschreven mocks van de buur | een mock die de schrijver bedacht, bevestigt wat de schrijver dacht. De stub komt uit het contract |
 | De vraag "durven we te releasen" | vervangen door een oordeel dat op een artefact is vastgesteld |
 
-**Elk hoofdstuk toont een delta, geen systeem.** De vraag die de showcase beantwoordt is niet *hoe bouw je dit* maar *wat verandert er in de opzet*. Daarom bouwt hij de bestaande praktijk niet na maar veronderstelt hem, en laat hij per hoofdstuk zien wat erbij komt en wat eraf kan.
+**Elk scenario toont een delta, geen systeem.** De vraag die de showcase beantwoordt is niet *hoe bouw je dit* maar *wat verandert er in de opzet*. Daarom bouwt hij de bestaande praktijk niet na maar veronderstelt hem, en laat hij per scenario zien wat erbij komt en wat eraf kan.
 
 ### Waarom deze showcase
 
-Contract-based testing laat zich slecht uitleggen en goed laten zien. Deze showcase is daarvoor gemaakt: een werkend voorbeeld per grenstype, draaiend op één laptop, om het mechanisme te tonen in plaats van te beschrijven. Elk hoofdstuk behandelt één testfeature en werkt op zichzelf.
+Contract-based testing laat zich slecht uitleggen en goed laten zien. Deze showcase is daarvoor gemaakt: een werkend voorbeeld per grenstype, draaiend op één laptop, om het mechanisme te tonen in plaats van te beschrijven. Elk scenario behandelt één testfeature en werkt op zichzelf.
 
 **Eigenaarschap.** Deze showcase en de bijbehorende repository zijn in eigen tijd gebouwd, staan onder eigen naam en zijn vrij te gebruiken door iedereen. Het systeem is fictief.
 
@@ -91,7 +91,7 @@ Contract-based testing laat zich slecht uitleggen en goed laten zien. Deze showc
 
 De showcase is tot stand gekomen in samenwerking met Claude en gebouwd met Claude Code.
 
-Daaruit volgt waar "af" ligt: een hoofdstuk is klaar zodra het argument overkomt, niet zodra hij de kwaliteit heeft die van productiecode verwacht zou worden.
+Daaruit volgt waar "af" ligt: een scenario is klaar zodra het argument overkomt, niet zodra hij de kwaliteit heeft die van productiecode verwacht zou worden.
 
 **Randvoorwaarden waaronder dit werkt.** Deze manier van contracttesten is niet universeel; ze veronderstelt zes dingen, en die verklaren de keuzes die anders willekeurig lijken.
 
@@ -114,9 +114,9 @@ Daaruit volgt waarom rood eerste prioriteit is, en het is een hardere reden dan 
 
 ### De opbouw
 
-De showcase loopt langs drie assen. Een deel varieert het **grenstype**: hetzelfde mechanisme, een ander contractformaat. Hoofdstuk 2, 3 en 5 variëren de **levenscyclus**: dezelfde grens, een later moment in het leven van een contract. Hoofdstuk 4 varieert de **testsoort**: dezelfde grens, een andere vraag. Hoofdstuk 8 gaat over de **binnenkant** van een deelsysteem en is daarmee het enige dat geen grens beschrijft.
+De showcase loopt langs drie assen. Een deel varieert het **grenstype**: hetzelfde mechanisme, een ander contractformaat. Scenario 2, 3 en 5 variëren de **levenscyclus**: dezelfde grens, een later moment in het leven van een contract. Scenario 4 varieert de **testsoort**: dezelfde grens, een andere vraag. Scenario 8 gaat over de **binnenkant** van een deelsysteem en is daarmee het enige dat geen grens beschrijft.
 
-| # | Hoofdstuk | As | Onderwerp | Vereist |
+| # | Scenario | As | Onderwerp | Vereist |
 |---|---|---|---|---|
 | 0 | Startsituatie | — | wat er draait vóór contracttesten | — |
 | 1 | CBT basis (API) | grenstype | Order → Payment, REST sync, OpenAPI | 0 |
@@ -129,13 +129,13 @@ De showcase loopt langs drie assen. Een deel varieert het **grenstype**: hetzelf
 | 8 | Frontend binnen een deelsysteem | binnenkant | Angular → eigen backend | `ci/` en het eigen deelsysteem |
 | 9 | Frontend in shell | grenstype | shell ↔ remote, module-API | eigen model |
 
-Hoofdstuk 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de contractlevenscyclus overheen loopt, geen vijf basissen. Hoofdstuk 1 tot en met 5 dekken de testfeatures F2 (een REST-grens), F3 (versiecontrole bij deployment) en F4 (monitoring op productie); 6 en 7 dekken F5 (async) en F6 (SOAP), en 9 gaat over een frontend-grens. Hoofdstuk 8 heeft bewust geen testfeature: de kaders gelden op grenzen, niet op de binnenkant.
+Scenario 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de contractlevenscyclus overheen loopt, geen vijf basissen. Scenario 1 tot en met 5 dekken de testfeatures F2 (een REST-grens), F3 (versiecontrole bij deployment) en F4 (monitoring op productie); 6 en 7 dekken F5 (async) en F6 (SOAP), en 9 gaat over een frontend-grens. Scenario 8 heeft bewust geen testfeature: de kaders gelden op grenzen, niet op de binnenkant.
 
-**Hoofdstuk 0 varieert niets.** Het staat er om te laten zien waar de andere hoofdstukken vandaan komen. Zonder dat is elke "toevoeging" een bewering die niemand kan nakijken, en dat is precies het gebrek dat deze showcase op grenzen aanwijst — toegepast op zichzelf.
+**Scenario 0 varieert niets.** Het staat er om te laten zien waar de andere scenario's vandaan komen. Zonder dat is elke "toevoeging" een bewering die niemand kan nakijken, en dat is precies het gebrek dat deze showcase op grenzen aanwijst — toegepast op zichzelf.
 
-**De showcase is een boom, geen rij.** De kolom *Vereist* zegt wat er af moet zijn, en dat is niet altijd een hoofdstuk: 6 en 7 hebben `ci/` en het deelsysteem Payment nodig, maar niets uit de tests van hoofdstuk 1. Dat services op de hoofdmap staan in plaats van in een hoofdstukmap, maakt zo'n afhankelijkheid pas benoembaar. De nummering is vlak gehouden omdat 1.2 in dit document al een subparagraaf aanduidt.
+**De showcase is een boom, geen rij.** De kolom *Vereist* zegt wat er af moet zijn, en dat is niet altijd een scenario: 6 en 7 hebben `ci/` en het deelsysteem Payment nodig, maar niets uit de tests van scenario 1. Dat services op de hoofdmap staan in plaats van in een scenariomap, maakt zo'n afhankelijkheid pas benoembaar. De nummering is vlak gehouden omdat 1.2 in dit document al een subparagraaf aanduidt.
 
-**De volgorde is de bouwvolgorde.** Hoofdstuk 1 draagt ruwweg de helft van al het bouwwerk; 2 tot en met 5 zijn er kleine uitbreidingen op en maken het verhaal compleet tot het einde van de contractlevenscyclus. Pas daarna wordt het contractformaat gevarieerd. De frontend staat achteraan omdat hij het model oprekt en een nog openstaande keuze raakt.
+**De volgorde is de bouwvolgorde.** Scenario 1 draagt ruwweg de helft van al het bouwwerk; 2 tot en met 5 zijn er kleine uitbreidingen op en maken het verhaal compleet tot het einde van de contractlevenscyclus. Pas daarna wordt het contractformaat gevarieerd. De frontend staat achteraan omdat hij het model oprekt en een nog openstaande keuze raakt.
 
 ### De repository
 
@@ -148,7 +148,7 @@ Hoofdstuk 1 tot en met 5 gebruiken dezelfde grens: het is één basis waar de co
 
 **Eén uitzondering: de site.** `showcase-website` staat in een eigen repository en is niet in deze opgenomen. Hij is van een andere squad, met een eigen backlog en een eigen tempo, en wat de twee verbindt is het contract op de grens ertussen en verder niets. Dat is geen praktische keuze maar de opzet: dit is de enige grens in de showcase waar het eigenaarschap werkelijk wisselt, en hem in deze repository trekken zou precies weghalen wat hem de moeite waard maakt. De afweging staat in `docs/showcase-site.md`, de rolverdeling in `docs/context.md` deel B.
 
-**Eén repository.** Niet negen repositories: dan ontstaan negen kopieën van dezelfde scripts die uit elkaar lopen, en toont de showcase onbedoeld aan dat het niet standaardiseerbaar is. Binnen die ene repository staat wat gedeeld is op de hoofdmap en heeft elk hoofdstuk daarnaast een eigen genummerde map.
+**Eén repository.** Niet negen repositories: dan ontstaan negen kopieën van dezelfde scripts die uit elkaar lopen, en toont de showcase onbedoeld aan dat het niet standaardiseerbaar is. Binnen die ene repository staat wat gedeeld is op de hoofdmap en heeft elk scenario daarnaast een eigen genummerde map.
 
 ```
 showcase-cbt/
@@ -166,7 +166,7 @@ showcase-cbt/
 │   ├── controle-gates.sh     de gates over de gates: zie 1.13, O15
 │   ├── toets-tolerantie.sh   weigert streng en accepteert tolerant
 │   ├── bouw-stubbundel.sh    de levering aan showcase-website
-│   ├── vergelijk-rapporten.sh  de aftrekking van hoofdstuk 0 en 1
+│   ├── vergelijk-rapporten.sh  de aftrekking van scenario 0 en 1
 │   ├── stubbundel/           wat mee de bundel in gaat, zonder netwerkpad
 │   ├── fixtures/             twee rapporten als invoer voor de aftrekking
 │   └── lib/                  tools.sh, en commandowoorden.awk voor de gates
@@ -201,23 +201,23 @@ showcase-cbt/
 └── 09-frontend-shell/
 ```
 
-**Onder `contracts/` staan twee soorten grenzen, en dat is geen slordigheid.** `payment/` is de grens uit de showcase: verzonnen, tussen twee verzonnen deelsystemen, en het onderwerp van hoofdstuk 1 tot en met 5. `showcase-cbt/` is de grens uit de realisatie: `scenario-api` en `run-stream`, tussen deze repository en showcase-website, met twee squads die er werkelijk aan weerszijden zitten. Dezelfde opzet, hetzelfde register, hetzelfde gereedschap — maar de een wordt getóónd en de ander wordt geléést. Of ze in deze repository uit elkaar moeten, is O14; wat hier vastligt is dát het er twee zijn, zodat niemand `scenario-api` voor een scenariogrens aanziet.
+**Onder `contracts/` staan twee soorten grenzen, en dat is geen slordigheid.** `payment/` is de grens uit de showcase: verzonnen, tussen twee verzonnen deelsystemen, en het onderwerp van scenario 1 tot en met 5. `showcase-cbt/` is de grens uit de realisatie: `scenario-api` en `run-stream`, tussen deze repository en showcase-website, met twee squads die er werkelijk aan weerszijden zitten. Dezelfde opzet, hetzelfde register, hetzelfde gereedschap — maar de een wordt getóónd en de ander wordt geléést. Of ze in deze repository uit elkaar moeten, is O14; wat hier vastligt is dát het er twee zijn, zodat niemand `scenario-api` voor een scenariogrens aanziet.
 
 **Wat hier nog niet staat**, is wat qua structuur nog beweegt: `omgevingen/*.env`, `deelsystemen/*/grenzen.env` en `deelsystemen/*/releases/`. Die horen bij de showcase en niet bij de realisatie, en ze worden hier opgenomen zodra de versieafspraak vaststaat — ook dat valt onder O14.
 
-Twee regels dragen deze indeling. **Wat gedeeld is, staat op de hoofdmap en bestaat één keer**: `ci/`, `contracts/`, `playwright/` en `deelsystemen/`. Zodra een hoofdstuk een eigen kopie van `get-contract.sh` of van Payment krijgt, is de claim dat het mechanisme uniform is niet meer waar. En **de genummerde mappen bevatten geen services, maar tests**: een compose die de juiste deelsystemen samenstelt, een demoscript, hoofdstukspecifieke specs en een README die het argument uitlegt.
+Twee regels dragen deze indeling. **Wat gedeeld is, staat op de hoofdmap en bestaat één keer**: `ci/`, `contracts/`, `playwright/` en `deelsystemen/`. Zodra een scenario een eigen kopie van `get-contract.sh` of van Payment krijgt, is de claim dat het mechanisme uniform is niet meer waar. En **de genummerde mappen bevatten geen services, maar tests**: een compose die de juiste deelsystemen samenstelt, een demoscript, scenariospecifieke specs en een README die het argument uitlegt.
 
-Dat een deelsysteem niet in een hoofdstukmap thuishoort, volgt uit de showcase zelf: hoofdstuk 6 breidt Payment uit met een uitgaande grens naar Notification, en hoofdstuk 8 hangt er een frontend aan. Payment groeit dus mee met meerdere hoofdstukken en kan niet van één ervan zijn. De nummering hoort bij de tests, niet bij de code die getest wordt.
+Dat een deelsysteem niet in een scenariomap thuishoort, volgt uit de showcase zelf: scenario 6 breidt Payment uit met een uitgaande grens naar Notification, en scenario 8 hangt er een frontend aan. Payment groeit dus mee met meerdere scenario's en kan niet van één ervan zijn. De nummering hoort bij de tests, niet bij de code die getest wordt.
 
-**Een deelsysteem bestaat uit services.** De deelsysteemmap is daarom een houder en zelf geen service: elke microservice en elke micro-frontend staat eronder als eigen service, met een eigen build en een eigen image. Payment wordt zo `deelsystemen/payment/payment-api/`, met `payment-mf/` ernaast in plaats van in `08-frontend-binnenkant/`. Dat is dezelfde regel een niveau dieper: een service hoort bij het deelsysteem dat hem bezit, niet bij het hoofdstuk dat hem toevallig als eerste nodig heeft. Elk deelsysteem met een gezicht naar de gebruiker heeft een eigen micro-frontend: `order-mf`, `payment-mf`, `notification-mf`. Welke daarvan hoofdstuk 8 uitwerkt, is een andere vraag (O9).
+**Een deelsysteem bestaat uit services.** De deelsysteemmap is daarom een houder en zelf geen service: elke microservice en elke micro-frontend staat eronder als eigen service, met een eigen build en een eigen image. Payment wordt zo `deelsystemen/payment/payment-api/`, met `payment-mf/` ernaast in plaats van in `08-frontend-binnenkant/`. Dat is dezelfde regel een niveau dieper: een service hoort bij het deelsysteem dat hem bezit, niet bij het scenario dat hem toevallig als eerste nodig heeft. Elk deelsysteem met een gezicht naar de gebruiker heeft een eigen micro-frontend: `order-mf`, `payment-mf`, `notification-mf`. Welke daarvan scenario 8 uitwerkt, is een andere vraag (O9).
 
-**De portal stelt samen, hij bezit niet.** De shell laadt die micro-frontends op de pagina, maar hun broncode blijft bij het deelsysteem dat ze bezit. Zou `payment-mf` onder `deelsystemen/portal/` staan, dan wisselt er bij shell ↔ remote geen eigenaarschap meer en heeft hoofdstuk 9 geen grens meer om te tonen. Samenstellen op runtime en bezitten in de repository zijn hier twee verschillende dingen — en dat verschil is nu juist wat een frontend-grens tot een grens maakt.
+**De portal stelt samen, hij bezit niet.** De shell laadt die micro-frontends op de pagina, maar hun broncode blijft bij het deelsysteem dat ze bezit. Zou `payment-mf` onder `deelsystemen/portal/` staan, dan wisselt er bij shell ↔ remote geen eigenaarschap meer en heeft scenario 9 geen grens meer om te tonen. Samenstellen op runtime en bezitten in de repository zijn hier twee verschillende dingen — en dat verschil is nu juist wat een frontend-grens tot een grens maakt.
 
-Er zijn vier deelsystemen. Order en Payment dragen de grens uit hoofdstuk 1. Notification komt erbij in hoofdstuk 6 — Payment → Notification is een grens, dus wisselt daar eigenaarschap, en dan is Notification geen service van Payment maar een deelsysteem naast Payment. Portal komt erbij in hoofdstuk 9, met de shell erin: die wordt door een ander team geleverd dan de remotes die erin hangen, en dat is precies wat die grens interessant maakt.
+Er zijn vier deelsystemen. Order en Payment dragen de grens uit scenario 1. Notification komt erbij in scenario 6 — Payment → Notification is een grens, dus wisselt daar eigenaarschap, en dan is Notification geen service van Payment maar een deelsysteem naast Payment. Portal komt erbij in scenario 9, met de shell erin: die wordt door een ander team geleverd dan de remotes die erin hangen, en dat is precies wat die grens interessant maakt.
 
 Losstaand te draaien is daarmee elke genummerde map, mits de deelsystemen die hij samenstelt gebouwd zijn.
 
-**Testgereedschap wordt hergebruikt, niet per hoofdstuk opnieuw ingericht.** Playwright staat op de hoofdmap in `playwright/` — niet onder een naam als `e2e`, want hij bedient meerdere lagen. Eén smoke-spec wordt op een base-URL geparametriseerd, met `ci/smoke.sh <base-url>` als enige aanroeppunt. Hij draait op Test en toont dat de keten loopt. Op de CI-omgeving draait geen smoke maar de volledige contractverificatie, en op Acceptatie de gebruikersflow; de drie lagen doen elk hun eigen werk en herhalen elkaar niet. Playwright is in dit soort omgevingen doorgaans al in gebruik voor de e2e van een deelsysteem; de showcase sluit daarop aan in plaats van er een tweede werkwijze naast te zetten. Showcasespecifieke specs — bijvoorbeeld die van de UI in hoofdstuk 8 — staan in de hoofdstukmap zelf.
+**Testgereedschap wordt hergebruikt, niet per scenario opnieuw ingericht.** Playwright staat op de hoofdmap in `playwright/` — niet onder een naam als `e2e`, want hij bedient meerdere lagen. Eén smoke-spec wordt op een base-URL geparametriseerd, met `ci/smoke.sh <base-url>` als enige aanroeppunt. Hij draait op Test en toont dat de keten loopt. Op de CI-omgeving draait geen smoke maar de volledige contractverificatie, en op Acceptatie de gebruikersflow; de drie lagen doen elk hun eigen werk en herhalen elkaar niet. Playwright is in dit soort omgevingen doorgaans al in gebruik voor de e2e van een deelsysteem; de showcase sluit daarop aan in plaats van er een tweede werkwijze naast te zetten. Showcasespecifieke specs — bijvoorbeeld die van de UI in scenario 8 — staan in de scenariomap zelf.
 
 **De smoke gaat niet over inhoud.** De gedeelde smoke-spec assert uitsluitend op HTTP-status en op het doorlopen van de keten — geen veldwaarden, geen businessregels. Anders draait hij groen tegen de stub en rood tegen de echte buur om een reden die niets met de grens te maken heeft, en verhuist bovendien werk van een goedkope laag naar een dure.
 
@@ -239,7 +239,7 @@ Losstaand te draaien is daarmee elke genummerde map, mits de deelsystemen die hi
 
 ### Wat overal gelijk is
 
-Dit is de standaard. Wijkt een hoofdstuk hiervan af, dan is dat een bevinding en geen variant.
+Dit is de standaard. Wijkt een scenario hiervan af, dan is dat een bevinding en geen variant.
 
 | | Invulling |
 |---|---|
@@ -252,13 +252,13 @@ Dit is de standaard. Wijkt een hoofdstuk hiervan af, dan is dat een bevinding en
 | Deploy | per deelsysteem, één tegelijk; de gate is de vorige omgeving groen |
 | Testlagen | unit, integratie, e2e — contractverificatie is integratie met de spec als norm |
 | Stub | gegenereerd uit de spec, gevalideerd bij het maken, nooit gecommit |
-| Scenario's | de contractlevenscyclus uit hoofdstuk 2 tot en met 5 geldt voor elke grens |
+| Scenario's | de contractlevenscyclus uit scenario 2 tot en met 5 geldt voor elke grens |
 
 ### Het fictieve systeem en het contract
 
-De hele showcase gebruikt hetzelfde fictieve systeem: **Order → Payment → Notification**, met Payment als centraal deelsysteem. Hoofdstuk 1 gebruikt de grens Order → Payment.
+De hele showcase gebruikt hetzelfde fictieve systeem: **Order → Payment → Notification**, met Payment als centraal deelsysteem. Scenario 1 gebruikt de grens Order → Payment.
 
-**Naamgeving in het register:** groep `payment` (de aanbieder), artifact `payment-api` (de interface). De groep is het deelsysteem dat het contract bezit en niet de grens: een grens heeft twee kanten en één eigenaar, en die eigenaar is de provider. Zo staat een tweede grens van hetzelfde deelsysteem — Payment → Notification in hoofdstuk 6 — vanzelf in dezelfde groep.
+**Naamgeving in het register:** groep `payment` (de aanbieder), artifact `payment-api` (de interface). De groep is het deelsysteem dat het contract bezit en niet de grens: een grens heeft twee kanten en één eigenaar, en die eigenaar is de provider. Zo staat een tweede grens van hetzelfde deelsysteem — Payment → Notification in scenario 6 — vanzelf in dezelfde groep.
 
 **Versie in het pad.** De provider moet bij een major twee versies naast elkaar serveren. Een padprefix maakt dat zichtbaar — in een demo zie je letterlijk twee routes draaien — waar een versieheader onzichtbaar blijft.
 
@@ -390,11 +390,11 @@ De implementatie houdt dezelfde regels aan en accepteert niet meer dan hij beloo
 
 ### Leeswijzer
 
-Elk hoofdstuk is los te lezen en volgt dezelfde indeling: waar de showcase over gaat, wat hij toevoegt ten opzichte van deze context, de opzet met uitsluitend de afwijkingen, de demo, en de openstaande punten.
+Elk scenario is los te lezen en volgt dezelfde indeling: waar de showcase over gaat, wat hij toevoegt ten opzichte van deze context, de opzet met uitsluitend de afwijkingen, de demo, en de openstaande punten.
 
-Hoofdstuk 1 is de uitzondering: die schrijft de gedeelde opzet volledig uit en dient daarmee als referentie voor de andere acht.
+Scenario 1 is de uitzondering: die schrijft de gedeelde opzet volledig uit en dient daarmee als referentie voor de andere acht.
 
-Niemand leest negen hoofdstukken. Vijf leespaden:
+Niemand leest negen scenario's. Vijf leespaden:
 
 | Vraag | Lees |
 |---|---|
@@ -408,11 +408,11 @@ Niemand leest negen hoofdstukken. Vijf leespaden:
 
 ## 0. Startsituatie
 
-> Vereist: niets. Hoofdstuk 1 vereist dit hoofdstuk.
+> Vereist: niets. Scenario 1 vereist dit scenario.
 
-Dit hoofdstuk toont wat er draait vóórdat contracttesten bestaan. Wat er wel en niet is, staat in *De startsituatie* hierboven; hier wordt het gedraaid in plaats van beschreven.
+Dit scenario toont wat er draait vóórdat contracttesten bestaan. Wat er wel en niet is, staat in *De startsituatie* hierboven; hier wordt het gedraaid in plaats van beschreven.
 
-**Het staat apart om één reden.** Zat de startsituatie in hetzelfde script als hoofdstuk 1, dan hield niets tegen dat hij het register aanraakt, en rustte de bewering "hier speelt het schema geen rol" op discipline. Een eigen map die alleen de scripts van vóór CBT aanroept, maakt er een eigenschap van de indeling van. Dat is dezelfde zet als "de omgeving ís het netwerk".
+**Het staat apart om één reden.** Zat de startsituatie in hetzelfde script als scenario 1, dan hield niets tegen dat hij het register aanraakt, en rustte de bewering "hier speelt het schema geen rol" op discipline. Een eigen map die alleen de scripts van vóór CBT aanroept, maakt er een eigenschap van de indeling van. Dat is dezelfde zet als "de omgeving ís het netwerk".
 
 ### 0.1 Eén doorloop, twee deelsystemen
 
@@ -428,17 +428,17 @@ Elk deelsysteem loopt zijn eigen weg af, van code tot Acceptatie: eerst Payment,
 
 **De CI-omgeving bestaat hier al.** Wat er niet is, is de herkomst van wat erin staat: de stub is met de hand geschreven door degene die hem gebruikt, niet gegenereerd uit een gepubliceerd contract. Hij dekt wat de schrijver nodig had, en niets meer — zo schrijf je een stub als er geen norm is om hem uit af te leiden.
 
-**De gebruikersflow hangt aan geen enkele deploy.** Hij spant over de keten en kan dus niet van één squad zijn; hij draait één keer, nadat beide deelsystemen er staan. In hoofdstuk 0 valt dat samen met de volgorde en levert het geen spanning op — daar deployt de tribe toch samen. In hoofdstuk 1 is het het verschil tussen zelfstandig releasen en op elkaar wachten.
+**De gebruikersflow hangt aan geen enkele deploy.** Hij spant over de keten en kan dus niet van één squad zijn; hij draait één keer, nadat beide deelsystemen er staan. In scenario 0 valt dat samen met de volgorde en levert het geen spanning op — daar deployt de tribe toch samen. In scenario 1 is het het verschil tussen zelfstandig releasen en op elkaar wachten.
 
-**Hoofdstuk 1 doet exact hetzelfde.** Dezelfde twee deelsystemen, dezelfde versies, dezelfde omgevingen — alleen mét contracttesten. Er verandert geen enkel versienummer tussen de twee hoofdstukken, en dat is opzet: zo is er precies één variabele.
+**Scenario 1 doet exact hetzelfde.** Dezelfde twee deelsystemen, dezelfde versies, dezelfde omgevingen — alleen mét contracttesten. Er verandert geen enkel versienummer tussen de twee scenario's, en dat is opzet: zo is er precies één variabele.
 
-> **Het werk dat contracttesten toevoegt = wat hoofdstuk 1 doet − wat hoofdstuk 0 doet.**
+> **Het werk dat contracttesten toevoegt = wat scenario 1 doet − wat scenario 0 doet.**
 
 Die aftrekking is alleen zuiver als al het andere gelijk blijft. Vandaar geen bugfix, geen versiebump en geen extra deelsysteem aan één van beide kanten. Wat overblijft in het verschil is het register, de stub, de verificatie aan beide kanten, de drift-check en de versieconformiteit — en niets anders.
 
 **Wat er niet gebeurt weegt even zwaar als wat er wel gebeurt.** In geen enkele stap komt het schema van de grens voor. Het ligt in `contracts/`, het wordt niet gelezen, en niets valt erop. Dat is "schema-first is er wel, maar niet afdwingbaar" aangetoond in plaats van beweerd.
 
-**Dit hoofdstuk is de makkelijkste om verkeerd te lezen.** Alles wordt groen, en terecht. Het risico is dat het publiek concludeert dat er niets aan de hand is. Het punt is niet dat er iets misgaat; het punt is dat je aan deze uitkomst niet kunt zien óf er iets misgaat aan de grens.
+**Dit scenario is de makkelijkste om verkeerd te lezen.** Alles wordt groen, en terecht. Het risico is dat het publiek concludeert dat er niets aan de hand is. Het punt is niet dat er iets misgaat; het punt is dat je aan deze uitkomst niet kunt zien óf er iets misgaat aan de grens.
 
 ### 0.2 Wat er is en wat er niet is
 
@@ -473,8 +473,8 @@ merkt het.
 Die mock is niet fout — hij is **onbewijsbaar**. Hij bevestigt wat de schrijver dacht dat
 Payment doet, en blijft groen als Payment verandert.
 
-Daarmee is wat hoofdstuk 1 toevoegt niet *meer* testen, maar één ding waaruit de rest volgt:
-een norm die buiten de test ligt. Elk "niet" in de tabel hierboven is in hoofdstuk 1 een
+Daarmee is wat scenario 1 toevoegt niet *meer* testen, maar één ding waaruit de rest volgt:
+een norm die buiten de test ligt. Elk "niet" in de tabel hierboven is in scenario 1 een
 "wel", en telkens is het register de bron.
 
 **Eén ervan is geen test.** De gate op een schemawijziging vergelijkt twee artefacten en
@@ -483,9 +483,9 @@ familie als een linter, en de reden dat hij een eigen pipeline heeft (1.4).
 
 ### 0.3 Wat het oplevert
 
-Een eigen rapport, `00-start/rapport/rapport-cbt-00`, naast dat van hoofdstuk 1. Twee rapporten naast elkaar tonen het verschil beter dan één rapport met een knip erin — en omdat de dekking gelijk is, is dat verschil af te lezen in plaats van te geloven.
+Een eigen rapport, `00-start/rapport/rapport-cbt-00`, naast dat van scenario 1. Twee rapporten naast elkaar tonen het verschil beter dan één rapport met een knip erin — en omdat de dekking gelijk is, is dat verschil af te lezen in plaats van te geloven.
 
-| | Hoofdstuk 0 | Hoofdstuk 1 |
+| | Scenario 0 | Scenario 1 |
 |---|---|---|
 | Deelsystemen | order en payment | order en payment |
 | Versies | alle 1.0.0 | alle 1.0.0 |
@@ -506,7 +506,7 @@ Een eigen rapport, `00-start/rapport/rapport-cbt-00`, naast dat van hoofdstuk 1.
 
 Dat is het antwoord op "wat kost contracttesten en wat levert het op", uitgedrukt in wat er werkelijk draait in plaats van in een belofte. Het is ook een ondergrens: in een bestaande omgeving komt daar eenmalig het werk bij om te repareren wat de eerste verificatie aan het licht brengt (zie 1.11).
 
-**Die aftrekking wordt afgedwongen en niet aangenomen.** `ci/vergelijk-rapporten.sh` toetst dat elke stap uit hoofdstuk 0 in dezelfde volgorde terugkomt in hoofdstuk 1, en leidt het verschil daaruit af. Dat is nodig omdat de koppeling tussen de twee hoofdstukken anders stilletjes breekt: voegt een later hoofdstuk een deelsysteem toe aan één van beide, of loopt de volgorde uiteen, dan blijven allebei gewoon groen en wordt alleen de conclusie onwaar. Een bewering die nergens door wordt afgedwongen is precies wat deze showcase aanvalt — ook wanneer de showcase hem zelf doet.
+**Die aftrekking wordt afgedwongen en niet aangenomen.** `ci/vergelijk-rapporten.sh` toetst dat elke stap uit scenario 0 in dezelfde volgorde terugkomt in scenario 1, en leidt het verschil daaruit af. Dat is nodig omdat de koppeling tussen de twee scenario's anders stilletjes breekt: voegt een later scenario een deelsysteem toe aan één van beide, of loopt de volgorde uiteen, dan blijven allebei gewoon groen en wordt alleen de conclusie onwaar. Een bewering die nergens door wordt afgedwongen is precies wat deze showcase aanvalt — ook wanneer de showcase hem zelf doet.
 
 Wat níet in het verschil zit, is even belangrijk. De CI-omgeving stond er al, de stub stond er al, de smoke en de gebruikersflow stonden er al. Contracttesten voegt geen laag toe aan de piramide en geen omgeving aan de straat — het verandert waar de norm vandaan komt.
 
@@ -514,7 +514,7 @@ Wat níet in het verschil zit, is even belangrijk. De CI-omgeving stond er al, d
 
 ## 1. Basis (API)
 
-Twee deelsystemen, één grens: Order (consumer) → Payment (provider), REST, schema-first, contract in Apicurio. Dit hoofdstuk is de referentie-implementatie: het beschrijft de opzet die de andere showcases alleen nog aanvullen.
+Twee deelsystemen, één grens: Order (consumer) → Payment (provider), REST, schema-first, contract in Apicurio. Dit scenario is de referentie-implementatie: het beschrijft de opzet die de andere showcases alleen nog aanvullen.
 
 > Hieronder staat wat er is en waarom. **Hoe je het draait** staat in `01-basis/README.md`.
 
@@ -538,7 +538,7 @@ Dat werkt op één voorwaarde: de controles moeten de fout kunnen zien. De smoke
 
 **Er zijn twee versies, en ze bewegen los van elkaar.** De contractversie is die van de grens: hij staat in het register, de provider bepaalt hem via de diff-gate, en hij beweegt alleen als de grens verandert. De serviceversie is die van het deelsysteem: hij komt uit de build en beweegt bij elke release. Payment kan naar serviceversie 1.4.0 zonder dat de contractversie meebeweegt — en dat is precies waarom Order niets merkt, want die pint op het contract en niet op de service.
 
-De relatie is niet één-op-één. Vanaf hoofdstuk 3 serveert één serviceversie twee contractversies naast elkaar; aan de providerkant is het dus een verzameling. Aan de consumerkant blijft het één pin.
+De relatie is niet één-op-één. Vanaf scenario 3 serveert één serviceversie twee contractversies naast elkaar; aan de providerkant is het dus een verzameling. Aan de consumerkant blijft het één pin.
 
 **Onveranderlijkheid geldt voor elk artefact, niet alleen voor contracten.** Eén build levert één versie op, en die image gaat ongewijzigd door alle omgevingen. Geen hertagging, geen `-rc`-achtervoegsel dat later verdwijnt: dan is wat je getest hebt niet meer hetzelfde artefact als wat je uitlevert. Release candidate is een status, geen naam. Zakt een versie, dan komt er een volgende — net als in het register, waar ook geen rollback bestaat maar alleen een nieuwe versie.
 
@@ -572,7 +572,7 @@ Ze staan hier omdat een consumer erop stukloopt. Ongeschreven gedrag aan een gre
 
 Beide deelsystemen gebruiken een eigen H2-database in memory, met een repository ertussen, zodat de integratielaag iets te integreren heeft. Er is geen gedeelde database.
 
-**Het onderscheid tussen 400 en `DECLINED` is de kern van dit hoofdstuk.** Een ongeldig bedrag is een contractschending: het verzoek voldoet niet aan de specificatie, dus 400. Een afgewezen betaling is een geldig verzoek met een negatieve uitkomst: 201 met een status. Wie die twee door elkaar haalt, dwingt de consumer om businessuitkomsten uit HTTP-statuscodes af te leiden.
+**Het onderscheid tussen 400 en `DECLINED` is de kern van dit scenario.** Een ongeldig bedrag is een contractschending: het verzoek voldoet niet aan de specificatie, dus 400. Een afgewezen betaling is een geldig verzoek met een negatieve uitkomst: 201 met een status. Wie die twee door elkaar haalt, dwingt de consumer om businessuitkomsten uit HTTP-statuscodes af te leiden.
 
 De drempel van 500,00 is willekeurig maar vast. Ze levert twee scenario's op die niet uit de specificatie volgen en daarom als scenario-mapping in de stub terechtkomen (zie 1.6).
 
@@ -621,11 +621,11 @@ Dat is dezelfde regel als bij de scripts: wat gedeeld is, bestaat één keer. Zo
 
 Wat per omgeving verschilt, staat niet in een tweede servicedefinitie maar in environment: welke versie er draait, en waar de buur te vinden is. De stub (`compose/stub.yml`) komt erbij als los bestand, niet als variant van het deelsysteem zelf.
 
-**`compose/extern.yml` bestaat nog niet.** Hij hoort bij hoofdstuk 7, waar de externe betaalprovider erbij komt; tot dat moment heeft geen enkele omgeving een koppeling naar buiten en valt er niets samen te stellen. De vorm ligt wel vast: hetzelfde patroon als `stub.yml`, een los bestand dat met `-f` wordt meegegeven en dat het deelsysteem zelf niet verandert.
+**`compose/extern.yml` bestaat nog niet.** Hij hoort bij scenario 7, waar de externe betaalprovider erbij komt; tot dat moment heeft geen enkele omgeving een koppeling naar buiten en valt er niets samen te stellen. De vorm ligt wel vast: hetzelfde patroon als `stub.yml`, een los bestand dat met `-f` wordt meegegeven en dat het deelsysteem zelf niet verandert.
 
 **Er is geen moment waarop alles tegelijk verhuist.** Elk deelsysteem schuift op zijn eigen tempo op en de gate is telkens de vorige omgeving die groen staat. Dat is randvoorwaarde 4 in de praktijk.
 
-**Acceptatie is de enige omgeving met koppelingen naar buiten**, en dat is wat hem onderscheidt van Test. Op Test staat een externe partij als stub — voor hoofdstuk 7, waar de buur een externe betaalprovider is, betekent dat concreet dat "echte buren" geldt voor de eigen deelsystemen en niet daarbuiten. Waarom Acceptatie er überhaupt is, staat in bijlage A.
+**Acceptatie is de enige omgeving met koppelingen naar buiten**, en dat is wat hem onderscheidt van Test. Op Test staat een externe partij als stub — voor scenario 7, waar de buur een externe betaalprovider is, betekent dat concreet dat "echte buren" geldt voor de eigen deelsystemen en niet daarbuiten. Waarom Acceptatie er überhaupt is, staat in bijlage A.
 
 ---
 
@@ -705,8 +705,8 @@ niet over de grens.
 
 Pipeline 2 doet niet overal hetzelfde, en dat verschil volgt uit de **grens** en niet uit
 het deelsysteem. Een deelsysteem kan contracten serveren, contracten pinnen, of allebei —
-Payment doet in hoofdstuk 1 het eerste, in hoofdstuk 6 het eerste tweemaal, en in
-hoofdstuk 7 ook het tweede. Daarom is de rol een eigenschap die de pipeline afleidt, en
+Payment doet in scenario 1 het eerste, in scenario 6 het eerste tweemaal, en in
+scenario 7 ook het tweede. Daarom is de rol een eigenschap die de pipeline afleidt, en
 geen parameter die je meegeeft.
 
 **Serveert het deelsysteem een contract?** Dan hoort daarbij:
@@ -769,7 +769,7 @@ omdat het verschil ertoe doet en zichtbaar hoort te zijn.
 
 De handgeschreven variant is niet de mindere: hij is leesbaar, staat in dezelfde toolchain
 en documenteert de paden die ertoe doen. Maar hij dekt per definitie wat iemand heeft
-bedacht. In hoofdstuk 1 vond de gegenereerde variant zes gebreken in een implementatie met
+bedacht. In scenario 1 vond de gegenereerde variant zes gebreken in een implementatie met
 vijftien groene tests — zie `besluiten.md`. Dat verschil is het argument om te genereren
 waar dat kan.
 
@@ -792,7 +792,7 @@ die af wat ze goedkoop kunnen vangen.
 
 De stub wordt elke run opnieuw gegenereerd uit de spec uit het register en wordt nooit gecommit. Hij draait mee in de CI-omgeving, als de buur die daar niet staat.
 
-Op Test en Acceptatie staan de eigen deelsystemen echt. Eén uitzondering: partijen buiten de organisatie draaien op Test als stub, want die omgeving heeft geen koppeling naar buiten. Dat raakt hoofdstuk 7 en verder niets in hoofdstuk 1.
+Op Test en Acceptatie staan de eigen deelsystemen echt. Eén uitzondering: partijen buiten de organisatie draaien op Test als stub, want die omgeving heeft geen koppeling naar buiten. Dat raakt scenario 7 en verder niets in scenario 1.
 
 **Waarom zelf genereren en geen kant-en-klare mockserver.** Prism van Stoplight doet twee dingen die hieronder als eigen werk staan al native: hij matcht padtemplates, en hij gebruikt de `example`-waarden uit de spec. Hij valideert bovendien binnenkomende requests tegen de spec, inclusief `additionalProperties: false` — dat is winst die deze opzet niet gratis krijgt.
 
@@ -837,9 +837,9 @@ Geen van beide is een pipelinestap. De controles draaien na **elke** deploy, ong
 
 Dat is niet de goedkoopste oplossing maar de enige juiste, want een *verwachte* samenstelling bestaat hier niet: elk deelsysteem schuift op zijn eigen tempo op, dus er is geen moment waarop een bepaalde combinatie de bedoelde is. Een lijst met verwachte versies zou randvoorwaarde 4 tegenspreken en zou bij elke release van iemand anders verouderen. De vraag "draait hier de bedoelde combinatie" is daarmee de verkeerde vraag; "sluit alles hier op elkaar aan" is de goede.
 
-Die eerste voorwaarde is geen formaliteit maar de reden dat deze check bij contracttesten hoort en niet bij de startsituatie. Zonder register zijn de versies op de info-endpoints twee handgeschreven beweringen die met elkaar vergeleken worden; pas als ze allebei naar een gepubliceerd artefact wijzen, stelt de vergelijking iets vast. In hoofdstuk 0 is de check daarom niet van toepassing — niet uitgezet, maar zonder grond.
+Die eerste voorwaarde is geen formaliteit maar de reden dat deze check bij contracttesten hoort en niet bij de startsituatie. Zonder register zijn de versies op de info-endpoints twee handgeschreven beweringen die met elkaar vergeleken worden; pas als ze allebei naar een gepubliceerd artefact wijzen, stelt de vergelijking iets vast. In scenario 0 is de check daarom niet van toepassing — niet uitgezet, maar zonder grond.
 
-In hoofdstuk 5 doet hij zijn werk: een consumer die gepind staat op een versie die niemand meer serveert, wordt rood zonder dat iemand een lijst hoefde bij te houden.
+In scenario 5 doet hij zijn werk: een consumer die gepind staat op een versie die niemand meer serveert, wordt rood zonder dat iemand een lijst hoefde bij te houden.
 
 Die check is niet zomaar een van de drie. Hij is degene die het afzien van een `can-i-deploy`-gate verdedigbaar maakt: de smoke gaat niet over inhoud en komt groen door een verkeerde versiecombinatie heen, de versieconformiteitscheck niet.
 
@@ -861,7 +861,7 @@ Dat dashboard beantwoordt drie vragen, en de derde is er niet bij gekomen om te 
 
 **Het dashboard leest echte toestand.** Versies uit draaiende info-endpoints, grenzen uit het register, gates uit het rapport. Geen enkel gegeven komt uit een demoscript, want dan toont het dashboard wat iemand bedoelde in plaats van wat er is. Dat is dezelfde regel als bij de stub, om dezelfde reden.
 
-**Voorlopig één pagina.** De stip op de horizon is een site: per deelsysteem een pagina, per grens een pagina, en de testsoorten als kolommen zodat er later een UI-test bij kan zonder verbouwing. Voor dit hoofdstuk is één pagina genoeg — bovenaan wat er nu draait, eronder wat er in deze run is gebeurd. Wat er voor die site hoe dan ook geldt, staat in `docs/showcase-site.md`.
+**Voorlopig één pagina.** De stip op de horizon is een site: per deelsysteem een pagina, per grens een pagina, en de testsoorten als kolommen zodat er later een UI-test bij kan zonder verbouwing. Voor dit scenario is één pagina genoeg — bovenaan wat er nu draait, eronder wat er in deze run is gebeurd. Wat er voor die site hoe dan ook geldt, staat in `docs/showcase-site.md`.
 
 **Rood: eerst weer draaiend, dan pas de vraag hoe het kwam.** Op Test en Acceptatie draaien release candidates, en dan is vooruit meestal sneller dan terug: een kapotte RC is een signaal om snel een nieuwe te leveren. Rollback is het antwoord wanneer vooruit niet snel kan. Bij een afwijkende versiesamenstelling is roll-forward vrijwel altijd juist — het ontbrekende deelsysteem alsnog deployen in plaats van het geslaagde terugtrekken. Rollback geldt voor deployments; het register kent geen rollback, daar is alleen een nieuwe versie.
 
@@ -892,7 +892,7 @@ De piramide houdt drie lagen. Contracttesten voegt er geen vierde aan toe.
 | **integratie** | integratietest met eigen DB — norm in de test | healthcheck<br>contractverificatie op de CI-omgeving — norm = **spec** |
 | **e2e** | — | smoke op Test · gebruikersflow op Acceptatie |
 
-**e2e is relatief aan wat de omgeving bevat.** Dezelfde laag loopt op drie scopes: op de CI-omgeving door het deelsysteem heen met de buren gestubd, op Test door het systeem, op Acceptatie door de keten met de buitenwereld erbij. Dat is geen drie lagen maar één laag op drie treden van de trap uit 1.3. Zolang Payment uit één service bestaat valt e2e binnen het deelsysteem samen met de contractverificatie; vanaf hoofdstuk 8, als `payment-mf` erbij komt, wordt het onderscheid zichtbaar.
+**e2e is relatief aan wat de omgeving bevat.** Dezelfde laag loopt op drie scopes: op de CI-omgeving door het deelsysteem heen met de buren gestubd, op Test door het systeem, op Acceptatie door de keten met de buitenwereld erbij. Dat is geen drie lagen maar één laag op drie treden van de trap uit 1.3. Zolang Payment uit één service bestaat valt e2e binnen het deelsysteem samen met de contractverificatie; vanaf scenario 8, als `payment-mf` erbij komt, wordt het onderscheid zichtbaar.
 
 **De as is scope, niet snelheid.** Contractverificatie draait tegen een gedeployde container en is daarmee trager dan de smoke op Test, die een handvol aanroepen doet — en staat er toch onder. Wat de lagen ordent is hoeveel er tegelijk in beeld is: één klasse, één deelsysteem, de hele keten.
 
@@ -928,7 +928,7 @@ De diff-gate hoort bij de contractwijziging, niet bij de pipeline van Payment of
 
 **Wat de gate niet ziet.** oasdiff redeneert over de spec en niet over de implementatie, en kent de gevolgen van `additionalProperties: false` niet. Een veld uit een requestschema verwijderen levert daarom een warning op en geen error, terwijl bestaande consumers die het veld nog meesturen een 400 krijgen. Dezelfde soort grens als bij het schema zelf: de gate dekt de structuur, niet de betekenis.
 
-Hiermee dekt dit hoofdstuk alle drie de detectiemomenten in de bouwstraat: breaking change op de schemawijziging, non-conforme provider-implementatie, non-conforme consumeraanroep. In hoofdstuk 1 heeft de gate nog niets te vergelijken — er is één versie. Vanaf hoofdstuk 2 doet hij werk.
+Hiermee dekt dit scenario alle drie de detectiemomenten in de bouwstraat: breaking change op de schemawijziging, non-conforme provider-implementatie, non-conforme consumeraanroep. In scenario 1 heeft de gate nog niets te vergelijken — er is één versie. Vanaf scenario 2 doet hij werk.
 
 Deze drie stappen zijn pipeline 1 uit 1.4: het contract heeft een eigen pipeline omdat het een eigen levenscyclus heeft. Wie hem start is een vraag voor de werkwijze en niet voor de techniek — de spec kan in de repository van de provider staan of in een eigen spec-repository met review door de architect (O5). Dat verandert wie het script aanroept, niet wat het doet.
 
@@ -936,9 +936,9 @@ Deze drie stappen zijn pipeline 1 uit 1.4: het contract heeft een eigen pipeline
 
 ### 1.10 De contractlevenscyclus in overzicht
 
-Hoofdstuk 1 kent één contractversie en dus geen wijziging. De vier scenario's die daarna komen, staan hier in overzicht; elk is uitgewerkt in een eigen hoofdstuk.
+Scenario 1 kent één contractversie en dus geen wijziging. De vier scenario's die daarna komen, staan hier in overzicht; elk is uitgewerkt in een eigen scenario.
 
-| Scenario | Wat er gebeurt | Risico | Gezien door | Hoofdstuk |
+| Scenario | Wat er gebeurt | Risico | Gezien door | Scenario |
 |---|---|---|---|---|
 | A. Geen breaking change | additief, minor | "minor" was stiekem breaking | diff-gate | 2 |
 | Governance | consumer vraagt om uitbreiding | consumer bouwt een workaround | niets automatisch | 2 |
@@ -953,17 +953,17 @@ Twee dingen die uit dit overzicht volgen. **De meeste maatregelen zijn geen test
 
 ### 1.11 Demo
 
-De demo begint waar hoofdstuk 0 ophoudt: beide deelsystemen draaien, er is net een release doorheen gegaan, en er is geen register. Wat hier gebeurt is de toevoeging — dezelfde deelsystemen, nu met contracttesten.
+De demo begint waar scenario 0 ophoudt: beide deelsystemen draaien, er is net een release doorheen gegaan, en er is geen register. Wat hier gebeurt is de toevoeging — dezelfde deelsystemen, nu met contracttesten.
 
-**Aan het artefact verandert niets.** Geen image wordt herbouwd, geen samenstelling wijzigt, geen versienummer beweegt. Het contract krijgt voor het eerst een gepubliceerde versie, maar de spec zelf is dezelfde die er in hoofdstuk 0 ongelezen lag.
+**Aan het artefact verandert niets.** Geen image wordt herbouwd, geen samenstelling wijzigt, geen versienummer beweegt. Het contract krijgt voor het eerst een gepubliceerde versie, maar de spec zelf is dezelfde die er in scenario 0 ongelezen lag.
 
-| Versieniveau | Na hoofdstuk 0 | Na hoofdstuk 1 |
+| Versieniveau | Na scenario 0 | Na scenario 1 |
 |---|---|---|
 | deelsysteem `payment` | 1.0.0 | 1.0.0 |
 | microservice `payment-api` | 1.0.0 | 1.0.0 |
 | contract `payment-api` | niet gepubliceerd | 1.0.0 |
 
-**Wat verandert is het oordeel.** Dezelfde payment 1.0.0 die in hoofdstuk 0 groen door de pipeline kwam, gaat hier langs de contractlaag. Dat is een strengere norm op een ongewijzigd artefact — en daarmee is hoofdstuk 1 in de eerste plaats geen nieuwe manier van werken vooruit, maar een uitspraak over wat er al staat.
+**Wat verandert is het oordeel.** Dezelfde payment 1.0.0 die in scenario 0 groen door de pipeline kwam, gaat hier langs de contractlaag. Dat is een strengere norm op een ongewijzigd artefact — en daarmee is scenario 1 in de eerste plaats geen nieuwe manier van werken vooruit, maar een uitspraak over wat er al staat.
 
 Dat is ook wat een squad als eerste meemaakt die dit invoert: de eerste run gaat niet over de volgende release maar over de huidige. Gaat hij rood, dan heeft de pipeline niets kapotgemaakt — **hij heeft zichtbaar gemaakt wat al niet klopte.** Het artefact was nooit conform; er keek alleen niemand.
 
@@ -982,7 +982,7 @@ En dat is het verschil met wat er nu gebeurt als er iets misgaat aan een grens: 
 
 Zou de deelsysteemversie hier wél oplopen, dan zou dat suggereren dat er iets aan het deelsysteem is veranderd. Er is niets veranderd. Er wordt alleen scherper gekeken, en dat is een eigenschap van de pipeline en niet van wat erdoorheen gaat.
 
-**De volgorde is die van hoofdstuk 0**, en dat is geen detail: alleen dan staan de twee rapporten regel voor regel naast elkaar en is het verschil af te lezen in plaats van bij elkaar te zoeken.
+**De volgorde is die van scenario 0**, en dat is geen detail: alleen dan staan de twee rapporten regel voor regel naast elkaar en is het verschil af te lezen in plaats van bij elkaar te zoeken.
 
 | # | Scène | Zichtbaar |
 |---|---|---|
@@ -999,19 +999,19 @@ Zou de deelsysteemversie hier wél oplopen, dan zou dat suggereren dat er iets a
 
 De demo eindigt met het beeld uit 1.7: bovenaan wat er nu draait, eronder elke stap met tijdstip en uitkomst. Dat is hetzelfde testbewijs dat een pipeline oplevert en niet iets wat voor de demo apart wordt gemaakt.
 
-De demo's uit hoofdstuk 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen branches: een branch per scenario moet worden bijgewerkt bij elke wijziging in de basis. Elk script past de wijziging toe, draait de betrokken pipelines en eindigt met een reset naar de uitgangssituatie.
+De demo's uit scenario 2 tot en met 5 zijn scripts (`demo/<naam>.sh`), geen branches: een branch per scenario moet worden bijgewerkt bij elke wijziging in de basis. Elk script past de wijziging toe, draait de betrokken pipelines en eindigt met een reset naar de uitgangssituatie.
 
 ---
 
-### 1.12 Bewust buiten dit hoofdstuk
+### 1.12 Bewust buiten dit scenario
 
 | Onderdeel | Waar |
 |---|---|
-| Contractwijziging, breaking change, deprecation | hoofdstuk 2, 3 en 5 |
-| De gebruikersflow en de koppelingen naar buiten op Acceptatie | hoofdstuk 4 |
+| Contractwijziging, breaking change, deprecation | scenario 2, 3 en 5 |
+| De gebruikersflow en de koppelingen naar buiten op Acceptatie | scenario 4 |
 | De site: per deelsysteem en per grens een pagina | later; hier één pagina, zie 1.7 |
-| Async, SOAP, derde deelsysteem | hoofdstuk 6 en 7 |
-| Angular UI | hoofdstuk 8 |
+| Async, SOAP, derde deelsysteem | scenario 6 en 7 |
+| Angular UI | scenario 8 |
 | Publicatie vanuit een pipeline | hier handmatig; O5 |
 | Monitoring op Productie (F4) | vereist een productielaag; O8 |
 | Pipeline 6, naar Productie | beschreven in 1.4, niet gebouwd: een vierde omgeving op een laptop toont hetzelfde als Acceptatie zonder de koppelingen |
@@ -1038,17 +1038,17 @@ De **waarden** van `code` in het `Error`-schema zijn geen onderdeel van het cont
 | O4 | Version state voor deprecated versies in Apicurio 3.x — naamgeving verifiëren |
 | O5 | Eigenaarschap van de spec: in de provider-repo of in een aparte spec-repo met review door de architect. Technisch afgedekt via het aansluitpunt in 1.9; dit is een vraag voor de werkwijze, niet voor deze showcase |
 | O8 | Pins op info-endpoints als surrogaat voor monitoring (F4): tijdelijk voor de showcase of blijvend naast monitoring |
-| O9 | Welke micro-frontend hoofdstuk 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want hoofdstuk 9 heeft meerdere remotes nodig |
-| O10 | Wat de micro-frontend van Notification laat zien. Hoofdstuk 6 gaat over de async grens en heeft geen UI nodig; hoofdstuk 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
-| O13 | **De diff-gate werkt niet op AsyncAPI.** oasdiff leest OpenAPI en niets anders, dus voor `run-stream` valt de gate uit 1.9 weg. Bij 0.9.0 merk je dat niet — er is niets om mee te vergelijken — maar bij de eerste wijziging wel. Tot dat moment leunt die grens op de compatibility rule van het register alleen, en dat is één net in plaats van twee. Op te lossen in hoofdstuk 6, dat toch een AsyncAPI-grens uitwerkt; te overwegen valt een tweede vergelijker naast oasdiff of de gate expliciet als niet-van-toepassing markeren in plaats van hem stil over te slaan |
+| O9 | Welke micro-frontend scenario 8 uitwerkt. Order ligt voor de hand — een gebruiker plaatst een bestelling — maar Payment is het centrale deelsysteem en heeft de interessantere spec. Alle drie bestaan hoe dan ook, want scenario 9 heeft meerdere remotes nodig |
+| O10 | Wat de micro-frontend van Notification laat zien. Scenario 6 gaat over de async grens en heeft geen UI nodig; scenario 9 heeft hem wel nodig, want één remote maakt geen shell-grens. Zijn inhoud is daarmee nog nergens belegd |
+| O13 | **De diff-gate werkt niet op AsyncAPI.** oasdiff leest OpenAPI en niets anders, dus voor `run-stream` valt de gate uit 1.9 weg. Bij 0.9.0 merk je dat niet — er is niets om mee te vergelijken — maar bij de eerste wijziging wel. Tot dat moment leunt die grens op de compatibility rule van het register alleen, en dat is één net in plaats van twee. Op te lossen in scenario 6, dat toch een AsyncAPI-grens uitwerkt; te overwegen valt een tweede vergelijker naast oasdiff of de gate expliciet als niet-van-toepassing markeren in plaats van hem stil over te slaan |
 | O14 | **De repo-indeling is ontworpen voor één product, en er staan er twee in.** Het ordenende principe is er wel en het is consistent: wat gedeeld is staat één keer op de hoofdmap, services staan in `deelsystemen/`, genummerde mappen bevatten alleen tests. Dat principe ordent langs **wat iets is** — script, service, test, spec — en is nooit ontworpen om te ordenen langs **voor wie iets is**. Toen de realisatie erbij kwam (`scenario-api`, `run-stream`, de stubbundel, `controle.sh`) is die vraag niet gesteld, en staat Deel B nu op de plek die zijn soort aanwijst en niet zijn bestemming: contracten bij de contracten, scripts bij de scripts. Voor het meeste is dat juist — het gereedschap ís gedeeld, en dat is de stelling van de showcase. Voor drie dingen niet: `controle.sh` heeft de geleefde grens hard in zich, `verify-contract.sh` heeft de modulepaden van de showcase hard in zich, en `ci/stubbundel/` is een levering en geen script. Te bepalen: (a) die twee scripts parametriseren, (b) de levering een eigen plek buiten `ci/` geven. Een splitsing in `showcase/` en `gereedschap/` is onderzocht en afgewezen: 26 scripts berekenen hun wortel als `dirname/..`, er zijn 133 padverwijzingen naar `ci/<script>`, en `ci/` in tweeën knippen zou de claim ondergraven dat het mechanisme er één is. Wat níét met verplaatsen op te lossen was, is het versieprobleem waar dit punt mee begon: één repository-tag dekt beide producten. Dat is opgelost met een eigen tagreeks per contract, niet met mappen — zie `besluiten.md`, 2026-08-13. Geparkeerd op 2026-08-07, herzien op 2026-08-13 |
-| O15 | **De demo's van hoofdstuk 0 en 1 draaien nergens automatisch.** Van de 28 scripts in `ci/` en de demomappen draaien er 10 mee bij elke push; de andere 18 vragen gebouwde images, gedeployde containers of een omgeving en worden alleen gedraaid als iemand een demo start. Voor die 18 is de enige verificatie dat een mens kijkt. Dat is geen theoretisch gat: het hield een exitcode 127 in `vergelijk-rapporten.sh` maandenlang onzichtbaar — het script wérd aangeroepen, alleen door een demo, en een demo draait niet in CI. De pipelines uit 1.4 hangen daarmee aan een demoscript in plaats van aan een CI-platform. Oplossen betekent Maven, `docker build`, deploys en Playwright bij elke push, en dat vraagt een eigen afweging over wat een push mag kosten — laptopbudget is een ontwerpeis. Tot die tijd staan de 18 met reden en herzieningsdatum in `vrijstelling_uitvoering` in `ci/controle-gates.sh`. De afweging staat in `besluiten.md`, 2026-08-13. **Het geval, om de herzieningsdatum niet abstract te laten worden:** `verify-contract.sh` staat op die lijst omdat hij een gedeployd deelsysteem vraagt — een terechte reden. Op 2026-08-14 bleek dat commit `5975384` er weken eerder een stille beëindiging in had gezet: de consumerverificatie viel om terwijl de test zelf groen was, en de providerkant ontsnapte alleen doordat zijn testgereedschap een ander woord in de uitvoer gebruikt. Scenario 01 draaide daardoor half. Gevonden bij een handmatige doorloop, niet door een gate — want het enige dat dit script draait is de demo, en die draait niet in CI |
+| O15 | **De demo's van scenario 0 en 1 draaien nergens automatisch.** Van de 28 scripts in `ci/` en de demomappen draaien er 10 mee bij elke push; de andere 18 vragen gebouwde images, gedeployde containers of een omgeving en worden alleen gedraaid als iemand een demo start. Voor die 18 is de enige verificatie dat een mens kijkt. Dat is geen theoretisch gat: het hield een exitcode 127 in `vergelijk-rapporten.sh` maandenlang onzichtbaar — het script wérd aangeroepen, alleen door een demo, en een demo draait niet in CI. De pipelines uit 1.4 hangen daarmee aan een demoscript in plaats van aan een CI-platform. Oplossen betekent Maven, `docker build`, deploys en Playwright bij elke push, en dat vraagt een eigen afweging over wat een push mag kosten — laptopbudget is een ontwerpeis. Tot die tijd staan de 18 met reden en herzieningsdatum in `vrijstelling_uitvoering` in `ci/controle-gates.sh`. De afweging staat in `besluiten.md`, 2026-08-13. **Het geval, om de herzieningsdatum niet abstract te laten worden:** `verify-contract.sh` staat op die lijst omdat hij een gedeployd deelsysteem vraagt — een terechte reden. Op 2026-08-14 bleek dat commit `5975384` er weken eerder een stille beëindiging in had gezet: de consumerverificatie viel om terwijl de test zelf groen was, en de providerkant ontsnapte alleen doordat zijn testgereedschap een ander woord in de uitvoer gebruikt. Scenario 01 draaide daardoor half. Gevonden bij een handmatige doorloop, niet door een gate — want het enige dat dit script draait is de demo, en die draait niet in CI |
 
 ---
 
 ## 2. Wijziging zonder breuk
 
-> Vereist hoofdstuk 1. Nog niet uitgewerkt.
+> Vereist scenario 1. Nog niet uitgewerkt.
 
 Scenario A uit de contractlevenscyclus, plus het governance-scenario: technisch dezelfde beweging, andere aanleiding. Additief blijft additief, ongeacht wie erom vroeg.
 
@@ -1060,7 +1060,7 @@ Scenario A uit de contractlevenscyclus, plus het governance-scenario: technisch 
 | Consumer | ongewijzigd, pin blijft op v1.0.0 |
 | Klaar als | de publicatie geslaagd is; de consumer hoeft niets |
 
-**Wat hier structureel nieuw is:** de diff-gate heeft voor het eerst iets te vergelijken. In hoofdstuk 1 draait hij tegen een leeg register.
+**Wat hier structureel nieuw is:** de diff-gate heeft voor het eerst iets te vergelijken. In scenario 1 draait hij tegen een leeg register.
 
 **Demo:** publiceer v1.1.0, draai daarna Order's pipeline ongewijzigd. Groen, op v1.0.0, zonder dat iemand iets heeft aangeraakt. Draai daarna het tegenvoorbeeld onder hetzelfde minor-nummer: `merchantId` verplicht toevoegen. De gate weigert (`new-required-request-property`), en het register weigert als tweede net. De demo zet de twee naast elkaar: één veld erbij is veilig of breaking afhankelijk van één woord, en dat verschil is precies waar de gate voor bestaat.
 
@@ -1070,7 +1070,7 @@ Scenario A uit de contractlevenscyclus, plus het governance-scenario: technisch 
 
 ## 3. Breaking wijziging
 
-> Vereist hoofdstuk 1. Nog niet uitgewerkt.
+> Vereist scenario 1. Nog niet uitgewerkt.
 
 Scenario B. Een grens breekt niet: een breuk wordt een nieuwe major náást de bestaande, met een deprecation-termijn die bij publicatie wordt vastgelegd.
 
@@ -1090,7 +1090,7 @@ Scenario B. Een grens breekt niet: een breuk wordt een nieuwe major náást de b
 
 ## 4. Acceptatie
 
-> Vereist hoofdstuk 1. Nog niet uitgewerkt.
+> Vereist scenario 1. Nog niet uitgewerkt.
 
 | | |
 |---|---|
@@ -1100,15 +1100,15 @@ Scenario B. Een grens breekt niet: een breuk wordt een nieuwe major náást de b
 
 Contractverificatie dekt de structuur van een grens: velden, typen, statuscodes, foutmodellen. Wat het niet dekt is betekenis — een veld dat blijft bestaan maar iets anders gaat betekenen, of een uitkomst die per deelsysteem klopt en samen toch niet. Dat is de residue waarvoor de gebruikersflow bestaat.
 
-Dit hoofdstuk is daarmee het tegenwicht bij de rest van de showcase. Contractverificatie maakt ketentesten niet overbodig; het maakt ze **kleiner en gerichter**, omdat de structuur elders al is aangetoond en de flow zich kan beperken tot wat een gebruiker daadwerkelijk doet.
+Dit scenario is daarmee het tegenwicht bij de rest van de showcase. Contractverificatie maakt ketentesten niet overbodig; het maakt ze **kleiner en gerichter**, omdat de structuur elders al is aangetoond en de flow zich kan beperken tot wat een gebruiker daadwerkelijk doet.
 
-**Demo:** één volledige gebruikersflow over Order en Payment op Acceptatie — bestelling plaatsen, betaling geaccepteerd, bevestiging zichtbaar — en daarnaast de constatering dat deze suite één scenario telt in plaats van tien, omdat de grens al is aangetoond in hoofdstuk 1.
+**Demo:** één volledige gebruikersflow over Order en Payment op Acceptatie — bestelling plaatsen, betaling geaccepteerd, bevestiging zichtbaar — en daarnaast de constatering dat deze suite één scenario telt in plaats van tien, omdat de grens al is aangetoond in scenario 1.
 
 ---
 
 ## 5. Sunset
 
-> Vereist hoofdstuk 3. Nog niet uitgewerkt.
+> Vereist scenario 3. Nog niet uitgewerkt.
 
 | | |
 |---|---|
@@ -1171,15 +1171,15 @@ Dit is het antwoord op de vraag of contracttesten ook buiten de eigen organisati
 | Toevoeging | de frontend als consumer: pinnen, stub genereren, schemavalidatie in de browser; dit is de plek voor Playwright en ajv |
 | Status | teamkeuze, geen gezamenlijk kader — afspraken gelden op grenzen, niet op de binnenkant |
 
-Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsysteem, met een uitdrukkelijk andere boodschap dan de rest van de showcase: het mag, het werkt, en het wordt niet voorgeschreven. Hij levert ook de UI die hoofdstuk 1 bewust niet heeft.
+Deze showcase toont aan dat hetzelfde mechanisme bruikbaar is binnen een deelsysteem, met een uitdrukkelijk andere boodschap dan de rest van de showcase: het mag, het werkt, en het wordt niet voorgeschreven. Hij levert ook de UI die scenario 1 bewust niet heeft.
 
-De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, niet in de hoofdstukmap; `08-frontend-binnenkant/` bevat alleen de tests eromheen. Wélk deelsysteem de UI krijgt, is nog niet besloten (O9).
+De frontend is een service van een deelsysteem en staat dus in `deelsystemen/`, niet in de scenariomap; `08-frontend-binnenkant/` bevat alleen de tests eromheen. Wélk deelsysteem de UI krijgt, is nog niet besloten (O9).
 
 ---
 
 ## 9. Frontend in shell
 
-> Eigen model. Wordt pas gebouwd als de andere hoofdstukken staan; de opzet wijkt te veel af om er nu aan te beginnen.
+> Eigen model. Wordt pas gebouwd als de andere scenario's staan; de opzet wijkt te veel af om er nu aan te beginnen.
 
 | | |
 |---|---|
@@ -1198,7 +1198,7 @@ Er is één ding dat telt en dat is productie. Elke omgeving daarvoor is een pla
 
 Acceptatie staat in deze showcase omdat er behoefte is aan een stabiele plek om de gebruikersflow te doorlopen, en omdat het vertrouwen dat die flow ook automatisch en gepland kan draaien er nog niet is. Dat is een organisatorische stand van zaken, geen technische noodzaak.
 
-De showcase neemt hem daarom op zoals hij is, en laat tegelijk zien wat hem overbodig zou maken. **Hoofdstuk 4 draait de gebruikersflow geautomatiseerd** — dat is precies de reden dat Acceptatie bestaat, en meteen het bewijs dat het gepland kan. **Hoofdstuk 7 legt de externe grens onder een contract** — dat is de tweede reden, en die valt daarmee grotendeels weg. Wie beide heeft staan, houdt van de technische onderbouwing van een derde omgeving weinig over.
+De showcase neemt hem daarom op zoals hij is, en laat tegelijk zien wat hem overbodig zou maken. **Scenario 4 draait de gebruikersflow geautomatiseerd** — dat is precies de reden dat Acceptatie bestaat, en meteen het bewijs dat het gepland kan. **Scenario 7 legt de externe grens onder een contract** — dat is de tweede reden, en die valt daarmee grotendeels weg. Wie beide heeft staan, houdt van de technische onderbouwing van een derde omgeving weinig over.
 
 Wat er dan overblijft is niet-technisch: mensen willen er met eigen ogen naar kijken voordat het naar buiten gaat. Dat is vertrouwen en geen bewijs, en dat argumenteer je niet weg met gereedschap. Wie doet alsof dat hetzelfde probleem is, verliest het gesprek.
 

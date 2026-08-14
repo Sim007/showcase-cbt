@@ -53,7 +53,7 @@ trap 'rm -f "${ALLE}" "${PINS}" "${GESERVEERD}"' EXIT
 info_endpoints "${OMGEVING}" > "${ALLE}"
 [ -s "${ALLE}" ] || fout "geen draaiend deelsysteem gevonden op ${OMGEVING}"
 
-# Komma-gescheiden en niet een lijst: vanaf hoofdstuk 3 serveert één provider twee majors
+# Komma-gescheiden en niet een lijst: vanaf scenario 3 serveert één provider twee majors
 # naast elkaar, en dan staat er "1.0.0,2.0.0" op het info-endpoint.
 ontleed() {
   jq -r --arg veld "$1" '

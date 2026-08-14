@@ -117,7 +117,7 @@ ajv() {
 #
 # Draait de gedeelde smoke uit playwright/. Geen browserimage: de smoke praat HTTP, en de
 # officiële Playwright-image is ruim twee gigabyte. Laptopbudget is een ontwerpeis.
-# Hoofdstuk 8 heeft browsers wel nodig; dan komt daar een eigen image bij.
+# Scenario 8 heeft browsers wel nodig; dan komt daar een eigen image bij.
 #
 # node_modules hangt op de hoofdmap en niet in playwright/: de specs staan bij de
 # deelsystemen, en Node zoekt zijn afhankelijkheden omhoog vanaf het bestand. Vanuit
@@ -203,14 +203,14 @@ stap() {
 
 # rapport_start <onderdeel> / bijzonderheid <tekst> / rapport_oordeel <tekst>
 #
-# Eén rapport per hoofdstuk, chronologisch, met een tijdstip per stap. Dat is waar
+# Eén rapport per scenario, chronologisch, met een tijdstip per stap. Dat is waar
 # "releasen op testbewijs" op neerkomt: niet dát het groen was, maar wat er wanneer is
 # aangetoond en tegen welke contractversie.
 #
-# Het rapport staat bij het hoofdstuk waar het over gaat, in <hoofdstuk>/rapport/. Die map
+# Het rapport staat bij het scenario waar het over gaat, in <scenario>/rapport/. Die map
 # staat in .gitignore: een testbewijs hoort bij een run en niet bij de broncode.
 #
-# De standaard wijst naar hoofdstuk 1. Een ander hoofdstuk gebruikt dezelfde pipelines en
+# De standaard wijst naar scenario 1. Een ander scenario gebruikt dezelfde pipelines en
 # zet CBT_RAPPORT naar zijn eigen bestand.
 rapport_start() {
   RAPPORT_ONDERDEEL="$1"
@@ -220,7 +220,7 @@ rapport_start() {
   [ -f "${RAPPORT_BESTAND}" ] && return 0
   {
     _nr="$(basename "${RAPPORT_BESTAND}" .md | sed 's/.*-//')"
-    echo "# Rapport CBT — hoofdstuk ${_nr#0}"
+    echo "# Rapport CBT — scenario ${_nr#0}"
     echo
     echo "Begonnen op $(date -u '+%Y-%m-%d %H:%M:%S') UTC. Alle tijden zijn UTC."
     echo
@@ -265,7 +265,7 @@ rapport_oordeel() {
 
 # Waar het rapport staat, meldt ci/rapport-html.sh aan het eind van een demo — één keer,
 # beide paden. Dat stond hier eerst, in rapport_oordeel, en dan kwam dezelfde regel na elke
-# pipeline voorbij: negen keer in één doorloop van hoofdstuk 0.
+# pipeline voorbij: negen keer in één doorloop van scenario 0.
 
 # info_endpoints <omgeving>
 #

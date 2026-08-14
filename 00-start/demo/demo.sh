@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
-# Hoofdstuk 0: de startsituatie. Beide deelsystemen door de bestaande pipeline.
+# Scenario 0: de startsituatie. Beide deelsystemen door de bestaande pipeline.
 #
 #   demo.sh [--stap]     --stap wacht op een toets tussen de delen
 #
 # Dit script raakt het register niet aan en roept geen enkel contractscript aan. Dat is
-# geen belofte maar de reden dat dit hoofdstuk apart staat: wat hier draait, draaide er al
+# geen belofte maar de reden dat dit scenario apart staat: wat hier draait, draaide er al
 # voordat contracttesten bestonden.
 #
-# Hoofdstuk 1 doet exact hetzelfde, met dezelfde deelsystemen en dezelfde versies, maar dan
+# Scenario 1 doet exact hetzelfde, met dezelfde deelsystemen en dezelfde versies, maar dan
 # mét contracttesten. Het verschil tussen de twee rapporten is daarmee precies het werk dat
 # contracttesten toevoegt — en niets anders.
 
@@ -19,7 +19,7 @@ cd "${CBT_ROOT}"
 
 STAP="${1:-}"
 
-# Eigen rapport. Zonder dit schrijft elke pipeline in dat van hoofdstuk 1, en dan is het
+# Eigen rapport. Zonder dit schrijft elke pipeline in dat van scenario 1, en dan is het
 # verschil tussen de twee — de kern van deze opzet — juist niet meer te zien.
 export CBT_RAPPORT="${CBT_ROOT}/00-start/rapport/rapport-cbt-00.md"
 
@@ -113,6 +113,6 @@ CBT_LIVE= ci/rapport-html.sh "${CBT_RAPPORT}"
 
 echo
 echo "─────────────────────────────────────────────────────────────────────"
-echo "  Klaar. Hoofdstuk 1 doet dit nog een keer, met contracttesten."
+echo "  Klaar. Scenario 1 doet dit nog een keer, met contracttesten."
 echo "  Zelfde deelsystemen, zelfde versies. Volgende: 01-basis/demo/demo.sh"
 echo "─────────────────────────────────────────────────────────────────────"

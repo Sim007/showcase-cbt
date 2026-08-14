@@ -1,16 +1,16 @@
 # 0. Startsituatie
 
-> Vereist: niets. Hoofdstuk 1 vereist dit hoofdstuk.
+> Vereist: niets. Scenario 1 vereist dit scenario.
 
 Wat er draait vóórdat contracttesten bestaan: twee deelsystemen, door de bestaande
 pipelines, naar Test en Acceptatie. Alles groen.
 
-Hoofdstuk 1 doet **exact hetzelfde** — dezelfde deelsystemen, dezelfde versies — maar dan
+Scenario 1 doet **exact hetzelfde** — dezelfde deelsystemen, dezelfde versies — maar dan
 mét contracttesten. Het verschil tussen de twee rapporten is daarmee precies wat
 contracttesten toevoegt, en niets anders.
 
 **Wat het aantoont en waarom het zo werkt** staat in
-[docs/showcase-cbt.md](../docs/showcase-cbt.md), hoofdstuk 0. Hieronder staat hoe je het
+[docs/showcase-cbt.md](../docs/showcase-cbt.md), scenario 0. Hieronder staat hoe je het
 draait.
 
 ---
@@ -18,12 +18,12 @@ draait.
 ## De korte weg
 
 ```sh
-00-start/demo/demo.sh          # dit hoofdstuk
+00-start/demo/demo.sh          # dit scenario
 00-start/demo/demo.sh --stap   # met een pauze ertussen, voor een presentatie
 ci/opruimen-alles.sh           # alles weg: omgevingen, register, rapporten
 ```
 
-Daarna gaat [hoofdstuk 1](../01-basis/README.md) verder waar dit ophoudt.
+Daarna gaat [scenario 1](../01-basis/README.md) verder waar dit ophoudt.
 
 ---
 
@@ -52,7 +52,7 @@ pad en verder niets, want er is geen norm om meer uit af te leiden. Payment is p
 roept niemand aan, dus zijn CI-omgeving heeft geen stub nodig.
 
 **De gebruikersflow hangt aan geen enkele deploy.** Hij spant over de keten, dus hij draait
-één keer nadat beide deelsystemen er staan. In dit hoofdstuk levert dat geen spanning op —
+één keer nadat beide deelsystemen er staan. In dit scenario levert dat geen spanning op —
 de tribe deployt toch samen.
 
 **Let op wat er niet gebeurt.** In geen enkele stap komt het schema van de grens voor. Het
@@ -92,7 +92,7 @@ Payment doet, en blijft groen als Payment verandert.
 
 Leg hem naast `01-basis/rapport/rapport-cbt-01.html`:
 
-| | Hoofdstuk 0 | Hoofdstuk 1 |
+| | Scenario 0 | Scenario 1 |
 |---|---|---|
 | Deelsystemen | order en payment | order en payment |
 | Versies | alle 1.0.0 | alle 1.0.0 |

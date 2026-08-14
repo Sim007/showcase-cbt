@@ -14,7 +14,7 @@
 # het enige wat werkt.
 #
 # Regel 3 en 4 bestaan omdat een script dat nergens draait geen gate is maar een voornemen
-# in een andere vorm. vergelijk-rapporten.sh werd alleen door de demo van hoofdstuk 1
+# in een andere vorm. vergelijk-rapporten.sh werd alleen door de demo van scenario 1
 # aangeroepen, en die draait niet in CI — daarom bleef exitcode 127 maanden onzichtbaar.
 #
 # Regel 2 bestaat omdat regel 1 een voornemen toetste. Hij keek of de tekst

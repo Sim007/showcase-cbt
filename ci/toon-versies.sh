@@ -31,7 +31,7 @@ while read -r info; do
       (.contract.serveert // .contract.pin // "—")
     ] | @tsv')"
 
-  # Op tab splitsen en niet op spatie: een provider serveert vanaf hoofdstuk 3 meerdere
+  # Op tab splitsen en niet op spatie: een provider serveert vanaf scenario 3 meerdere
   # versies, komma-gescheiden, en die horen in één veld te blijven.
   oud_ifs="${IFS}"
   IFS="$(printf '\t')"

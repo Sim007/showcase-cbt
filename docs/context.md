@@ -303,7 +303,7 @@ Zodra een document in de repo staat is dát de bron: wijzigingen landen in de re
 chat.
 
 - `context.md` — dit document.
-- `besluiten.md` — waar besluiten landen, met datum. Bevat ook het hoofdstuk Geleerd. Bij twijfel
+- `besluiten.md` — waar besluiten landen, met datum. Bevat ook het scenario Geleerd. Bij twijfel
   gaat dit document voor op wat in een chat is gezegd.
 - `usecases-showcase-website.md` — usecases, benodigde data, NFR's, MVP-indeling.
 

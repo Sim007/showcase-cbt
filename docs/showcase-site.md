@@ -4,7 +4,7 @@ Dit is de brief voor het ontwerp van de site. Het beschrijft niet hoe hij eruitz
 legt vast wat er hoe dan ook geldt, welke gegevens er werkelijk zijn, en wat er uit een
 ontwerpsessie terug moet komen om bruikbaar te zijn.
 
-`docs/showcase-cbt.md` blijft de bron voor de showcase zelf. Hoofdstuk 1 hieronder vat
+`docs/showcase-cbt.md` blijft de bron voor de showcase zelf. Scenario 1 hieronder vat
 samen wat nodig is om dit document buiten de repository te kunnen lezen; bij verschil wint
 `showcase-cbt.md`.
 
@@ -67,9 +67,9 @@ Eén regel die de site raakt: **een gedeelde pipeline is nooit een gate voor é�
 de site over het geheel toont, mag dus nooit lezen als een stoplicht voor een individuele
 release.
 
-**Twee hoofdstukken, twee rapporten.** Hoofdstuk 0 toont de startsituatie: wat er draait
+**Twee scenario's, twee rapporten.** Scenario 0 toont de startsituatie: wat er draait
 voordat contracttesten bestaan, inclusief een gewone release door de bestaande pipeline.
-Hoofdstuk 1 voegt het register en de contracttesten toe. `rapport-cbt-00` is zichtbaar
+Scenario 1 voegt het register en de contracttesten toe. `rapport-cbt-00` is zichtbaar
 dunner dan `rapport-cbt-01` en bevat geen enkele contractregel.
 
 **Waar het naartoe werkt:** een squad kan releasen op testbewijs, zonder met iemand een
@@ -164,7 +164,7 @@ vervagen:
 | de gegenereerde pagina | nergens in git; hij is uitvoer van een run (eis 9) |
 
 Zolang de subrepo alleen bevat wat regenereerbaar is, blijft de site een site. Komt er iets
-in dat nergens anders te vinden is, dan is de vork uit dit hoofdstuk genomen — dan is het
+in dat nergens anders te vinden is, dan is de vork uit dit scenario genomen — dan is het
 een systeem, en dan hoort het ook als zodanig behandeld te worden.
 
 **Wordt hij het wél, dan is hij een deelsysteem als elk ander** — en dat is geen probleem
@@ -172,7 +172,7 @@ maar een aardigheid. Hij wordt dan consumer van het register: hij pint een contr
 de registry-API, krijgt een `grenzen.env`, en zijn eigen pipeline verifieert hem tegen die
 spec. Het dashboard ondergaat dan het mechanisme dat het toont. Dat is een sterkere
 demonstratie dan wat hier nu staat, en een reden om die stap ooit te zetten — maar niet in
-hoofdstuk 1.
+scenario 1.
 
 ---
 
@@ -190,7 +190,7 @@ vandaag uit te halen valt.
 ```
 
 Een provider heeft `contract.serveert` in plaats van `contract.pin`. Beide zijn
-komma-gescheiden strings, want een provider serveert vanaf hoofdstuk 3 twee majors naast
+komma-gescheiden strings, want een provider serveert vanaf scenario 3 twee majors naast
 elkaar. Alleen `health` en `info` staan open — er is geen ander endpoint om uit te lezen.
 
 **Register** — Apicurio v3 op `/apis/registry/v3`, zonder authenticatie (bewuste
@@ -198,7 +198,7 @@ vereenvoudiging voor de demo). Beschikbaar: groepen, artefacten, versies per art
 inhoud van een versie, en de compatibiliteitsregel. Wie een contract *pint* staat er niet
 in — dat komt van de kant van de consumer, uit zijn info-endpoint.
 
-**Rapport** — `<hoofdstuk>/rapport/rapport-cbt-<nr>.md`, een markdowntabel met per regel:
+**Rapport** — `<scenario>/rapport/rapport-cbt-<nr>.md`, een markdowntabel met per regel:
 tijd (UTC), onderdeel, stap, uitkomst (`groen` / `**ROOD**` / `**oordeel**`),
 bijzonderheden.
 
@@ -225,7 +225,7 @@ daaruit, niet andersom.
 | squadlid | welke versie serveert mijn buur nu, en op welke hang ik? | ja — info-endpoints |
 | squadlid van de provider | wie hangt er aan de versie die ik wil opruimen? | ja — register plus de pins van alle consumers |
 | architect / tribe | welke grenzen zijn er, en wie staat waar? | ja — register |
-| wie het niet kent | wat gebeurt hier eigenlijk, en waar zijn we? | ja — rapport plus hoofdstuk |
+| wie het niet kent | wat gebeurt hier eigenlijk, en waar zijn we? | ja — rapport plus scenario |
 | release manager | sluit op Test alles op elkaar aan? | ja — pins naast geserveerde versies, beide uit de info-endpoints |
 
 Let op de formulering van de laatste: niet *de bedoelde* combinatie, maar of alles op elkaar
@@ -256,7 +256,7 @@ gebeurd. Eén link, één venster, ververst zichzelf tijdens een run — dat wer
 
 Die twee helften hebben een verschillende reikwijdte, en dat is geen slordigheid. Het
 bovenste deel is systeembreed: versies, grenzen en aansluiting gaan over alles wat draait.
-Het onderste deel hoort bij één hoofdstuk, want een rapport is het bewijs van één run.
+Het onderste deel hoort bij één scenario, want een rapport is het bewijs van één run.
 
 **Later: een site.** Een pagina per deelsysteem, een pagina per grens. De testsoorten als
 kolommen, zodat een UI-test er later bij komt als een kolom en niet als een verbouwing. Dat

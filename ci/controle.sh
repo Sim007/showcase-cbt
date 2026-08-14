@@ -121,13 +121,13 @@ echo "  release-assets gebouwd en tegen het werkregister gehouden"
 
 docker compose -f "${CBT_ROOT}/compose/registry.yml" down >/dev/null 2>&1 || true
 
-# --- 7: de aftrekking van hoofdstuk 0 en 1 ------------------------------------------------
+# --- 7: de aftrekking van scenario 0 en 1 ------------------------------------------------
 #
-# vergelijk-rapporten.sh draagt de bewering waar hoofdstuk 0 en 1 samen op rusten, en werd
-# tot nu toe alleen door de demo van hoofdstuk 1 aangeroepen. Die draait niet in CI, en
+# vergelijk-rapporten.sh draagt de bewering waar scenario 0 en 1 samen op rusten, en werd
+# tot nu toe alleen door de demo van scenario 1 aangeroepen. Die draait niet in CI, en
 # daardoor bleef een exitcode 127 in dat script maanden onzichtbaar.
 #
-# De invoer zijn twee fixtures en geen echte rapporten: die staan in <hoofdstuk>/rapport/,
+# De invoer zijn twee fixtures en geen echte rapporten: die staan in <scenario>/rapport/,
 # horen bij een run, en zijn er op een runner dus niet. Zie docs/besluiten.md.
 
 "${CBT_ROOT}/ci/vergelijk-rapporten.sh" \
