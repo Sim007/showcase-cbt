@@ -170,7 +170,18 @@ Dit is het testbewijs van één run en hoort daarom niet in de repository.
 </body>
 </html>
 HTML
-} > "${DOEL}"
+# Schrijven en hernoemen, niet rechtstreeks naar het doel. `> "${DOEL}"` kapt het bestand
+# eerst af en vult het daarna: wie er tussendoor leest, krijgt een halve pagina. Tijdens een
+# demo ververst de browser elke twee seconden en wordt deze pagina na elke stap opnieuw
+# geschreven — bemeten op een run van hoofdstuk 0 zag een bemonstering de tabel van 22 rijen
+# terugvallen naar 2 en daarna doorgaan naar 27. Dat is precies de flits die je op een groot
+# scherm niet wilt.
+#
+# `mv` binnen dezelfde map is atomair: een lezer ziet de oude pagina of de nieuwe, nooit een
+# halve. Het tijdelijke bestand staat daarom naast het doel en niet in /tmp — over een
+# mapgrens heen is het een kopie en geldt die garantie niet.
+} > "${DOEL}.tmp"
+mv "${DOEL}.tmp" "${DOEL}"
 
 # Beide paden, en één keer. Zonder CBT_LIVE is de terminal het enige wat je hebt, en dan wil
 # je weten waar het testbewijs staat — maar dit script draait aan het eind van een demo en
