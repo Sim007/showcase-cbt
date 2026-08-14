@@ -52,7 +52,7 @@ fi
 # Playwright faalt zelf al bij "No tests found", maar dan leunt deze gate op het
 # standaardgedrag van een gereedschap dat bij een tagbump kan veranderen. Het aantal staat
 # hier als eigen bewering.
-GESLAAGD="$(grep -oE '[0-9]+ passed' "${UITVOER}" | tail -1 | cut -d' ' -f1)"
-verwacht_minstens "${GESLAAGD:-0}" 1 "geslaagde smoketests tegen ${BASE_URL}"
+GESLAAGD="$(testgevallen "${UITVOER}")"
+verwacht_minstens "${GESLAAGD}" 1 "geslaagde smoketests tegen ${BASE_URL}"
 
 echo "smoke: groen — ${GESLAAGD} tests"

@@ -53,9 +53,8 @@ UITVOER="$(mktemp)"
 trap 'rm -f "${UITVOER}"' EXIT
 
 tel_gevallen() {
-  _n="$(grep -oE '[0-9]+ passed' "${UITVOER}" | tail -1 | cut -d' ' -f1)"
-  [ -n "${_n}" ] || _n="$(grep -oE 'Tests run: [0-9]+' "${UITVOER}" | tail -1 | grep -oE '[0-9]+')"
-  verwacht_minstens "${_n:-0}" 1 "gedraaide testgevallen ($1)"
+  _n="$(testgevallen "${UITVOER}")"
+  verwacht_minstens "${_n}" 1 "gedraaide testgevallen ($1)"
   echo "contract: ${_n} testgevallen ($1)"
 }
 

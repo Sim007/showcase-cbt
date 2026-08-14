@@ -291,6 +291,42 @@ info_endpoints() {
   done
 }
 
+# testgevallen <logbestand>
+#
+# Hoeveel testgevallen er in een uitvoerlog staan, of 0. Beëindigt nooit, ook niet als het
+# bestand ontbreekt of als er niets herkenbaars in staat — het oordeel hoort bij
+# `verwacht_minstens` hieronder en niet hier. De teller telt, de gate oordeelt.
+#
+# Twee redenen dat dit een eigen functie is.
+#
+# **Het woord verschilt per framework.** Maven schrijft `Tests run: 4`, Playwright en
+# Schemathesis schrijven `4 passed`. De consumerverificatie draait op Maven en de
+# providerverificatie op Schemathesis, en die tweede ontsnapte alleen doordat zijn uitvoer
+# toevallig het andere woord gebruikte. Een teller die aan één woord hangt, hangt aan het
+# gereedschap en niet aan de vraag.
+#
+# **En de vorm was dodelijk.** `n="$(grep … | tail -1 | cut …)"` beëindigt onder
+# `set -euo pipefail` het hele script zodra de grep niets vindt: de pijp geeft 1, de
+# toekenning geeft 1, en `set -e` maakt er een einde aan — zonder één regel uitvoer. Zo
+# viel de consumerverificatie stil om terwijl de test zelf groen was. Hier kan dat niet
+# meer: elke pijp eindigt op `|| true` en de uitkomst is altijd een getal.
+#
+# Komt er een vierde formaat bij, dan geeft dit 0 terug en valt `verwacht_minstens` erover.
+# Dat is met opzet luidruchtig: onbekende uitvoer hoort een alarm te zijn en geen nul.
+testgevallen() {
+  _log="$1"
+  [ -f "${_log}" ] || { echo 0; return 0; }
+
+  # Playwright en Schemathesis: "4 passed", "1632 generated, 1632 passed"
+  _aantal="$(grep -oE '[0-9]+ passed' "${_log}" 2>/dev/null | tail -1 | grep -oE '^[0-9]+' || true)"
+
+  # Maven: "Tests run: 4, Failures: 0, Errors: 0"
+  [ -n "${_aantal}" ] \
+    || _aantal="$(grep -oE 'Tests run: [0-9]+' "${_log}" 2>/dev/null | tail -1 | grep -oE '[0-9]+' || true)"
+
+  echo "${_aantal:-0}"
+}
+
 # verwacht_minstens <gevonden> <ondergrens> <omschrijving>
 #
 # Elke gate declareert hiermee hoeveel hij verwachtte te zien. Dat is geen assertie erbij

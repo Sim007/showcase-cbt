@@ -48,7 +48,7 @@ fi
 
 # Een label dat niets matcht is hier het gevaarlijkst: een typefout in @payment levert nul
 # flows op, en zonder deze regel zou dat groen zijn.
-GESLAAGD="$(grep -oE '[0-9]+ passed' "${UITVOER}" | tail -1 | cut -d' ' -f1)"
-verwacht_minstens "${GESLAAGD:-0}" 1 "geslaagde gebruikersflows tegen ${BASE_URL}"
+GESLAAGD="$(testgevallen "${UITVOER}")"
+verwacht_minstens "${GESLAAGD}" 1 "geslaagde gebruikersflows tegen ${BASE_URL}"
 
 echo "gebruikersflow: groen — ${GESLAAGD} flows"

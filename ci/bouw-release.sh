@@ -115,7 +115,10 @@ for bestand in ${ASSETS}; do
   sha256som "${DOEL_REL}" "${bestand}"
 done > "${DOELMAP}/SHA256SUMS"
 
-AANTAL="$(grep -c '' "${DOELMAP}/SHA256SUMS")"
+# awk en geen `grep -c ''`: die geeft exit 1 op een leeg bestand, en dan beëindigt set -e
+# het script vóórdat verwacht_minstens hieronder kan zeggen wat er mis is. Precies nul
+# assets is de fout die deze gate moet melden, niet de fout die hem doodt.
+AANTAL="$(awk 'END { print NR }' "${DOELMAP}/SHA256SUMS")"
 verwacht_minstens "${AANTAL}" 1 "assets met een checksum"
 
 echo "bouw-release: ${TAG} klaar in ${DOEL_REL}/ — ${AANTAL} asset(s) plus SHA256SUMS"
