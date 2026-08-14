@@ -47,15 +47,15 @@ De versie komt uit `ci/lib/tools.sh`, zodat er maar één plek is die hem vastle
 
 ## Beginnen
 
-Het register is gedeeld en staat los van de hoofdstukken. Eén keer omhoog en het blijft
-staan.
+Niets opstarten. Elk hoofdstuk zet neer wat het nodig heeft en ruimt het daarna op.
 
-```sh
-docker compose -f compose/registry.yml up -d
-```
+**Hoofdstuk 0 heeft met opzet géén register** — dat is het hele punt van dat hoofdstuk: het
+schema ligt in `contracts/`, het wordt niet gelezen, en niets valt erop. Start je er tóch
+één, dan staat hij er ongebruikt bij, naast de zin dat hij er niet is.
 
-Het register draait op <http://localhost:8080>, de UI op <http://localhost:8888>. Opslag
-is in memory: na een herstart is hij leeg, en dat is voor een demo precies goed.
+Hoofdstuk 1 zet het register zelf omhoog en laat het daarna staan, zodat je erin kunt kijken:
+het draait op <http://localhost:8080>, de UI op <http://localhost:8888>. Opslag is in memory,
+dus na een herstart is hij leeg — voor een demo precies goed.
 
 Variabelen — versies, poorten, het adres van de buur — staan in
 [.env.example](.env.example). Kopieer naar `.env` als je iets wilt afwijken.
