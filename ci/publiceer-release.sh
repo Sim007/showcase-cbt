@@ -16,7 +16,7 @@
 # opnieuw te zetten, en geen enkele controle van ons ziet dat. Dit script weigert daarom te
 # publiceren op een release die al bestaat — dat is het maximale wat wij kunnen afdwingen.
 # Wat er tegenover staat is de checksum: wordt een asset toch vervangen, dan valt dat op bij
-# squad 2 en niet bij ons. Daarom staat SHA256SUMS in elke release en staat in de
+# squad 2 en niet bij ons. Daarom draagt elke asset een eigen .sha256 en staat in de
 # contractdocumentatie dat verifiëren geen formaliteit is.
 #
 # Het token komt uit de omgeving en staat nooit op de commandoregel.
@@ -42,7 +42,7 @@ UPLOADS="https://uploads.github.com/repos/${REPO}"
 MAP="${CBT_ROOT}/build/release/${TAG}"
 MAP_REL="build/release/${TAG}"
 [ -d "${MAP}" ] || fout "geen assets op ${MAP_REL}. Draai eerst ci/bouw-release.sh"
-[ -f "${MAP}/SHA256SUMS" ] || fout "geen SHA256SUMS in ${MAP_REL}"
+ls "${MAP}"/*.sha256 >/dev/null 2>&1 || fout "geen .sha256-bestanden in ${MAP_REL}"
 
 [ -n "${GITHUB_TOKEN:-}" ] || fout "GITHUB_TOKEN staat niet in de omgeving"
 
@@ -93,7 +93,7 @@ for pad in "${MAP}"/*; do
   GEUPLOAD=$((GEUPLOAD + 1))
 done
 
-verwacht_minstens "${GEUPLOAD}" 2 "assets geüpload (minstens de asset zelf en SHA256SUMS)"
+verwacht_minstens "${GEUPLOAD}" 2 "assets geüpload (minstens de asset zelf en zijn .sha256)"
 
 # --- 4: terughalen en vergelijken -----------------------------------------------------------
 #
@@ -106,7 +106,8 @@ CONTROLE_REL="build/release/${TAG}-terug"
 rm -rf "${CONTROLE}"; mkdir -p "${CONTROLE}"
 
 TERUG=0
-while read -r som bestand; do
+for sompad in "${MAP}"/*.sha256; do
+  read -r som bestand < "${sompad}"
   curl -fsSL -o "${CONTROLE}/${bestand}" \
     "https://github.com/${REPO}/releases/download/${TAG}/${bestand}" \
     || fout "${bestand} is niet op te halen langs de URL die squad 2 krijgt"
@@ -115,7 +116,7 @@ while read -r som bestand; do
     || fout "${bestand} in de release wijkt af van wat er is gebouwd: ${TERUGSOM} tegen ${som}"
   echo "  ok      ${bestand} komt terug zoals hij is gebouwd"
   TERUG=$((TERUG + 1))
-done < "${MAP}/SHA256SUMS"
+done
 
 verwacht_minstens "${TERUG}" 1 "assets teruggehaald en vergeleken"
 rm -rf "${CONTROLE}" "${ANTWOORD}"

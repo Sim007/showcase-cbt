@@ -82,12 +82,14 @@ case "${BRON}" in
     curl -fsSL -o "${DOEL}" "${BASIS}/${ARTIFACT}-${VERSIE}.yaml" \
       || { rm -f "${DOEL}"; fout "${ARTIFACT} ${VERSIE} is niet uitgegeven op ${RELEASE_REPO}"; }
 
-    SOMMEN="${CBT_ROOT}/build/contracts/${ARTIFACT}-${VERSIE}.SHA256SUMS"
-    curl -fsSL -o "${SOMMEN}" "${BASIS}/SHA256SUMS" \
-      || fout "release ${ARTIFACT}-${VERSIE} heeft geen SHA256SUMS — niet te verifiëren"
+    # Eén checksumbestand per asset, met de assetnaam erin. Zie docs/besluiten.md: één
+    # `SHA256SUMS` per release botst zodra iemand twee releases naar dezelfde map haalt.
+    SOMMEN="${CBT_ROOT}/build/contracts/${ARTIFACT}-${VERSIE}.yaml.sha256"
+    curl -fsSL -o "${SOMMEN}" "${BASIS}/${ARTIFACT}-${VERSIE}.yaml.sha256" \
+      || fout "release ${ARTIFACT}-${VERSIE} heeft geen checksumbestand — niet te verifiëren"
 
     VERWACHT="$(awk -v n="${ARTIFACT}-${VERSIE}.yaml" '$2 == n { print $1 }' "${SOMMEN}")"
-    [ -n "${VERWACHT}" ] || fout "SHA256SUMS noemt ${ARTIFACT}-${VERSIE}.yaml niet"
+    [ -n "${VERWACHT}" ] || fout "${ARTIFACT}-${VERSIE}.yaml.sha256 noemt dat bestand zelf niet"
 
     GEVONDEN="$(sha256som "build/contracts" "${ARTIFACT}-${VERSIE}.yaml" | cut -d' ' -f1)"
     [ "${GEVONDEN}" = "${VERWACHT}" ] \

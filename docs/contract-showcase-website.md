@@ -175,18 +175,24 @@ er is geen lijst die je moet raadplegen en er is geen script van ons dat je nodi
 
 ```
 https://github.com/Sim007/showcase-cbt/releases/download/<artifact>-<versie>/<artifact>-<versie>.yaml
-https://github.com/Sim007/showcase-cbt/releases/download/<artifact>-<versie>/SHA256SUMS
+https://github.com/Sim007/showcase-cbt/releases/download/<artifact>-<versie>/<artifact>-<versie>.yaml.sha256
 ```
 
 Ophalen en verifiëren:
 
 ```sh
-A=scenario-api; V=0.9.0
+A=scenario-api; V=0.10.0
 B=https://github.com/Sim007/showcase-cbt/releases/download/$A-$V
 curl -fsSLO "$B/$A-$V.yaml"
-curl -fsSLO "$B/SHA256SUMS"
-sha256sum -c SHA256SUMS      # macOS: shasum -a 256 -c SHA256SUMS
+curl -fsSLO "$B/$A-$V.yaml.sha256"
+sha256sum -c "$A-$V.yaml.sha256"      # macOS: shasum -a 256 -c "$A-$V.yaml.sha256"
 ```
+
+**Het checksumbestand heet naar zijn asset, sinds 0.10.0.** Daarvóór heette het in elke
+release `SHA256SUMS`, en dan overschrijft de tweede download de eerste zodra je twee releases
+naar dezelfde map haalt — waarna `sha256sum -c` het verkeerde bestand verifieert zonder
+foutmelding. Jullie vonden dat en losten het op met een submap per artifact; die is nu
+overbodig. Dat de vondst van jullie kwam en niet van ons, staat in `besluiten.md`.
 
 Let op `-L`: GitHub stuurt de download door naar een opslag-URL. En op de hoofdletter in
 `Sim007`.
@@ -205,7 +211,7 @@ Drie regels `curl` in jullie eigen taal is de hele koppeling.
 **De checksum is geen formaliteit.** Een release-tag is bij GitHub te verwijderen en opnieuw
 te zetten; onveranderlijkheid is daar discipline en geen eigenschap. Ons script weigert op een
 bestaande release, en dat is het maximale dat wij kunnen afdwingen. Wordt een asset tóch
-vervangen, dan is `SHA256SUMS` de plek waar dat opvalt — en dan valt het op bij jullie en niet
+vervangen, dan is het `.sha256`-bestand de plek waar dat opvalt — en dan valt het op bij jullie en niet
 bij ons. Bewaar de checksum die je bij het pinnen hebt gezien.
 
 **De stubbundel is hernoemd én verlaagd.** Wat jullie hebben heet

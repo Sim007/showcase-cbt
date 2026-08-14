@@ -74,7 +74,7 @@ spectral() {
 # waardeloos. De alpine-image levert overal dezelfde regels, en die zijn te controleren met
 # `sha256sum -c` én met `shasum -a 256 -c`.
 #
-# De werkmap staat apart zodat de bestandsnamen in SHA256SUMS zonder pad blijven: dat bestand
+# De werkmap staat apart zodat de bestandsnaam in het checksumbestand zonder pad blijft: dat
 # hoort naast de assets in een release, waar geen mappen zijn.
 sha256som() {
   _werkmap="$1"

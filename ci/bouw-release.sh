@@ -105,21 +105,28 @@ fi
 
 # --- de checksums ------------------------------------------------------------------------
 #
-# Naast de assets en zonder pad ervoor: in een release zijn er geen mappen. Te controleren
-# met `sha256sum -c` en met `shasum -a 256 -c`.
+# Eén bestand per asset, met de assetnaam erin: `scenario-api-0.10.0.yaml.sha256`. Niet één
+# `SHA256SUMS` per release.
+#
+# Die naam kwam van squad 2. Alle drie de releases leverden een bestand met dezelfde naam,
+# dus wie ze naar één map haalde overschreef stil de vorige — en `sha256sum -c` verifieerde
+# daarna het verkeerde bestand zónder foutmelding. Stil groen, in de verificatiestap zelf.
+# Zij losten het op met een submap per artifact; dat is hún reparatie van ons probleem. Met
+# een naam die niet kan botsen is er niets meer op te lossen.
+#
+# De inhoud blijft de vorm die `sha256sum -c` en `shasum -a 256 -c` lezen: de checksum, twee
+# spaties, de bestandsnaam zonder pad.
 
-# Eerst de lijst vastleggen, dan pas schrijven: het doelbestand ontstaat door de
-# omleiding, en anders staat SHA256SUMS met de checksum van een leeg bestand in zichzelf.
+# Eerst de lijst vastleggen, dan pas schrijven: de checksumbestanden ontstaan in deze lus,
+# en anders krijgt de laatste de checksum van de eerste erbij.
 ASSETS="$( cd "${DOELMAP}" && ls )"
+AANTAL=0
 for bestand in ${ASSETS}; do
-  sha256som "${DOEL_REL}" "${bestand}"
-done > "${DOELMAP}/SHA256SUMS"
+  sha256som "${DOEL_REL}" "${bestand}" > "${DOELMAP}/${bestand}.sha256"
+  AANTAL=$((AANTAL + 1))
+done
 
-# awk en geen `grep -c ''`: die geeft exit 1 op een leeg bestand, en dan beëindigt set -e
-# het script vóórdat verwacht_minstens hieronder kan zeggen wat er mis is. Precies nul
-# assets is de fout die deze gate moet melden, niet de fout die hem doodt.
-AANTAL="$(awk 'END { print NR }' "${DOELMAP}/SHA256SUMS")"
 verwacht_minstens "${AANTAL}" 1 "assets met een checksum"
 
-echo "bouw-release: ${TAG} klaar in ${DOEL_REL}/ — ${AANTAL} asset(s) plus SHA256SUMS"
-sed 's/^/  /' "${DOELMAP}/SHA256SUMS"
+echo "bouw-release: ${TAG} klaar in ${DOEL_REL}/ — ${AANTAL} asset(s), elk met een .sha256"
+cat "${DOELMAP}"/*.sha256 | sed 's/^/  /'
