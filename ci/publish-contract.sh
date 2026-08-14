@@ -39,6 +39,23 @@ case "${VERSIE}" in
 esac
 
 ARTEFACT_URL="${API}/groups/${GROEP}/artifacts/${ARTIFACT}"
+
+# --- de compatibiliteitsrichting van deze grens -------------------------------------------
+#
+# Als data en niet als standaard: welke kant compatibel moet blijven volgt uit wie schrijft
+# en wie leest, en dat verschilt per grens. Ontbreekt de regel, dan faalt de publicatie —
+# kiezen is verplicht, vergeten kan niet.
+# shellcheck source=registers.env
+. "${CBT_ROOT}/ci/registers.env"
+_richtingsleutel="RICHTING_$(printf '%s_%s' "${GROEP}" "${ARTIFACT}" | tr '-' '_')"
+eval "RICHTING=\${${_richtingsleutel}:-}"
+[ -n "${RICHTING}" ] || fout "geen compatibiliteitsrichting voor ${GROEP}/${ARTIFACT}.
+  Zet ${_richtingsleutel} in ci/registers.env, met de reden erbij: wie schrijft aan deze
+  grens en wie leest? BACKWARD waar de provider leest, FORWARD waar hij schrijft."
+case "${RICHTING}" in
+  BACKWARD|FORWARD|FULL|NONE) ;;
+  *) fout "onbekende richting ${RICHTING} voor ${GROEP}/${ARTIFACT}" ;;
+esac
 WERKMAP="${CBT_ROOT}/build/contracts"
 mkdir -p "${WERKMAP}"
 
@@ -202,15 +219,15 @@ if [ -z "${VORIGE}" ]; then
     "${API}/groups/${GROEP}/artifacts?ifExists=FAIL" >/dev/null \
     || fout "publicatie van ${VERSIE} mislukt — bestaat het artifact al?"
 
-  # Het register vormt een tweede net als de gate wordt overgeslagen. Voor artifact
-  # type OPENAPI is die controle in Apicurio 3.x beperkt; de gate hierboven blijft
-  # de maatregel die het werk doet.
+  # Het register vormt een tweede net als de gate wordt overgeslagen. Welke kant compatibel
+  # moet blijven staat als keuze in ci/registers.env, want dat volgt uit wie schrijft en wie
+  # leest aan deze grens — zie docs/besluiten.md, 2026-08-14.
   curl -fsS -X POST -H "Content-Type: application/json" \
-    -d '{"ruleType":"COMPATIBILITY","config":"BACKWARD"}' \
+    -d "{\"ruleType\":\"COMPATIBILITY\",\"config\":\"${RICHTING}\"}" \
     "${ARTEFACT_URL}/rules" >/dev/null \
-    || fout "kon de compatibility rule niet op BACKWARD zetten"
+    || fout "kon de compatibility rule niet op ${RICHTING} zetten"
 
-  echo "artifact ${GROEP}/${ARTIFACT} aangemaakt op ${VERSIE}, compatibility rule BACKWARD"
+  echo "artifact ${GROEP}/${ARTIFACT} aangemaakt op ${VERSIE}, compatibility rule ${RICHTING}"
 else
   jq -Rs --arg versie "${VERSIE}" \
     '{version: $versie, content: {content: ., contentType: "application/x-yaml"}}' \
