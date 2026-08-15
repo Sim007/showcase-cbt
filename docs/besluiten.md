@@ -1076,6 +1076,117 @@ Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu
 alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
 staat nergens in een spec.
 
+## 2026-08-15 — De gate moet meten tegen de belofte, niet tegen het artefact dat het dichtst bij de hand ligt
+
+Het compatibiliteitsnet op de payloads van `run-stream` zou vanzelfsprekend op de
+gepubliceerde schema's gaan: die staan in de spec, ze zijn er, en ze beschrijven de berichten.
+
+Gemeten wat dat oplevert: **elke additieve wijziging wordt afgekeurd**, op alle zes, met
+`OBJECT_TYPE_PROPERTY_SCHEMAS_NARROWED`. En dat is correct geredeneerd — die schema's staan op
+`additionalProperties: false`, dus een ontvanger die ze streng toepast breekt op een onbekend
+veld.
+
+**Alleen is dat niet de belofte die wij doen.** Wij beloven dat een consumer een onbekend veld
+mag negeren; dat staat in de tolerantie-eisen en de stubbundel levert er een schema voor mee.
+Compatibiliteit is een uitspraak over wat de ontvanger verdraagt, dus hoort de gate op het
+artefact dat de ontvanger beschrijft. Op de ontvangstvariant: `400` bij een veld uit
+`required`, `200` bij een veld erbij. Precies goed.
+
+**De klasse:** een gate die correct redeneert over het verkeerde artefact is gevaarlijker dan
+een gate die fout redeneert. Hij is niet te betrappen op een denkfout — je moet je afvragen
+welke belofte je eigenlijk aan het meten bent, en dat is een vraag die niemand stelt zolang de
+gate rood en groen doet wat je verwacht. Hier zou hij scenario 02 hebben geblokkeerd: de
+wijziging die de showcase als niet-brekend tóónt, afgekeurd door de gate die niet-brekend moet
+bewijzen.
+
+**Tweede keer dat "één schema kan niet twee rollen doen" beslissend is** (2026-08-10), nu op
+een plek waar niemand het zocht. Toen ging het over wat je meelevert aan een consumer; nu over
+waar je een gate op zet. Hetzelfde onderscheid, twee lagen uit elkaar — en dat suggereert dat
+het geen detail van de stubbundel was maar een eigenschap van de grens zelf.
+
+## 2026-08-15 — Een negatieve test zegt niets zolang de positieve niet is aangetoond
+
+De vier kanaries op de ontvangstvariant vragen twee dingen af te keuren en twee door te
+laten. Om ze te kunnen bouwen genereert het script eerst een geldig bericht uit het schema:
+elk verplicht veld met een waarde die bij zijn type past.
+
+Die generator vulde elk tekstveld met `"x"`. En `runId` heeft een `pattern`:
+`^run-[0-9a-f]{6}$`. Dus was het "geldige" bericht ongeldig, en werd **élk** bericht
+afgekeurd.
+
+**Waarna twee van de vier kanaries groen stonden.** "Bericht zonder verplicht veld →
+afgekeurd": klopt. "Bericht met verkeerd type → afgekeurd": klopt. Beide om een reden die
+niets met hun vraag te maken had. Alleen de derde kanarie viel op, en die had ik net zo goed
+kunnen missen als er één minder was geweest.
+
+**De klasse:** een test die iets moet afkeuren, bewijst niets zolang niet is aangetoond dat
+hij het goede geval wél doorlaat. Een gate die alles afkeurt is groen op elke negatieve test,
+en dat is niet te onderscheiden van een gate die precies het juiste afkeurt.
+
+De reparatie is een nulde controle vóór de vier: het geldige bericht moet aantoonbaar geldig
+zijn, anders faalt de toets met de mededeling dat de kanaries niets zeggen. En de waarden
+komen nu uit de `example` van de spec — die is per definitie geldig, want de stubgeneratie
+eist hem al.
+
+**Dat dit opdook in de gate die tegen stil groen is gebouwd, is het ongemakkelijkste
+voorbeeld van de reeks.** Niet omdat het erger is dan de vorige, maar omdat het laat zien dat
+kennis van het patroon niet beschermt. Alleen een controle die het goede geval aantoont, doet
+dat — en die moet je expliciet opschrijven, want hij voelt overbodig.
+
+## 2026-08-15 — De koppeling zat in de afleiding zelf
+
+De zes payloadschema's krijgen elk hun eigen versie, zodat een wijziging in één schema er
+niet vijf meesleept. Dat is hetzelfde besluit als waarom `scenario-api` en `run-stream` niet
+aan elkaar hangen.
+
+De eerste afleiding kopieerde `components.schemas` **in zijn geheel** in elk payloaddocument
+— makkelijk, en het maakt elk document zelfstandig. Gevolg: één veld toevoegen aan
+`RunGestartPayload` veranderde de inhoud van alle zes, en dan publiceert het script er zes.
+Gemeten: `6 gepubliceerd, 0 ongewijzigd` waar er `1, 5` hoorde te staan.
+
+**De koppeling die het besluit wilde vermijden, was ingebouwd in de afleiding die het besluit
+moest uitvoeren.** En hij zou pas zijn opgevallen als iemand zich had afgevraagd waarom er
+zes versienummers waren opgeschoven — dus waarschijnlijk nooit, want een versie erbij ziet
+eruit als werk dat gedaan is.
+
+Nu gaat alleen mee wat een payload werkelijk gebruikt, transitief gevolgd langs `$ref`. Daarna
+`1 gepubliceerd, 5 ongewijzigd`.
+
+**Wat het algemeen maakt:** een afleiding die meer meeneemt dan nodig, maakt artefacten die
+samen bewegen zonder samen te horen. Dat is dezelfde fout als een gedeelde database tussen
+deelsystemen, drie ordes kleiner.
+
+## 2026-08-15 — Gereedschap dat zwijgt bij ongeldige invoer, meldt groen
+
+Twee kandidaten getoetst als tweede net op `run-stream`, en beide vielen af — maar de manier
+waarop de tweede afviel is een klasse.
+
+**`asyncapi diff` gaf geen uitvoer en exitcode 0** op een document dat niet valideert. Niet
+`{"changes": []}`, niet een foutmelding: niets, en groen. Een gate die zijn uitvoer op
+`breaking` grept ziet dan geen breuk en publiceert. `asyncapi validate` meldt hetzelfde
+document netjes als fout — het gereedschap wíst het, en de diff zweeg erover.
+
+Dat is precies wat Spectral doet zonder regelset: `No ruleset has been found`, exitcode 0.
+Twee verschillende gereedschappen, dezelfde vorm.
+
+**De klasse:** gereedschap dat zwijgt bij invoer die het niet aankan, is niet neutraal — het
+is groen. En groen is de gevaarlijkste uitkomst, want daar kijkt niemand naar. Elke gate die
+op extern gereedschap leunt heeft daarom twee controles nodig die niets met de vraag te maken
+hebben: valideert de invoer, en is de uitvoer welgevormd. Pas dan mag het oordeel geloofd
+worden.
+
+**Ik vond het doordat mijn eigen kanarie fout was** — ik zette een veld in `required` zonder
+het als property te declareren, en de parser gooide het weg. Tweede keer deze maand dat een
+verkeerde tegenproef de echte tekortkoming blootlegde. Dat is geen toeval: een tegenproef die
+niet doet wat je denkt, is precies de invoer waarop gereedschap zich anders gedraagt dan de
+documentatie belooft.
+
+**En de telemetrie erbij.** De AsyncAPI-CLI stuurt bij elke aanroep gebruiksgegevens naar
+buiten, standaard aan. Ons gereedschap draait op `--network none`, dus dat moet expliciet uit
+en offline getoetst. Vierde keer dat de aanname in het gereedschap zat in plaats van in het
+contract — na Docker bij de ontvanger, `npx` bij de ontvanger, en een stub die alleen het
+heden kende.
+
 ## 2026-08-14 — De consumer vond wat onze eigen verificatiestap niet zag
 
 Alle drie de releases leverden een bestand dat `SHA256SUMS` heette. Wie ze naar dezelfde map
