@@ -123,11 +123,16 @@ ook doen — alleen dan in productie in plaats van nu.
 De stream geeft bij **elke nieuwe verbinding de volgende run**. Verbind je drie keer, dan
 heb je ze alledrie gehad.
 
-| | Wat erin zit |
-|---|---|
-| `voltooid` | alle stappen komen aan bod en slagen |
-| `gestopt` | stap 3 mislukt; **stap 4, 5 en 6 krijgen geen enkel bericht** |
-| `midden` | een momentopname midden in een lopende run |
+| | `runId` | Wat erin zit |
+|---|---|---|
+| `voltooid` | `run-7c41a9` | alle stappen komen aan bod en slagen |
+| `gestopt` | `run-3b8e02` | stap 3 mislukt; **stap 4, 5 en 6 krijgen geen enkel bericht** |
+| `midden` | `run-9d15f4` | een momentopname midden in een lopende run |
+
+**Elke opname heeft zijn eigen `runId`.** Ze droegen er eerst alle drie hetzelfde, en dat was
+verkeerd oefenmateriaal: drie verschillende verlopen die beweren dezelfde run te zijn. Wie op
+`runId` bijhoudt welke run hij volgt, kon daar niets zinnigs mee. De nummers liggen vast en
+zijn reproduceerbaar — ze komen uit de generator en niet uit een toevalsgenerator.
 
 **`gestopt` is degene waar het om gaat.** Stap 4 en 5 zijn van Order, en Order krijgt in die
 run niets — niet omdat Order iets fout deed, maar omdat Payment eerder in de lijst faalde.

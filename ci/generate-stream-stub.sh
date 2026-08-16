@@ -130,31 +130,43 @@ stapberichten() {
   _nr="$(stap_veld "${_i}" nummer)"
   _cli="$(stap_veld "${_i}" cli)"
 
-  regel "${_b}" StapGestartPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${_nr}" \
-    '{soort:"stap-gestart", tijd:$t, runId:"run-7c41a9", stapNummer:$nr}')"
+  regel "${_b}" StapGestartPayload "$(jq -cn --arg rid "${RUN_ID}" --arg t "$(tijdstip $N)" --argjson nr "${_nr}" \
+    '{soort:"stap-gestart", tijd:$t, runId:$rid, stapNummer:$nr}')"
   N=$((N + 1))
 
-  regel "${_b}" CliUitvoerPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${_nr}" --arg r "$ ${_cli}" \
-    '{soort:"cli-uitvoer", tijd:$t, runId:"run-7c41a9", stapNummer:$nr, regel:$r}')"
+  regel "${_b}" CliUitvoerPayload "$(jq -cn --arg rid "${RUN_ID}" --arg t "$(tijdstip $N)" --argjson nr "${_nr}" --arg r "$ ${_cli}" \
+    '{soort:"cli-uitvoer", tijd:$t, runId:$rid, stapNummer:$nr, regel:$r}')"
   N=$((N + 1))
 
-  regel "${_b}" StapAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson nr "${_nr}" --arg u "${_u}" \
-    '{soort:"stap-afgerond", tijd:$t, runId:"run-7c41a9", stapNummer:$nr, uitkomst:$u}')"
+  regel "${_b}" StapAfgerondPayload "$(jq -cn --arg rid "${RUN_ID}" --arg t "$(tijdstip $N)" --argjson nr "${_nr}" --arg u "${_u}" \
+    '{soort:"stap-afgerond", tijd:$t, runId:$rid, stapNummer:$nr, uitkomst:$u}')"
   N=$((N + 1))
 }
 
-RUN_JSON="$(jq -cn --arg s "${SCENARIO_ID}" --arg t "$(tijdstip 0)" \
-  '{runId:"run-7c41a9", scenarioId:$s, gestartOp:$t}')"
+# --- drie opnames, drie runId's -----------------------------------------------------------
+#
+# Ze droegen alle drie `run-7c41a9`. Dat is niet alleen onoefenbaar maar verkeerd oefenbaar:
+# drie verschillende verlopen die beweren dezelfde run te zijn. Een consumer die op `runId`
+# bijhoudt welke run hij volgt — en dat is precies wat hij moet doen zodra de stream open
+# blijft tussen runs door — kan daar niets zinnigs mee.
+#
+# Vast en niet willekeurig: de fixtures zijn uitgerekend en bit-voor-bit reproduceerbaar, en
+# dat blijft de voorwaarde waaronder ze gecommit mogen staan. `voltooid` houdt het bestaande
+# nummer, zodat de examples in de spec en de documentatie blijven kloppen.
+RUN_ID_VOLTOOID=run-7c41a9
+RUN_ID_GESTOPT=run-3b8e02
+RUN_ID_MIDDEN=run-9d15f4
 
 # --- situatie 1: voltooid ---------------------------------------------------------------
 
+RUN_ID="${RUN_ID_VOLTOOID}"
 V1="${TMP}/verloop-voltooid.jsonl"; : > "${V1}"; N=0
 
 regel "${V1}" MomentopnamePayload "$(jq -cn --arg t "$(tijdstip $N)" \
   '{soort:"momentopname", tijd:$t, run:null, afgerondeStappen:[]}')"
 N=$((N + 1))
-regel "${V1}" RunGestartPayload "$(jq -cn --arg t "$(tijdstip $N)" --arg s "${SCENARIO_ID}" \
-  '{soort:"run-gestart", tijd:$t, runId:"run-7c41a9", scenarioId:$s}')"
+regel "${V1}" RunGestartPayload "$(jq -cn --arg rid "${RUN_ID}" --arg t "$(tijdstip $N)" --arg s "${SCENARIO_ID}" \
+  '{soort:"run-gestart", tijd:$t, runId:$rid, scenarioId:$s}')"
 N=$((N + 1))
 
 I=0
@@ -163,21 +175,22 @@ while [ "${I}" -lt "${STAPPEN}" ]; do
   I=$((I + 1))
 done
 
-regel "${V1}" RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" \
-  '{soort:"run-afgerond", tijd:$t, runId:"run-7c41a9", reden:"voltooid"}')"
+regel "${V1}" RunAfgerondPayload "$(jq -cn --arg rid "${RUN_ID}" --arg t "$(tijdstip $N)" \
+  '{soort:"run-afgerond", tijd:$t, runId:$rid, reden:"voltooid"}')"
 
 # --- situatie 2: gestopt op een mislukte stap -------------------------------------------
 #
 # De stappen ná de mislukte krijgen geen enkel bericht. Dat is geen omissie in de stub maar
 # de afspraak: "niet uitgevoerd" volgt uit het uitblijven van berichten.
 
+RUN_ID="${RUN_ID_GESTOPT}"
 V2="${TMP}/verloop-gestopt.jsonl"; : > "${V2}"; N=0
 
 regel "${V2}" MomentopnamePayload "$(jq -cn --arg t "$(tijdstip $N)" \
   '{soort:"momentopname", tijd:$t, run:null, afgerondeStappen:[]}')"
 N=$((N + 1))
-regel "${V2}" RunGestartPayload "$(jq -cn --arg t "$(tijdstip $N)" --arg s "${SCENARIO_ID}" \
-  '{soort:"run-gestart", tijd:$t, runId:"run-7c41a9", scenarioId:$s}')"
+regel "${V2}" RunGestartPayload "$(jq -cn --arg rid "${RUN_ID}" --arg t "$(tijdstip $N)" --arg s "${SCENARIO_ID}" \
+  '{soort:"run-gestart", tijd:$t, runId:$rid, scenarioId:$s}')"
 N=$((N + 1))
 
 I=0
@@ -194,14 +207,16 @@ while [ "${I}" -lt "${STAPPEN}" ]; do
   I=$((I + 1))
 done
 
-regel "${V2}" RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" --argjson bij "${FAALT}" \
-  '{soort:"run-afgerond", tijd:$t, runId:"run-7c41a9", reden:"gestopt", gestoptBijStap:$bij}')"
+regel "${V2}" RunAfgerondPayload "$(jq -cn --arg rid "${RUN_ID}" --arg t "$(tijdstip $N)" --argjson bij "${FAALT}" \
+  '{soort:"run-afgerond", tijd:$t, runId:$rid, reden:"gestopt", gestoptBijStap:$bij}')"
 
 # --- situatie 3: midden in een lopende run ----------------------------------------------
 #
 # Geen run-gestart: die is al voorbij. De momentopname draagt wat er al af is, en verder
 # geen cli-uitvoer — die is voor deze kijker weg, en dat is bewust.
 
+RUN_ID="${RUN_ID_MIDDEN}"
+RUN_JSON="$(jq -cn --arg rid "${RUN_ID}" --arg s "${SCENARIO_ID}" --arg t "$(tijdstip 0)" '{runId:$rid, scenarioId:$s, gestartOp:$t}')"
 V3="${TMP}/verloop-midden.jsonl"; : > "${V3}"; N=6
 
 # In één aanroep en niet in een lus met een pipe. Een container in een pijp die een andere
@@ -222,8 +237,8 @@ while [ "${I}" -lt "${STAPPEN}" ]; do
   I=$((I + 1))
 done
 
-regel "${V3}" RunAfgerondPayload "$(jq -cn --arg t "$(tijdstip $N)" \
-  '{soort:"run-afgerond", tijd:$t, runId:"run-7c41a9", reden:"voltooid"}')"
+regel "${V3}" RunAfgerondPayload "$(jq -cn --arg rid "${RUN_ID}" --arg t "$(tijdstip $N)" \
+  '{soort:"run-afgerond", tijd:$t, runId:$rid, reden:"voltooid"}')"
 
 echo "stap 3: $(wc -l < "${V1}" | tr -d ' ') / $(wc -l < "${V2}" | tr -d ' ') / $(wc -l < "${V3}" | tr -d ' ') berichten (voltooid / gestopt / midden), ${STIL} stappen zonder bericht"
 
