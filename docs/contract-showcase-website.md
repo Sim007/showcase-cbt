@@ -126,6 +126,21 @@ Dat staat hier zodat het niet later als bevinding terugkomt. Wie het anders wil,
 het bufferen en herhalen van uitvoer die per definitie geen betekenis draagt, en betaalt dat
 met een kijker die eerst een inhaalslag moet afwachten.
 
+**Na een herverbinding: vervangt de nieuwe momentopname jullie cli-regels, of vult hij aan?**
+Geen van beide — een momentopname bevat géén cli-uitvoer, dus er valt niets te vervangen en
+niets aan te vullen. Wat jullie doen met de regels die je al had, is presentatie en dus van
+jullie kant. Het contract levert wel waar je die keuze op baseert: `momentopname.run` is
+`Run` of `null`, en `Run` draagt `runId`.
+
+| Wat je ziet | Wat het betekent |
+|---|---|
+| hetzelfde `runId` als voor de onderbreking | dezelfde run, je regels horen er nog bij |
+| een ander `runId` | een andere run, je regels gaan over iets anders |
+| `run: null` | er loopt niets |
+
+Dit staat er sinds de tweede lezer erover struikelde. Dat het twee keer misging op dezelfde
+plek is het signaal: de spec zei het wel, maar niet waar iemand het zoekt.
+
 ## 7a. `uitkomst` draagt geen kleur
 
 `geslaagd` en `mislukt`, niet `groen` en `rood`. Kleur is presentatie, en presentatie is een

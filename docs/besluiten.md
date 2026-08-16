@@ -1076,6 +1076,56 @@ Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu
 alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
 staat nergens in een spec.
 
+## 2026-08-15 — Erkende schuld: de structuurkant van `run-stream` is ongedekt
+
+**De schuld heet: *kanaal- en operatiewijzigingen op `run-stream` worden door niets
+getoetst.*** Een kanaal dat verdwijnt of van naam verandert, een operatie die weggaat, een
+berichttype dat uit de `oneOf` valt — daar staat geen gate tussen.
+
+**Wat er wél staat.** De inhoud van de berichten wordt beoordeeld: `ci/ontvangstschemas.sh`
+zet de zes payloadschema's als `JSON`-artifacts in het register met `FORWARD`, en dat net is
+gemeten en werkt. Onze wijzigingen zitten vrijwel altijd daar — een veld erbij, een veld dat
+verplicht wordt, een type dat opschuift.
+
+**Waarom de andere helft er niet is.** Twee kandidaten getoetst en beide afgevallen.
+
+De `COMPATIBILITY`-regel van het register is voor artifacttype `ASYNCAPI` een no-op: zelfs
+alle kanalen weghalen levert HTTP 200, terwijl dezelfde regel op een `OPENAPI`-artifact een
+verwijderd pad netjes weigert met `RuleViolationException`.
+
+`asyncapi diff` classificeert wél op kanaalniveau — een hernoemd kanaal geeft `breaking` —
+maar hij is niet in te zetten binnen onze eigen regels. De CLI crasht zodra hij als non-root
+draait (`TypeError: oclifHandler is not a function`), en `CLAUDE.md` eist dat containers als
+non-root draaien. Read-only mount en `--network none` zijn wél haalbaar; `--user` niet.
+
+**En waarom we die regel niet buigen.** De blootstelling zou klein zijn: twee specs, geen
+netwerk, alleen lezen. Maar de waarde van een onwrikbare regel zit in dat woord, en de eerste
+uitzondering is altijd de best onderbouwde — dat is precies waarom hij de deur opent. Onze
+eigen eis aan een explain is hier bovendien niet te halen: die moet verifieerbaar zijn bij de
+aanvrager, en de aanvrager is een externe CLI die we niet kunnen bevragen en die bij de
+volgende versie anders kan werken.
+
+Daar komt bij dat dit gereedschap bij elke meting minder deed dan het belooft: geen
+payloadclassificatie, zwijgen bij ongeldige invoer, `--overrides` zonder effect, telemetrie
+naar buiten, en nu root. Dat is geen gereedschap waarvoor je je strengste regel opgeeft.
+
+**Wat de schuld waard is.** Kleiner dan hij klinkt. Een kanaal hernoemen of verwijderen is
+een zichtbare, opzettelijke handeling — niet iets wat per ongeluk in een commit sluipt, zoals
+een veld dat uit `required` valt. En het blijft niet onopgemerkt: de stubgeneratie en de
+contractverificatie draaien op de spec, dus een verdwenen kanaal valt verderop alsnog om.
+Alleen niet op het moment waarop het goedkoop is.
+
+**Herzien op 2027-02-13**, tegelijk met de vrijstellingen in `ci/controle-gates.sh`, zodat één
+ronde ze alle drie langsloopt. Eerder herzien zodra een van deze twee gebeurt:
+
+- er is gereedschap dat de structuur van een AsyncAPI vergelijkt en als non-root draait;
+- `run-stream` gaat naar `1.0.0` — en dat kan niet zolang deze schuld staat, want dan beloof
+  je onveranderlijkheid op een grens waarvan de helft niet bewaakt wordt.
+
+**Wat er wél uit de afgeblazen bouw is overgenomen:** de vorige versie wordt nu ook
+gevalideerd vóór de diff. Dat is los van welk gereedschap er ooit komt — vergelijken met een
+document dat niet klopt zegt niets, en het gereedschap zegt daar zelf niets over.
+
 ## 2026-08-15 — De gate moet meten tegen de belofte, niet tegen het artefact dat het dichtst bij de hand ligt
 
 Het compatibiliteitsnet op de payloads van `run-stream` zou vanzelfsprekend op de

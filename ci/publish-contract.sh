@@ -139,28 +139,33 @@ else
 
   # --- stap 2: diff-gate ----------------------------------------------------------
   #
-  # oasdiff leest OpenAPI en niets anders. Voor een AsyncAPI-grens valt deze gate dus weg,
-  # en dat wordt hier hardop gezegd in plaats van stil overgeslagen: een gate die je niet
-  # ziet ontbreken, denk je te hebben. Het register houdt zijn compatibility rule, maar dat
-  # is één net in plaats van twee. Zie O13.
+  # oasdiff leest OpenAPI en niets anders, dus op een AsyncAPI-grens valt déze gate weg. Wat
+  # er wél staat is het payloadnet: ci/ontvangstschemas.sh registreert de berichtschema's als
+  # JSON-artifacts, waar de compatibiliteitsregel van het register inhoudelijk werk doet.
+  #
+  # Ongedekt blijft daarmee precies één ding: kanaal- en operatieniveau. Dat wordt hier
+  # hardop gezegd in plaats van stil overgeslagen — een gate die je niet ziet ontbreken, denk
+  # je te hebben. De schuld staat met naam en herzieningsmoment in docs/besluiten.md,
+  # 2026-08-15, en is de reden dat run-stream nog geen 1.0.0 kan zijn.
   if [ "${ARTEFACT_TYPE}" != "OPENAPI" ]; then
-    # Een waarschuwing scrollt voorbij en stilte mag niet de standaard zijn: publiceren
-    # zonder gate kan wel, maar alleen als iemand er expliciet voor tekent. Zie O13.
+    # Een waarschuwing scrollt voorbij en stilte mag niet de standaard zijn: publiceren met
+    # een half net kan wel, maar alleen als iemand er expliciet voor tekent.
     [ "${CBT_ZONDER_DIFF_GATE:-}" = "akkoord" ] || fout \
-"de diff-gate kan deze wijziging niet toetsen: oasdiff leest geen ${ARTEFACT_TYPE}.
+"de structuurkant van deze wijziging wordt door niets getoetst: oasdiff leest geen ${ARTEFACT_TYPE}.
 
-  ${GROEP}/${ARTIFACT} gaat van ${VORIGE} naar ${VERSIE} zonder dat iets heeft
-  vastgesteld of dat een breuk is. Alleen de compatibility rule van het register
-  staat er dan tussen — één net in plaats van twee.
+  ${GROEP}/${ARTIFACT} gaat van ${VORIGE} naar ${VERSIE}. De inhoud van de berichten
+  wordt wél beoordeeld — ci/ontvangstschemas.sh zet die als JSON-artifacts in het
+  register, met de compatibiliteitsregel erop. Wat niemand ziet is een kanaal of een
+  operatie die verdwijnt of van naam verandert.
 
   Publiceren mag, maar niet stilzwijgend. Bevestig het:
 
       CBT_ZONDER_DIFF_GATE=akkoord ci/publish-contract.sh ${GROEP} ${ARTIFACT} ${VERSIE} ${SPECPAD}
 
-  Zie O13 in docs/showcase-cbt.md."
+  Zie O13 in docs/showcase-cbt.md, en de schuld in docs/besluiten.md 2026-08-15."
 
-    echo "diff-gate NIET UITGEVOERD: oasdiff leest geen ${ARTEFACT_TYPE}, en dat is bevestigd."
-    echo "  Deze wijziging is niet op breuken getoetst. Zie O13 in docs/showcase-cbt.md."
+    echo "diff-gate NIET UITGEVOERD op de structuur: oasdiff leest geen ${ARTEFACT_TYPE}."
+    echo "  De payloads worden wél beoordeeld; kanaal- en operatiewijzigingen niet. Zie O13."
   else
     VORIGE_SPEC="${WERKMAP}/${ARTIFACT}-${VORIGE}.vorige.yaml"
     curl -fsS -o "${VORIGE_SPEC}" "${ARTEFACT_URL}/versions/${VORIGE}/content" \
@@ -169,6 +174,21 @@ else
     # oasdiff draait in een container met de wortel op /work; paden dus relatief.
     OUD_REL="${VORIGE_SPEC#"${CBT_ROOT}/"}"
     NIEUW_REL="${SPECPAD#"${CBT_ROOT}/"}"
+
+    # Ook de oude kant valideren, en niet alleen de nieuwe. Stap 0 hierboven toetst de spec
+    # die gepubliceerd wordt; deze toetst waar hij tegen vergeleken wordt. Een diff tegen een
+    # document dat niet klopt zegt niets, en het gereedschap zegt er niets over — dat is
+    # gemeten bij een ander diff-gereedschap, dat op een ongeldig document geen uitvoer gaf
+    # en exitcode 0. Zie docs/besluiten.md, 2026-08-15.
+    #
+    # Dat de vorige versie ooit door stap 0 kwam is geen bewijs dat wat het register nu
+    # teruggeeft nog klopt: daartussen zit een opslagronde en een leveringsronde.
+    if ! spectral lint --ruleset "${REGELSET}" --fail-severity error "${OUD_REL}" \
+         >"${WERKMAP}/spectral-vorige.log" 2>&1; then
+      echo "publish-contract: de vorige versie ${VORIGE} uit het register is geen geldige spec." >&2
+      sed 's/^/    /' "${WERKMAP}/spectral-vorige.log" >&2
+      fout "er valt niets tegen te vergelijken; de diff-gate zou hier over niets oordelen"
+    fi
 
     # oasdiff onderscheidt in zijn exitcode een gevonden breuk (1) van een tool die zijn
     # werk niet kon doen (alles daarboven, bijvoorbeeld 102 bij een onleesbare spec). Dat
