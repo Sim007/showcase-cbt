@@ -117,6 +117,10 @@ echo "  ${GECONTROLEERD} berichten, tijd loopt overal vooruit"
 
 echo "  stubbundel gebouwd"
 
+# Bouwen is niet hetzelfde als werken. Deze toets start hem en leest zijn stream, begrensd op
+# een aantal berichten en op tijd — want een toets die hangt meldt niets, ook geen rood.
+"${CBT_ROOT}/ci/toets-stubbundel.sh" "${VERSIE}" | sed 's/^/  /'
+
 # --- 6b: de release-assets zijn te bouwen -------------------------------------------------
 #
 # Publiceren kan hier niet — dat vraagt een tag en een token. Bouwen wél, want de asset komt
