@@ -1,5 +1,10 @@
 # Melding aan showcase-website — 0.11.0 staat, de bundel nog niet
 
+> **Achterhaald op 2026-08-17 door `melding-showcase-website-stubbundel-0.11.0.md`.** De
+> bundel doet inmiddels wel wat hieronder als "nog niet" staat. Dit bericht blijft staan
+> zoals het verstuurd is — een melding die de deur uit is, wordt niet achteraf bijgewerkt,
+> want dan klopt niet meer wat de ontvanger heeft gelezen.
+
 > **Lees dit eerst:** de specs zijn er, het gereedschap nog niet. Wat hieronder beschreven
 > staat, doet de stubbundel op dit moment **niet**. Dat is met opzet zo opgeleverd en het
 > staat hier voorop, want specs die iets beloven wat het beschikbare gereedschap nog niet doet
