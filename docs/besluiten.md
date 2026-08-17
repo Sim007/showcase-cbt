@@ -1042,10 +1042,77 @@ idle-momentopname geeft een tweede run zonder begin. Daarna: bundel `0.11.0`, zi
 een korte melding dat het gereedschap de specs heeft ingehaald.
 
 **Eén ding dat in deel B moet meeveranderen en makkelijk vergeten wordt.**
-`ci/toets-stubbundel.sh` leest nu tot een verwacht aantal berichten — 21, het aantal van een
-volledige run. Zodra de stub openblijft is dat aantal niet meer de natuurlijke grens van een
-run maar een getal dat ik zelf heb gekozen, en dan toetst de gate zijn eigen aanname. Hij
-moet lezen **tot `run-afgerond`**, met de tijdslimiet als vangnet daaromheen.
+`ci/toets-stubbundel.sh` leest tot een aantal berichten dat hijzelf noemt. Zodra de stub
+openblijft is dat aantal niet meer de natuurlijke grens van een run maar een getal dat ik
+zelf heb gekozen, en dan toetst de gate zijn eigen aanname. Hij moet lezen **tot
+`run-afgerond`**, met de tijdslimiet als vangnet daaromheen.
+
+> **Gecorrigeerd op 2026-08-17.** Hier stond dat die toets tot 21 berichten las, het aantal
+> van een volledige run. Dat klopte niet: hij las twaalf seconden en eiste er minstens vijf
+> (`VERWACHT_MINSTENS=5`, `--max-time 12`). De redenering hierboven blijft staan — hij moest
+> hoe dan ook weg — maar het getal was verzonnen, en dat maakt het erger en niet beter: 21
+> klinkt afgeleid van de opname en 5 is zichtbaar willekeurig. **Vierde keer deze maand dat
+> een document iets beweert wat de code niet doet.** De drie ervoor gingen over beloften aan
+> een ander (`omgeving`, `deelsysteem`, "twee draaiwijzen"); deze gaat over een verslag aan
+> onszelf, en dat is de soort die niemand tegenleest.
+
+## 2026-08-17 — Deel B: zes gedragswijzigingen, en wat `midden` daarbij verliest
+
+Deel B stond op vier: openhouden, roteren op `POST /v1/runs`, een momentopname bij
+verbinden, en de hartslag. Het werden er zes, en de twee erbij zijn geen uitbreiding maar
+een gevolg dat bij het knippen over het hoofd is gezien.
+
+**De stub kreeg toestand, en daarmee een plicht.** `POST /v1/runs` zegt in de spec: er kan
+één run tegelijk lopen, en loopt er al een dan volgt een 409 met het `runId` van die run.
+Zolang de stub na elke start weer vergat wat hij deed, kón hij die regel niet hebben. Nu hij
+weet dat er een replay loopt, is 201 blijven geven geen versimpeling meer maar een stub die
+niet weigert wat de echte kant weigert — en dat is zijn hele bestaansreden.
+
+**En het `runId` in de 201 moest uit de opname komen.** De routebody is de example uit de
+spec, dus elke start antwoordde `run-7c41a9` terwijl de stream om beurten `run-3b8e02` of
+`run-9d15f4` afspeelde. Dat is niet "de stub die iets bepaalt": het example is een voorbeeld
+en geen voorschrift dat elk antwoord dat nummer draagt. Het is de stub die zijn twee kanten
+over dezelfde run aan het woord houdt. Zonder dat was `e4ea4de` — elke opname zijn eigen
+nummer — een halve reparatie geweest, want de verwarring stond dan een laag lager terug.
+
+**Wat het gekost heeft: `midden` toont niet meer wat hij toonde.** Die opname was er voor de
+late kijker, en dat geval hoort vanaf 0.11.0 bij het *verbinden* en niet bij het *starten*.
+Er waren twee uitwegen. De ene: `midden` uit de rotatie halen en zijn momentopname sturen aan
+wie verbindt terwijl er een run loopt — maar dan meldt die momentopname `run-9d15f4` terwijl
+er een andere run speelt, en dan liegt hij over welke run het is. De andere: hem in de
+rotatie laten en accepteren dat hij na een POST afspeelt als een run die bij stap 3 begint.
+
+Het is de tweede geworden. **Een fixture die minder toont is een kleinere fout dan een
+momentopname die de verkeerde run aanwijst** — de eerste maakt het oefenmateriaal armer, de
+tweede maakt het verkeerd, en verkeerd oefenmateriaal bevestigt de logica van de consumer
+zonder iets aan te tonen. Dat is precies het argument uit `e4ea4de`, en het geldt hier
+opnieuw.
+
+**De stub stelt daarom nooit zelf een momentopname samen.** Uit de replaypositie een stand
+berekenen kon: hij weet welke regels hij verstuurd heeft. Maar dan bepaalt hij de toestand
+van een run, en toont hij iets wat nergens is vastgelegd. Wie midden in een run aansluit,
+krijgt de opgenomen opening van die run en niet de stand van nu. Dat staat in de
+bundel-README als grens, niet als detail.
+
+**Het gat is echt en het is gemeld.** Het late-kijkersgeval is tegen de bundel niet meer te
+oefenen. Dat staat in de melding aan showcase-website en niet alleen hier, want zij zijn
+degenen die erop stuklopen — en een verlies dat alleen in ons eigen besluitenlogboek staat,
+is voor hen geen verlies maar een verrassing.
+
+**`HARTSLAG_MS` is erbij gekomen, en dat is een schakelaar die niet in de spec staat.** De
+spec zegt 20 seconden; een run duurt er acht. Zonder die schakelaar ziet geen enkele toets
+ooit een hartslag, en dan is "er is een heartbeat" een bewering zonder gate — bovenop een
+kanaalbeschrijving waar al vaststaat dat er geen schema onder staat. Twee ongedekte lagen
+boven elkaar is er één te veel. Hij hoort in dezelfde categorie als `TOLERANTIE=ja`:
+gereedschap om een contractbelofte te kunnen aantonen, geen gedrag dat het contract
+beschrijft. Dat onderscheid staat met zoveel woorden in de bundel-README, anders leest de
+volgende het als contractgedrag.
+
+**Wat blijft staan:** de WireMock-stream-stub uit `ci/generate-stream-stub.sh` houdt het
+gedrag van 0.10.0 — sluit na `run-afgerond`, roteert per verbinding, geen hartslag. Dat is
+vanaf nu de enige plek in de repository die de gepubliceerde spec tegenspreekt. Vastgelegd
+als O16, niet nu opgelost: WireMock kan een rotatie op een POST en een periodieke
+commentaarregel vermoedelijk niet, en dat uitzoeken hoort niet in de levering van deel B.
 
 ---
 
