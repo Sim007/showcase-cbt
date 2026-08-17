@@ -939,6 +939,114 @@ die de hele showcase draait is een andere belofte dan deze repository nu doet.
 O14. Dat is nog niet gedaan: dit document beschrijft de afweging, de openstaandepuntenlijst
 in de showcasebeschrijving is een andere plek en die wordt in een eigen wijziging bijgewerkt.
 
+## 2026-08-14 — De compatibiliteitsrichting volgt uit wie schrijft en wie leest
+
+`publish-contract.sh` zette `BACKWARD` hard op elk artifact. Op twee van de drie klopte dat,
+en dat het klopte was toeval: er is nooit gekozen, het was de standaardwaarde van een script.
+
+**De regel is breder dan die ene instelling.** Welke kant compatibel moet blijven volgt uit
+de richting van het verkeer op die grens:
+
+| | Wie schrijft | Wie leest | Richting |
+|---|---|---|---|
+| REST | de consumer stuurt een verzoek | de provider | `BACKWARD` |
+| stream | de provider vertelt | de consumer | `FORWARD` |
+
+Op `run-stream` schrijven wij en leest showcase-website. Met `BACKWARD` keurt de gate daar
+juist de wijziging goed die hen breekt: een veld uit `required` halen is voor een lézer
+veilig — hij eist minder — maar wij zijn de schrijver, en wat wij niet meer sturen mist de
+consumer. Gemeten op een `JSON`-artifact: `BACKWARD` geeft daar HTTP 200, `FORWARD` geeft 400
+met `OBJECT_TYPE_REQUIRED_PROPERTIES_MEMBER_ADDED`.
+
+De richting staat daarom per grens in `ci/registers.env`, met de reden erbij, en een grens
+zonder regel laat de publicatie falen. Kiezen is verplicht, vergeten kan niet — dezelfde
+omgekeerde formulering als bij de vrijstellingen.
+
+**Wat dit algemeen maakt:** een compatibiliteitsregel is geen instelling van een register
+maar een uitspraak over een richting. Wie hem als standaard overneemt, kiest de helft van de
+tijd de verkeerde — en merkt dat pas als de gate iets doorlaat.
+
+## 2026-08-16 — De stream blijft open tussen runs door
+
+Eén verbinding per sessie, niet per run. De consumer sluit hem, niet de provider. Een tweede
+scenario starten gaat over dezelfde verbinding.
+
+**Wat daaruit volgt.** `runId` is niet langer een detail voor herverbindingen maar het enige
+waaraan de website ziet dat er een nieuwe run begint. En een momentopname met `run: null` is
+vanaf nu de normale begintoestand van elke sessie, geen randgeval voor een late kijker.
+
+**Er hoort een heartbeat bij, en die is niet vrijblijvend.** Een stille SSE-verbinding wordt
+door proxies en browsers opgeruimd. "Altijd open" beloven zonder teken van leven is een
+belofte die het transport niet houdt. Elke 20 seconden een SSE-commentaarregel.
+
+**Een commentaarregel en geen zevende berichtsoort**, en dat is een afweging en geen detail:
+`EventSource` levert een commentaarregel nooit aan de applicatie af, dus een browserclient
+kan er niet over struikelen. Een echt bericht fírt wél, en dan moet elke consumer hem
+wegfilteren — dan verplaats je het werk naar de kant met de meeste lezers. Wie hem wél moet
+kennen is iedereen die de ruwe stream leest: een eigen parser, een `curl -N`, onze replayer.
+
+**De prijs, en die staat er bewust bij.** AsyncAPI 2.6.0 kan een commentaarregel niet
+uitdrukken — het formaat kent alleen berichten op een kanaal. De heartbeat staat dus in proza
+in de kanaalbeschrijving, op de enige plek waar geen enkel net staat: geen schema dat hem
+afdwingt, en de structuurkant is de erkende schuld uit O13. **Derde keer deze maand dat een
+belofte in proza landt**, en de vorige twee — `omgeving` ontbreekt, `deelsysteem` ontbreekt —
+zijn allebei misgelezen. Dat is geen reden om het niet te doen; het is een reden om te weten
+waar de volgende bevinding vandaan komt.
+
+**Waarom een herverbinding geen resync hoeft te dragen.** De hele showcase draait op één
+laptop, met iemand ernaast. Een reconnect is daarmee geen normale gebeurtenis maar een
+storing; showcase-website zet de automatische reconnect van `EventSource` uit en toont het.
+Opnieuw beginnen is de herstelactie, en die hoort bij de mens. Daardoor raken er binnen een
+run geen cli-regels kwijt en hoeft de momentopname niets in te halen.
+
+## 2026-08-17 — Elke opname een eigen `runId`, en waarom er één het oude houdt
+
+De drie fixtures droegen alle drie `run-7c41a9`: drie verschillende verlopen die beweerden
+dezelfde run te zijn. Onoefenbaar, en erger dan dat — verkeerd oefenbaar, want een consumer
+die op `runId` bijhoudt welke run hij volgt, krijgt materiaal dat zijn logica bevestigt
+terwijl het niets aantoont. Dat wordt dragend zodra de stream open blijft.
+
+Nu: `voltooid` = `run-7c41a9`, `gestopt` = `run-3b8e02`, `midden` = `run-9d15f4`. Vast en
+reproduceerbaar, want dat is de voorwaarde waaronder deze gegenereerde bestanden gecommit
+mogen staan.
+
+**`voltooid` houdt het oude nummer, en dat is een keuze.** Datzelfde nummer staat op zestien
+plekken in beide specs als `example`. Alle drie hernummeren zou die examples ongeldig maken,
+en dan was deze reparatie geen losse stap meer maar een specwijziging — precies wat hem uit
+de wachtrij hield terwijl showcase-website erop zat te wachten.
+
+**Wat blijft staan, genoteerd omdat het ooit gaat verwarren:** er is nu één fixture waarvan
+het `runId` gelijk is aan het voorbeeldnummer in de specs. Wie een bericht ziet met
+`run-7c41a9` kan niet aan het nummer zien of het uit de `voltooid`-opname komt of uit een
+voorbeeld. Als daar ooit verwarring over ontstaat, komt ze hiervandaan.
+
+## 2026-08-17 — Stand van deel A, en wat deel B nog moet
+
+Het besluit "de stream blijft open" is in twee delen geknipt, langs wie er iets van merkt.
+De oorspronkelijke knip — eerst de stub, dan de publicatie — kon niet: de stub moet de
+heartbeat zenden en die staat in `run-stream`, dus stub-vóór-spec levert een stub op die iets
+doet wat de spec niet beschrijft.
+
+**Deel A staat en is uitgegeven.** `scenario-api 0.11.0` met de afwezigheidsregel bij `Stap`,
+`run-stream 0.11.0` met de heartbeat in de kanaalbeschrijving, beide gepubliceerd, getagd en
+langs de publieke URL geverifieerd. De fixtures zijn opnieuw gegenereerd met drie eigen
+`runId`'s. De melding aan showcase-website staat in
+`docs/melding-showcase-website-0.11.0.md`, met vooraan dat de bundel hier nog niet naar
+handelt.
+
+**Deel B moet nog, in één keer.** `ci/stubbundel/stub.js` krijgt vier gedragswijzigingen die
+niet los opleverbaar zijn: de verbinding openhouden, roteren op `POST /v1/runs` in plaats van
+op een sluiting, een idle-momentopname bij verbinden, en de heartbeat zenden. Openhouden
+zonder roulatiesignaal geeft een stub die na één run stilvalt; roteren zonder
+idle-momentopname geeft een tweede run zonder begin. Daarna: bundel `0.11.0`, zijn tag, en
+een korte melding dat het gereedschap de specs heeft ingehaald.
+
+**Eén ding dat in deel B moet meeveranderen en makkelijk vergeten wordt.**
+`ci/toets-stubbundel.sh` leest nu tot een verwacht aantal berichten — 21, het aantal van een
+volledige run. Zodra de stub openblijft is dat aantal niet meer de natuurlijke grens van een
+run maar een getal dat ik zelf heb gekozen, en dan toetst de gate zijn eigen aanname. Hij
+moet lezen **tot `run-afgerond`**, met de tijdslimiet als vangnet daaromheen.
+
 ---
 
 # Geleerd
@@ -1075,6 +1183,41 @@ tolerantie iets om te draaien in plaats van te beloven.
 Eerst Docker, dat de ontvanger niet had. Toen `npx`, dat bij hem niet werkte. Nu een stub die
 alleen het heden kent. Het contract klopte alle drie de keren; wat eromheen zat niet — en dat
 staat nergens in een spec.
+
+## 2026-08-17 — Een belofte in een README is een bewering zonder gate
+
+De README van deze repository zegt over de stubbundel: **"Twee draaiwijzen, allebei
+getoetst"**, met een tabel van wat je hoort te zien — een preflight, een 400 op een
+niet-gedeclareerd veld, drie streams met hun aantallen.
+
+Er was geen enkel script dat de bundel startte. `toets-tolerantie.sh` en
+`bouw-stubbundel.sh` werken op bestanden; de enige plek waar de stream werd gelezen was een
+`curl -N` in een README, met de hand. Wat er automatisch getoetst werd, was of de bundel te
+**bouwen** viel — niet of hij werkte.
+
+"Allebei getoetst" was dus waar op de dag dat iemand het deed, en daarna een bewering.
+
+**Dezelfde klasse als de `/api/hoofdstukken`-aanname**, alleen langs een andere weg. Die kwam
+uit een overdrachtsdocument en reisde mee omdat niemand hem tegen de spec hield; deze staat
+in onze eigen README en overleefde omdat een README niet draait. Beide keren stond er geen
+gate tussen, en beide keren klonk de bewering met elke herhaling zekerder.
+
+**Wat het gevaarlijk maakt is de vorm.** Een README beschrijft wat er hoort te gebeuren, in
+de tegenwoordige tijd, en leest daarmee als vastgesteld. Er is geen verschil in toon tussen
+"dit is getoetst" en "dit is één keer nagekeken", en geen enkel gereedschap kent dat verschil
+wél.
+
+**Wat ervoor in de plaats komt:** `ci/toets-stubbundel.sh` start de bundel, stuurt een
+niet-gedeclareerd veld en eist een 400, leest de stream en toetst elk bericht op JSON met een
+`soort`. Draait mee in `controle.sh`. De regel in de README is daarmee voor het eerst waar op
+elke dag in plaats van op één dag.
+
+**En de manier van lezen hoort erbij.** Die toets leest **tot een verwacht aantal berichten,
+met een tijdslimiet** — niet tot de verbinding sluit. Dat is nodig zodra de stub openblijft,
+en het is sowieso strenger: een lus die op EOF wacht telt niet wat hij zag en komt bij nul
+berichten net zo vrolijk terug als bij twintig. Een toets die hángt is bovendien erger dan
+een die faalt: hij meldt niets, ook geen rood, en een pipeline die niets meldt lijkt nog te
+draaien.
 
 ## 2026-08-15 — Erkende schuld: de structuurkant van `run-stream` is ongedekt
 

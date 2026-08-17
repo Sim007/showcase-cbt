@@ -110,12 +110,22 @@ knelde.
 
 ## 7. De momentopname
 
-Bij verbinden komt eerst een `momentopname`, zodat een late kijker niet blind begint. Hij
-bevat de lopende run, de al afgeronde stappen en welke stap loopt — en **geen cli-uitvoer**.
-Die draagt geen betekenis, en zou een late kijker op een inhaalslag laten wachten voordat
-hij iets ziet.
+Bij verbinden komt eerst een `momentopname`. Hij bevat de lopende run, de al afgeronde
+stappen en welke stap loopt — en **geen cli-uitvoer**. Die draagt geen betekenis, en zou een
+late kijker op een inhaalslag laten wachten voordat hij iets ziet.
 
-Loopt er geen run, dan staat er `run: null`. Zwijgen zou dubbelzinnig zijn.
+**`run: null` is sinds 0.11.0 de normale begintoestand en geen randgeval.** De stream blijft
+open tussen runs door — één verbinding per sessie, niet per run — dus de gewone gang is:
+verbinden, een momentopname zonder run, en pas daarna een `POST /v1/runs` die de eerste
+`run-gestart` oplevert. Reken er dus op dat dit het eerste is wat je ziet, en niet op een
+momentopname die meteen een run draagt.
+
+Dat was vóór 0.11.0 anders: toen sloot de verbinding na elke run en was `run: null` het geval
+van iemand die toevallig tussen twee runs door binnenkwam. Wie tegen bundel 0.10.0 heeft
+gebouwd, heeft die oude volgorde gezien.
+
+Zwijgen in plaats van `run: null` zou dubbelzinnig zijn: dan is "er loopt niets" niet te
+onderscheiden van "de verbinding doet het niet".
 
 **Gevolg, bekend en bedoeld: wie halverwege binnenkomt, heeft een leeg CLI-paneel.** De
 stappen die al af zijn hebben hun uitvoer al gehad, en die komt niet opnieuw. Wat hij wél
