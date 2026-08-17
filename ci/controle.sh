@@ -5,7 +5,7 @@
 #   controle.sh
 #
 # Dit script bestaat omdat een uitzondering op krediet stond. De drie fixtures in
-# contracts/showcase-cbt/run-stream/0.10.0/runs/ zijn gegenereerd én gecommit, en dat mocht
+# contracts/showcase-cbt/run-stream/<versie>/runs/ zijn gegenereerd én gecommit, en dat mocht
 # alleen onder de voorwaarde dat er een controle bestaat die ze opnieuw genereert en
 # vergelijkt. Die controle bestond, maar draaide nergens automatisch — en een voorwaarde die
 # van een handmatige aanroep afhangt, is dezelfde zwakke afspraak die deze showcase over
@@ -29,7 +29,7 @@ fout() {
 GROEP=showcase-cbt
 SCENARIO=scenario-api
 STREAM=run-stream
-VERSIE=0.10.0
+VERSIE=0.11.0
 
 echo "== controle =="
 
