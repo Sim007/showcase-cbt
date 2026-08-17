@@ -106,16 +106,23 @@ Naast de scenario's loopt een echte grens: showcase-CBT levert `scenario-api` en
 bouwen — uitpakken en starten, verder niets.
 
 ```sh
-ci/bouw-stubbundel.sh showcase-cbt scenario-api 0.10.0 run-stream 0.10.0 0.10.0
+ci/bouw-stubbundel.sh showcase-cbt scenario-api 0.11.0 run-stream 0.11.0 0.11.0
 ```
 
-Levert `build/stubbundel-0.10.0.tgz` op, ongeveer 300 KB. De drie versies staan er los in:
+Levert `build/stubbundel-0.11.0.tgz` op, ongeveer 330 KB. De drie versies staan er los in:
 de twee specs bewegen elk op hun eigen tempo, en de bundel heeft een eigen nummer omdat hij
 van allebei is afgeleid. Welke versies erin zitten staat in `manifest.json`, met checksum.
 
-**Twee draaiwijzen, allebei getoetst.** Ze horen hetzelfde te doen; de eerste is er omdat
-de ontvanger geen Docker heeft, de tweede omdat wij die aanname niet nóg een keer willen
-maken zonder hem te controleren.
+**Twee draaiwijzen.** Ze horen hetzelfde te doen; de eerste is er omdat de ontvanger geen
+Docker heeft, de tweede omdat wij die aanname niet nóg een keer willen maken zonder hem te
+controleren.
+
+Wat de gate ervan dekt: `ci/toets-stubbundel.sh` pakt de bundel uit en draait hem in de
+node-container, dus het gedrag van `stub.js` staat vast bij elke push. Dat hij op een kále
+host met een eigen Node ook start, kan hier niet draaien — Docker en bash zijn de enige
+vereisten van deze repository, en een gate die Node op de runner veronderstelt maakt precies
+de aanname die we willen vermijden. Die regel blijft dus een handmatige controle bij een
+release, en dat staat hier omdat het verschil anders onzichtbaar is.
 
 | | Nodig | Commando |
 |---|---|---|
@@ -127,13 +134,22 @@ maken zonder hem te controleren.
 ```
 preflight (OPTIONS /v1/runs)            204
 POST /v1/runs met een onbekend veld     400
-stream, verbinding 1                    21 berichten, eindigt op run-afgerond voltooid
-stream, verbinding 2                    12 berichten, eindigt op run-afgerond gestopt
-stream, verbinding 3                    14 berichten, begint met een momentopname
+verbinden op /v1/runs/stream            momentopname met run: null, verbinding blijft open
+POST /v1/runs, eerste keer              201 met run-7c41a9, daarna 20 berichten
+POST /v1/runs tijdens die run           409 met run-7c41a9 erin
+POST /v1/runs, tweede keer              201 met run-3b8e02 — de gestopte run
+stilte op de verbinding                 elke 20 s een `: hartslag`
 ```
 
 Die 400 is de reden dat de bundel bestaat: hij weigert wat niet in de spec staat, net als de
-echte kant. Krijg je een 201, dan draait er iets anders dan deze bundel.
+echte kant. Krijg je een 201, dan draait er iets anders dan deze bundel. Dat geldt sinds
+`run-stream 0.11.0` ook voor de 409: er kan één run tegelijk lopen, en een stub die dat niet
+afdwingt laat jullie bouwen tegen een grens die ruimer is dan hij is.
+
+**Deze regels staan niet alleen hier.** `ci/toets-stubbundel.sh` start de bundel en toetst
+ze stuk voor stuk; hij draait mee in `ci/controle.sh`. Dat is met opzet zo: een README
+beschrijft in de tegenwoordige tijd wat er hoort te gebeuren, en leest daarmee als
+vastgesteld terwijl er niets onder staat. Zie `docs/besluiten.md`, 17 augustus.
 
 Met `TOLERANTIE=ja` stuurt de stream wat een volgende contractversie zou kunnen sturen — een
 onbekend veld, een onbekend berichttype en een onbekende enum-waarde. Zie

@@ -3,7 +3,7 @@
 Uitpakken en starten. Geen Docker, geen JDK, geen `npx`, en na het uitpakken geen netwerk.
 
 ```sh
-tar -xzf stubbundel-0.10.0.tgz
+tar -xzf stubbundel-0.11.0.tgz
 cd bundel
 node stub.js
 ```
@@ -52,6 +52,38 @@ je aan wat er is afgesproken.
 zit geen validatie tussen. Dat hoeft ook niet: ze zijn bij het maken al tegen hun
 payloadschema gehouden. Maar het betekent dat je er niet op moet vertrouwen om je eigen
 fouten te vangen.
+
+---
+
+## De verbinding blijft open
+
+Sinds `run-stream 0.11.0`. **Eén verbinding per sessie, niet per run** — en jullie sluiten
+hem, niet wij.
+
+```
+GET  /v1/runs/stream     verbinden; blijft open
+POST /v1/runs            start een run over die verbinding
+POST /v1/runs            tijdens die run: 409, met het runId van de run die loopt
+```
+
+**Bij verbinden komt eerst een momentopname.** Loopt er niets, dan draagt die `run: null`.
+Dat is de normale begintoestand van een sessie en geen randgeval — je krijgt hem elke keer
+als je opent voordat je iets start.
+
+**De 201 op `POST /v1/runs` draagt het `runId` van de run die dan begint**, en dat is
+hetzelfde nummer als op de berichten die erna over de stream komen. Zie de tabel hieronder
+voor welk nummer wanneer.
+
+**Blijft het stil, dan komt er elke 20 seconden een `: hartslag`.** Voor een browserclient
+verandert dat niets: `EventSource` levert een commentaarregel nooit af, er komt geen
+`onmessage` voor. Lees je de ruwe stream — een eigen parser, een `curl -N`, een test — dan
+zie je hem wél en sla je regels die met `:` beginnen over.
+
+**Wat de bundel niet kan.** Verbind je midden in een lopende run, dan krijg je de opgenomen
+openingsmomentopname van die run en niet de stand van dat moment. Deze stub stelt nooit zelf
+een momentopname samen: dat zou betekenen dat hij de toestand van een run gaat bepalen, en
+dan oefen je tegen iets wat nergens is vastgelegd. Verbind dus vóór je start — zo is de
+grens ook bedoeld.
 
 ---
 
@@ -118,16 +150,35 @@ ook doen — alleen dan in productie in plaats van nu.
 
 ---
 
+## Twee schakelaars, en wat ze niet zijn
+
+| | |
+|---|---|
+| `TOLERANTIE=ja` | de stream stuurt wat een volgende contractversie zou kunnen sturen |
+| `HARTSLAG_MS=1000` | de hartslag komt na een seconde stilte in plaats van na twintig |
+
+**Allebei zijn ze gereedschap om een belofte uit het contract te kúnnen aantonen, en geen
+gedrag dat het contract beschrijft.** In de spec staat 20 seconden, en dat is wat de bundel
+doet als je niets instelt. Een toets die binnen één run wil vaststellen dát er een hartslag
+is, haalt die 20 seconden nooit — dan blijft het een bewering. Zo gebruiken wij hem in
+`ci/toets-stubbundel.sh`, en zo is hij hier ook bedoeld.
+
+Lees ze dus niet als contractgedrag. Wat jullie client moet kunnen, staat in de spec; deze
+twee zijn er om te controleren dat hij het ook echt kan.
+
+---
+
 ## De drie runs
 
-De stream geeft bij **elke nieuwe verbinding de volgende run**. Verbind je drie keer, dan
-heb je ze alledrie gehad.
+**Elke `POST /v1/runs` start de volgende opname.** Start drie keer over dezelfde verbinding,
+dan heb je ze alledrie gehad. (Tot 0.10.0 ging dat per nieuwe verbinding; die verbinding
+sluit nu niet meer, dus de start is het signaal geworden.)
 
 | | `runId` | Wat erin zit |
 |---|---|---|
 | `voltooid` | `run-7c41a9` | alle stappen komen aan bod en slagen |
 | `gestopt` | `run-3b8e02` | stap 3 mislukt; **stap 4, 5 en 6 krijgen geen enkel bericht** |
-| `midden` | `run-9d15f4` | een momentopname midden in een lopende run |
+| `midden` | `run-9d15f4` | begint bij stap 3 — zie hieronder |
 
 **Elke opname heeft zijn eigen `runId`.** Ze droegen er eerst alle drie hetzelfde, en dat was
 verkeerd oefenmateriaal: drie verschillende verlopen die beweren dezelfde run te zijn. Wie op
@@ -145,9 +196,21 @@ Dat is het geval waar je afleidregel op moet passen:
 `run-afgerond` draagt bij `gestopt` ook `gestoptBijStap`, zodat je niet hoeft af te leiden
 welke stap de run stopte.
 
+**`midden` toont niet meer wat hij ooit toonde, en dat moeten jullie weten.** Die opname was
+er voor de late kijker: iemand die verbindt terwijl er al een run loopt. Dat geval hoort nu
+bij het verbinden en niet bij het starten, en de stub kan het niet nabootsen zonder zelf een
+momentopname samen te stellen. Speel je hem af met een `POST`, dan zie je een run die bij
+stap 3 begint zonder `run-gestart` — inclusief `afgerondeStappen` en `lopendeStap` in de
+openingsmomentopname, dus de plaat is nog steeds meteen correct, maar het is niet meer het
+late-kijkersgeval.
+
+**Dat gat is er echt.** Het late-kijkersgeval is tegen deze bundel niet meer te oefenen. Wij
+hebben liever een fixture die minder toont dan een stub die iets aanwijst wat niet is
+vastgelegd. Loopt jullie werk erop vast, zeg het — dan is het een gesprek over de fixtures
+en niet over een instelling.
+
 **`midden` heeft een leeg CLI-paneel.** De uitvoer van al afgeronde stappen komt niet
-opnieuw; die draagt geen betekenis en zou je eerst een inhaalslag laten afwachten. Wat je
-wél krijgt is `afgerondeStappen` en `lopendeStap`, dus de plaat is meteen correct.
+opnieuw; die draagt geen betekenis en zou je eerst een inhaalslag laten afwachten.
 
 ---
 
@@ -164,11 +227,26 @@ Zeg het als 5173 niet klopt; dan wordt het een contractwijziging en geen stubins
 
 ## Uitproberen
 
+Eerst verbinden, in een eigen venster. **Deze stopt niet vanzelf** — de verbinding blijft
+open, en dat is de bedoeling. Sluit hem met Ctrl-C:
+
 ```sh
-curl localhost:8090/v1/scenarios
-curl -X POST -H 'Content-Type: application/json' -d '{"scenarioId":"01"}' localhost:8090/v1/runs
-curl -X POST -H 'Content-Type: application/json' -d '{"scenarioId":"01","onzin":true}' localhost:8090/v1/runs
 curl -N localhost:8090/v1/runs/stream
 ```
 
-De derde hoort een 400 te geven. Doet hij dat niet, dan klopt er iets niet en horen we het graag.
+Dan, in een tweede venster:
+
+```sh
+curl localhost:8090/v1/scenarios
+curl -X POST -H 'Content-Type: application/json' -d '{"scenarioId":"01"}' localhost:8090/v1/runs
+curl -X POST -H 'Content-Type: application/json' -d '{"scenarioId":"01"}' localhost:8090/v1/runs
+curl -X POST -H 'Content-Type: application/json' -d '{"scenarioId":"01","onzin":true}' localhost:8090/v1/runs
+```
+
+Wat je in het eerste venster hoort te zien: meteen een momentopname met `run: null`, na de
+eerste POST de run `run-7c41a9` tot en met `run-afgerond`, en daarna elke 20 seconden een
+`: hartslag`.
+
+De tweede POST komt binnen terwijl die run nog loopt en hoort een **409** te geven met
+`run-7c41a9` erin. De derde hoort een **400** te geven. Doet een van beide dat niet, dan
+klopt er iets niet en horen we het graag.
