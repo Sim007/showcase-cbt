@@ -83,6 +83,18 @@ jq --arg streampad "${STREAMPAD}" '
             methode: ($methode.key | ascii_upcase),
             patroon: ("^" + ($pad.key | gsub("\\{[^}]+\\}"; "[^/]+")) + "$"),
             status: ($ok.key | tonumber),
+            # De operationId, zodat de stub een route kan herkennen zonder een pad hard te
+            # hebben staan. `startRun` is het enige verzoek dat bij hem iets in beweging
+            # zet — de stream roteert erop — en die naam komt uit de spec.
+            operationId: $methode.value.operationId,
+            # De foutantwoorden met hun example. Nodig sinds de stub toestand heeft: hij kan
+            # een tweede start weigeren zoals de spec voorschrijft, en dan moet het antwoord
+            # uit de spec komen en niet uit de stub.
+            fouten: (($methode.value.responses // {}) | to_entries
+              | map(select((.key | test("^2")) | not))
+              | map(select(.value.content."application/json".example != null))
+              | map({ key: .key, value: .value.content."application/json".example })
+              | from_entries),
             kopteksten: (
               (if $ok.value.content then { "Content-Type": "application/json" } else {} end)
               + (($ok.value.headers // {}) | to_entries | map({

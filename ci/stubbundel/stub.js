@@ -12,6 +12,17 @@
 //
 // Wat hij niet toetst: de berichten op de stream. Die worden afgespeeld zoals ze zijn
 // opgenomen. Zie de README.
+//
+// --- De verbinding blijft open (run-stream 0.11.0) -------------------------------------
+//
+// Eén verbinding per sessie, niet per run. De consumer sluit hem, niet wij. Een run start
+// over `POST /v1/runs` en de berichten gaan naar iedereen die op dat moment luistert. Bij
+// het verbinden komt eerst een momentopname, en blijft het daarna stil dan gaat er elke
+// HARTSLAG_MS een SSE-commentaarregel uit als teken van leven.
+//
+// De stub stelt nooit zelf een momentopname samen. Wat hij verstuurt zijn opgenomen regels;
+// een momentopname uit de replaypositie berekenen zou betekenen dat hij de toestand van een
+// run gaat bepalen, en dan toont hij iets wat nergens is vastgelegd.
 
 const http = require('http');
 const fs = require('fs');
@@ -23,6 +34,15 @@ const HIER = __dirname;
 const POORT = Number(process.env.POORT || 8090);
 const data = JSON.parse(fs.readFileSync(path.join(HIER, 'stub-data.json'), 'utf8'));
 
+// De twee schakelaars hieronder zijn gereedschap om een belofte uit het contract te kunnen
+// aantonen, en geen gedrag dat het contract beschrijft. Zie de README.
+//
+// HARTSLAG_MS staat op de 20 seconden uit de spec. Lager zetten is er voor een toets: een
+// hartslag die pas na 20 seconden komt, wordt door geen enkele toets binnen een run gezien,
+// en dan is "er is een heartbeat" opnieuw een bewering zonder iets eronder.
+const HARTSLAG_MS = Number(process.env.HARTSLAG_MS || 20000);
+const TEMPO_MS = 400;
+
 const ajv = new Ajv({ strict: false, allErrors: true });
 addFormats(ajv);
 
@@ -33,14 +53,39 @@ const routes = data.routes.map((r) => ({
   keur: r.verzoekSchema ? ajv.compile({ ...data.componenten, ...r.verzoekSchema }) : null,
 }));
 
-// De drie fixtures, om en om bij elke verbinding — net als de WireMock-stub. Zo komt de
-// gestopte run vanzelf aan de beurt, en die heeft de consumer het hardst nodig.
-const RUNS = ['voltooid', 'gestopt', 'midden'].map((naam) =>
+const startroute = routes.find((r) => r.operationId === 'startRun');
+if (!startroute) throw new Error('geen operatie startRun in stub-data.json');
+
+// De drie fixtures, om en om bij elke start. Zo komt de gestopte run vanzelf aan de beurt,
+// en die heeft de consumer het hardst nodig.
+const NAMEN = ['voltooid', 'gestopt', 'midden'];
+const RUNS = NAMEN.map((naam) =>
   fs.readFileSync(path.join(HIER, 'runs', `${naam}.jsonl`), 'utf8').trim().split('\n')
 );
 let beurt = 0;
 
-// TOLERANTIE=ja stuurt wat een volgende contractversie zou kunnen sturen. Niet omdat 1.0.0
+// Het runId komt uit de opname zelf en niet uit een example: de drie fixtures dragen elk hun
+// eigen nummer, en de stub moet zijn twee kanten daarover laten overeenstemmen.
+function runIdVan(regels) {
+  for (const regel of regels) {
+    const b = JSON.parse(regel);
+    if (b.runId) return b.runId;
+    if (b.run && b.run.runId) return b.run.runId;
+  }
+  throw new Error('een opname zonder runId');
+}
+
+// De momentopname voor een verbinding waarop niets loopt. Uit de fixtures, want `run: null`
+// is een opgenomen regel en de normale begintoestand van een sessie. Ontbreekt hij, dan
+// stopt de stub: zelf een lege momentopname verzinnen is precies wat hij niet doet.
+const IDLE = RUNS.map((regels) => regels[0])
+  .find((regel) => {
+    const b = JSON.parse(regel);
+    return b.soort === 'momentopname' && b.run === null;
+  });
+if (!IDLE) throw new Error('geen momentopname met run: null in de fixtures');
+
+// TOLERANTIE=ja stuurt wat een volgende contractversie zou kunnen sturen. Niet omdat 0.11.0
 // dat doet, maar omdat een stub die alleen de huidige versie spreekt een tolerantiefout
 // niet kán tonen: alles past, dus alles lijkt goed — tot de eerste additieve wijziging.
 //
@@ -48,17 +93,23 @@ let beurt = 0;
 // groen meldt is hetzelfde patroon als een lus die na één bericht stopt.
 const TOLERANT = process.env.TOLERANTIE === 'ja';
 
+function tolerantBericht(b) {
+  b.herkomst = 'toekomstige-versie';                         // 1 — onbekend veld
+  if (b.soort === 'run-afgerond' && b.reden === 'gestopt') {
+    b.reden = 'gestopt-door-beheerder';                      // 3 — onbekende enum-waarde
+  }
+  return b;
+}
+
+function tolerantRegel(regel) {
+  if (!TOLERANT) return regel;
+  return JSON.stringify(tolerantBericht(JSON.parse(regel)));
+}
+
 function toekomstig(regels) {
   if (!TOLERANT) return regels;
 
-  const uit = regels.map((regel) => {
-    const b = JSON.parse(regel);
-    b.herkomst = 'toekomstige-versie';                       // 1 — onbekend veld
-    if (b.soort === 'run-afgerond' && b.reden === 'gestopt') {
-      b.reden = 'gestopt-door-beheerder';                    // 3 — onbekende enum-waarde
-    }
-    return JSON.stringify(b);
-  });
+  const uit = regels.map((regel) => JSON.stringify(tolerantBericht(JSON.parse(regel))));
 
   // 2 — onbekend berichttype, vlak voor het einde zodat het midden in de verwerking valt
   const laatste = JSON.parse(uit[uit.length - 1]);
@@ -81,37 +132,93 @@ function lees(verzoek) {
   });
 }
 
-// De stream: één bericht per SSE-event, met dezelfde tussenpozen als de opname. Dit is het
-// hele replaymechanisme — het toetst niets en beslist niets.
-function stream(antwoord) {
-  const regels = toekomstig(RUNS[beurt++ % RUNS.length]);
+// --- de stream ---------------------------------------------------------------------------
+
+const abonnees = new Set();
+let lopend = null;
+
+// De hartslag wordt na elk bericht opnieuw opgezet: hij is er voor stilte, en een verbinding
+// waarover berichten gaan heeft geen extra teken van leven nodig. Zo staat het ook in de
+// kanaalbeschrijving — "blijft het stil, dan".
+function hartslagOpnieuw(abonnee) {
+  clearTimeout(abonnee.hartslag);
+  abonnee.hartslag = setTimeout(() => {
+    abonnee.antwoord.write(': hartslag\n\n');
+    hartslagOpnieuw(abonnee);
+  }, HARTSLAG_MS);
+}
+
+function zend(abonnee, regel) {
+  abonnee.antwoord.write(`data: ${regel}\n\n`);
+  hartslagOpnieuw(abonnee);
+}
+
+function verbind(verzoek, antwoord) {
   antwoord.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     Connection: 'keep-alive',
     'Access-Control-Allow-Origin': data.origin,
   });
-  regels.forEach((regel, i) => setTimeout(() => {
-    antwoord.write(`data: ${regel}\n\n`);
-    if (i === regels.length - 1) antwoord.end();
-  }, i * 400));
+
+  const abonnee = { antwoord, hartslag: null };
+  abonnees.add(abonnee);
+  verzoek.on('close', () => {
+    clearTimeout(abonnee.hartslag);
+    abonnees.delete(abonnee);
+  });
+
+  // Loopt er een run, dan is dit de opgenomen openingsmomentopname van die run en niet de
+  // stand van nú. Deze bundel is er voor één sessie die verbindt en daarna runs start; wie
+  // midden in een run aansluit, krijgt een momentopname die achterloopt. Dat is een grens
+  // van de bundel en staat zo in de README.
+  zend(abonnee, tolerantRegel(lopend ? lopend.opening : IDLE));
+}
+
+// Het hele replaymechanisme: de regels van één opname, met dezelfde tussenpozen als de
+// opname, naar iedereen die luistert. Het toetst niets en beslist niets.
+function startRun() {
+  const regels = toekomstig(RUNS[beurt % RUNS.length]);
+  beurt += 1;
+
+  // De eerste regel van een opname is de momentopname bij het verbinden. Er wordt nu één
+  // keer verbonden en daarna vaker gestart, dus hier hoort hij niet meer in de stroom: hij
+  // zou een `run: null` melden op het moment dat er net een run begon.
+  const eerste = JSON.parse(regels[0]);
+  const opening = eerste.soort === 'momentopname' ? regels[0] : IDLE;
+  const stroom = eerste.soort === 'momentopname' ? regels.slice(1) : regels;
+
+  lopend = { runId: runIdVan(regels), opening };
+
+  stroom.forEach((regel, i) => setTimeout(() => {
+    abonnees.forEach((abonnee) => zend(abonnee, regel));
+    if (i === stroom.length - 1) lopend = null;
+  }, (i + 1) * TEMPO_MS));
+
+  return lopend.runId;
+}
+
+// --- de server ---------------------------------------------------------------------------
+
+function json(antwoord, status, body) {
+  antwoord.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': data.origin,
+  });
+  antwoord.end(JSON.stringify(body));
 }
 
 http.createServer(async (verzoek, antwoord) => {
   const pad = verzoek.url.split('?')[0];
 
-  if (verzoek.method === 'GET' && pad === data.streampad) return stream(antwoord);
+  if (verzoek.method === 'GET' && pad === data.streampad) return verbind(verzoek, antwoord);
 
   const route = routes.find((r) => r.methode === verzoek.method && r.patroon.test(pad));
   if (!route) {
-    antwoord.writeHead(404, {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': data.origin,
-    });
-    return antwoord.end(JSON.stringify({
+    return json(antwoord, 404, {
       code: 'PAD_ONBEKEND',
       message: `${verzoek.method} ${pad} staat niet in het contract`,
-    }));
+    });
   }
 
   if (route.keur) {
@@ -123,23 +230,44 @@ http.createServer(async (verzoek, antwoord) => {
       body = null;
     }
     if (!route.keur(body)) {
-      antwoord.writeHead(400, {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': data.origin,
-      });
-      return antwoord.end(JSON.stringify({
+      return json(antwoord, 400, {
         code: 'VERZOEK_ONGELDIG',
         message: ajv.errorsText(route.keur.errors),
-      }));
+      });
     }
   }
 
+  if (route.operationId === 'startRun') {
+    // "Er kan één run tegelijk lopen. Loopt er al een, dan levert dit een 409 met het runId
+    // van die lopende run." De body is de example uit de spec; alleen het nummer erin wordt
+    // dat van de run die echt loopt, want anders wijst het antwoord een andere run aan dan
+    // de stream afspeelt. Het `Error`-schema heeft geen veld voor een runId — die staat in
+    // de tekst, dus daar gebeurt het.
+    if (lopend) {
+      const voorbeeld = route.fouten['409'];
+      return json(antwoord, 409, {
+        ...voorbeeld,
+        message: voorbeeld.message.split(route.body.runId).join(lopend.runId),
+      });
+    }
+
+    // Het runId van de opname die nu begint. Het example in de spec is een voorbeeld en geen
+    // voorschrift dat elk antwoord dat nummer draagt; de stub houdt hiermee zijn twee kanten
+    // over dezelfde run aan het woord.
+    const runId = startRun();
+    return json(antwoord, route.status, { ...route.body, runId });
+  }
+
+  // Afbreken beantwoordt zijn eigen operatie en raakt de replay niet: de opname bepaalt hoe
+  // een run eindigt. Wie een run wil zien die stopt, start `gestopt`.
   antwoord.writeHead(route.status, route.kopteksten);
   antwoord.end(route.body === null ? '' : JSON.stringify(route.body));
 }).listen(POORT, () => {
   console.log(`stub van showcase-CBT luistert op http://localhost:${POORT}`);
   console.log(`  ${routes.length} operaties uit het contract`);
-  console.log(`  stream op ${data.streampad} — drie fixtures, om en om per verbinding`);
+  console.log(`  stream op ${data.streampad} — blijft open, jij sluit hem`);
+  console.log(`  POST /v1/runs start de volgende opname: ${NAMEN.join(', ')}`);
+  console.log(`  hartslag na ${HARTSLAG_MS / 1000}s stilte`);
   if (TOLERANT) {
     console.log('  TOLERANTIE=ja — de stream stuurt een onbekend veld, een onbekend');
     console.log('    berichttype en een onbekende enum-waarde. Alle drie horen jouw');
