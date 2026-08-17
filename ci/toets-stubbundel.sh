@@ -152,6 +152,9 @@ echo "  ok    gelezen tot run-afgerond"
 # in plaats van met een getal dat ik ooit heb gekozen.
 VERWACHT="$(wc -l < "${WERK}/bundel/runs/voltooid.jsonl" | tr -d ' ')"
 BERICHTEN="$(grep -c '^data: ' "${UITVOER}" || true)"
+verwacht_minstens "${BERICHTEN:-0}" "${VERWACHT}" "berichten uit de stream van de bundel"
+# En niet meer dan dat: te veel berichten betekent dat er iets in de stroom zit wat niet in
+# de opname staat, en dat is net zo goed drift als te weinig.
 [ "${BERICHTEN}" = "${VERWACHT}" ] \
   || fout "${BERICHTEN} berichten gelezen, ${VERWACHT} in de opname — de stream levert niet wat er is vastgelegd"
 echo "  ok    ${BERICHTEN} berichten, precies de opname"
