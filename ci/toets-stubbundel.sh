@@ -137,6 +137,30 @@ grep -q "${RUNID}" "${TWEEDE}" \
   || fout "de 409 noemt niet het runId van de lopende run — dan wijst hij een andere run aan dan de stream afspeelt"
 echo "  ok    tweede start tijdens de run geeft 409 met datzelfde runId"
 
+# --- verbinden terwijl de run loopt -------------------------------------------------------------
+#
+# Dit pad is door squad 2 gemeten en niet door ons: de stub stuurde de openingsregel van de
+# opname, dus `run: null` terwijl er een run liep. Hun reducer zette scenarioId op null en kon
+# de stapberichten erna nergens aan hangen. Wij hadden dat als beperking in de README gezet in
+# plaats van als toets, en daarmee stond er niets tussen.
+
+sleep 3
+TWEEDE_STROOM="${WERK}/stream2.txt"
+curl -fsS -N --max-time 3 "http://localhost:${POORT}/v1/runs/stream" > "${TWEEDE_STROOM}" 2>/dev/null || true
+
+MIDDENIN="$(grep -m1 '^data: ' "${TWEEDE_STROOM}" | sed 's/^data: //')"
+[ -n "${MIDDENIN}" ] || fout "een tweede verbinding tijdens de run kreeg geen momentopname"
+
+printf '%s' "${MIDDENIN}" | jq -e --arg runid "${RUNID}" \
+  '.soort == "momentopname" and .run.runId == $runid' >/dev/null \
+  || fout "de momentopname midden in de run draagt niet de lopende run — dat is precies wat squad 2 stukliep"
+
+# De stand moet meebewegen met wat er verstuurd is. Na drie seconden op 400ms per bericht zijn
+# er stappen afgerond; blijft dit op nul staan, dan stuurt de stub een beginstand.
+printf '%s' "${MIDDENIN}" | jq -e '.afgerondeStappen | length > 0' >/dev/null \
+  || fout "de momentopname midden in de run meldt geen afgeronde stappen, terwijl er al berichten uit zijn"
+echo "  ok    verbinden tijdens de run geeft de stand van die run"
+
 # --- lezen tot run-afgerond --------------------------------------------------------------------
 
 WACHT=0

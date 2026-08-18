@@ -20,9 +20,9 @@
 // het verbinden komt eerst een momentopname, en blijft het daarna stil dan gaat er elke
 // HARTSLAG_MS een SSE-commentaarregel uit als teken van leven.
 //
-// De stub stelt nooit zelf een momentopname samen. Wat hij verstuurt zijn opgenomen regels;
-// een momentopname uit de replaypositie berekenen zou betekenen dat hij de toestand van een
-// run gaat bepalen, en dan toont hij iets wat nergens is vastgelegd.
+// De momentopname bij verbinden draagt de stand van de run die op dat moment loopt. Die
+// stand leidt de stub uitsluitend af uit wat hij verstuurd heeft — zie `beginStand` en
+// `werkBij` verderop — en nooit uit wat hij vermoedt.
 
 const http = require('http');
 const fs = require('fs');
@@ -153,6 +153,59 @@ function zend(abonnee, regel) {
   hartslagOpnieuw(abonnee);
 }
 
+// --- de stand van de lopende run ---------------------------------------------------------
+//
+// De stub leidt zijn toestand uitsluitend af uit wat hij verstuurd heeft, nooit uit wat hij
+// vermoedt. Dat is het verschil met zelf een momentopname verzinnen: hier begint de stand bij
+// de openingsmomentopname van de opname — zelf een opgenomen uitspraak over de toestand — en
+// wordt hij bijgewerkt door precies de berichten die de deur uit zijn gegaan.
+//
+// Zonder dit stuurde de stub bij verbinden de openingsregel van de opname, dus `run: null`
+// terwijl er een run liep. Het schema zegt daarover: "Null wanneer er geen run loopt."
+// Dat was geen beperking van de bundel maar een stub die zijn eigen contract tegensprak.
+
+function beginStand(openingRegel) {
+  const b = JSON.parse(openingRegel);
+  const stand = {
+    soort: 'momentopname',
+    tijd: b.tijd,
+    run: b.run,
+    afgerondeStappen: (b.afgerondeStappen || []).slice(),
+  };
+  if (b.lopendeStap !== undefined) stand.lopendeStap = b.lopendeStap;
+  return stand;
+}
+
+function werkBij(stand, b) {
+  stand.tijd = b.tijd;
+  switch (b.soort) {
+    case 'run-gestart':
+      // `Run` eist een gestartOp en run-gestart draagt dat veld niet. De tijd van dít bericht
+      // is het moment waarop wij de start gemeld hebben, en dat is wat wij kunnen weten.
+      stand.run = { runId: b.runId, scenarioId: b.scenarioId, gestartOp: b.tijd };
+      stand.afgerondeStappen = [];
+      delete stand.lopendeStap;
+      break;
+    case 'stap-gestart':
+      stand.lopendeStap = b.stapNummer;
+      break;
+    case 'stap-afgerond': {
+      const stap = { stapNummer: b.stapNummer, uitkomst: b.uitkomst };
+      if (b.bijzonderheden !== undefined) stap.bijzonderheden = b.bijzonderheden;
+      stand.afgerondeStappen.push(stap);
+      delete stand.lopendeStap;
+      break;
+    }
+    case 'run-afgerond':
+      delete stand.lopendeStap;
+      break;
+    default:
+      // cli-uitvoer draagt geen toestand, en een onbekende soort uit een volgende versie
+      // hoort de stand niet te raken.
+      break;
+  }
+}
+
 function verbind(verzoek, antwoord) {
   antwoord.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -168,11 +221,9 @@ function verbind(verzoek, antwoord) {
     abonnees.delete(abonnee);
   });
 
-  // Loopt er een run, dan is dit de opgenomen openingsmomentopname van die run en niet de
-  // stand van nú. Deze bundel is er voor één sessie die verbindt en daarna runs start; wie
-  // midden in een run aansluit, krijgt een momentopname die achterloopt. Dat is een grens
-  // van de bundel en staat zo in de README.
-  zend(abonnee, tolerantRegel(lopend ? lopend.opening : IDLE));
+  // Loopt er een run, dan gaat de stand van die run mee. Loopt er niets, dan de opgenomen
+  // regel met `run: null` — en dat is de normale begintoestand van een sessie.
+  zend(abonnee, tolerantRegel(lopend ? JSON.stringify(lopend.stand) : IDLE));
 }
 
 // Het hele replaymechanisme: de regels van één opname, met dezelfde tussenpozen als de
@@ -188,10 +239,12 @@ function startRun() {
   const opening = eerste.soort === 'momentopname' ? regels[0] : IDLE;
   const stroom = eerste.soort === 'momentopname' ? regels.slice(1) : regels;
 
-  lopend = { runId: runIdVan(regels), opening };
+  lopend = { runId: runIdVan(regels), stand: beginStand(opening) };
 
   stroom.forEach((regel, i) => setTimeout(() => {
     abonnees.forEach((abonnee) => zend(abonnee, regel));
+    // Bijwerken ná het zenden: de stand is een uitspraak over wat er verstuurd ís.
+    werkBij(lopend.stand, JSON.parse(regel));
     if (i === stroom.length - 1) lopend = null;
   }, (i + 1) * TEMPO_MS));
 

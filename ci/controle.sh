@@ -31,6 +31,13 @@ SCENARIO=scenario-api
 STREAM=run-stream
 VERSIE=0.11.0
 
+# De bundel heeft een eigen nummer, en dat is niet netjes maar noodzakelijk: hij is afgeleid
+# van twee specs en is gereedschap, geen contract. Een reparatie in de stub die geen enkele
+# spec raakt is een patch van de bundel en van niets anders. Stond hier VERSIE, dan zou elke
+# stubwijziging om een contractversie vragen — precies wat "drie versies, elk hun eigen
+# levenscyclus" ontkent.
+BUNDELVERSIE=0.11.1
+
 echo "== controle =="
 
 # --- 1: elke gate declareert wat hij verwachtte ------------------------------------------
@@ -112,14 +119,14 @@ echo "  ${GECONTROLEERD} berichten, tijd loopt overal vooruit"
 # schone runner nog bouwt, vangt precies die soort drift — en dit is de enige plek waar dat
 # automatisch gebeurt.
 
-"${CBT_ROOT}/ci/bouw-stubbundel.sh" "${GROEP}" "${SCENARIO}" "${VERSIE}" "${STREAM}" "${VERSIE}" "${VERSIE}" \
+"${CBT_ROOT}/ci/bouw-stubbundel.sh" "${GROEP}" "${SCENARIO}" "${VERSIE}" "${STREAM}" "${VERSIE}" "${BUNDELVERSIE}" \
   >/dev/null || fout "de stubbundel bouwt niet meer"
 
 echo "  stubbundel gebouwd"
 
 # Bouwen is niet hetzelfde als werken. Deze toets start hem en leest zijn stream, begrensd op
 # een aantal berichten en op tijd — want een toets die hangt meldt niets, ook geen rood.
-"${CBT_ROOT}/ci/toets-stubbundel.sh" "${VERSIE}" | sed 's/^/  /'
+"${CBT_ROOT}/ci/toets-stubbundel.sh" "${BUNDELVERSIE}" | sed 's/^/  /'
 
 # --- 6b: de release-assets zijn te bouwen -------------------------------------------------
 #
@@ -130,7 +137,7 @@ echo "  stubbundel gebouwd"
 
 "${CBT_ROOT}/ci/bouw-release.sh" spec "${GROEP}" "${SCENARIO}" "${VERSIE}" >/dev/null
 "${CBT_ROOT}/ci/bouw-release.sh" spec "${GROEP}" "${STREAM}" "${VERSIE}" >/dev/null
-"${CBT_ROOT}/ci/bouw-release.sh" bundel "${VERSIE}" >/dev/null
+"${CBT_ROOT}/ci/bouw-release.sh" bundel "${BUNDELVERSIE}" >/dev/null
 
 echo "  release-assets gebouwd en tegen het werkregister gehouden"
 

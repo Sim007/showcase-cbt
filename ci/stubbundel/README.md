@@ -3,7 +3,7 @@
 Uitpakken en starten. Geen Docker, geen JDK, geen `npx`, en na het uitpakken geen netwerk.
 
 ```sh
-tar -xzf stubbundel-0.11.0.tgz
+tar -xzf stubbundel-0.11.1.tgz
 cd bundel
 node stub.js
 ```
@@ -79,11 +79,18 @@ verandert dat niets: `EventSource` levert een commentaarregel nooit af, er komt 
 `onmessage` voor. Lees je de ruwe stream — een eigen parser, een `curl -N`, een test — dan
 zie je hem wél en sla je regels die met `:` beginnen over.
 
-**Wat de bundel niet kan.** Verbind je midden in een lopende run, dan krijg je de opgenomen
-openingsmomentopname van die run en niet de stand van dat moment. Deze stub stelt nooit zelf
-een momentopname samen: dat zou betekenen dat hij de toestand van een run gaat bepalen, en
-dan oefen je tegen iets wat nergens is vastgelegd. Verbind dus vóór je start — zo is de
-grens ook bedoeld.
+**Verbind je midden in een lopende run, dan draagt de momentopname die run** — met de stappen
+die tot dat moment zijn afgerond en, als er een stap bezig is, `lopendeStap`. Dat is het
+late-kijkersgeval, en je kunt het uitproberen door tijdens een run een tweede keer te
+verbinden.
+
+De stub leidt die stand uitsluitend af uit wat hij verstuurd heeft: hij begint bij de
+opgenomen openingsmomentopname van de opname en werkt hem bij met elk bericht dat de deur uit
+gaat. Hij vermoedt niets. Wat je krijgt is dus een uitspraak over berichten die je ook
+gekregen zou hebben als je eerder had verbonden.
+
+> In `stubbundel-0.11.0` klopte dit niet: daar kwam de opgenomen openingsregel, dus `run: null`
+> terwijl er een run liep. Gerepareerd in `0.11.1`.
 
 ---
 
@@ -196,18 +203,16 @@ Dat is het geval waar je afleidregel op moet passen:
 `run-afgerond` draagt bij `gestopt` ook `gestoptBijStap`, zodat je niet hoeft af te leiden
 welke stap de run stopte.
 
-**`midden` toont niet meer wat hij ooit toonde, en dat moeten jullie weten.** Die opname was
-er voor de late kijker: iemand die verbindt terwijl er al een run loopt. Dat geval hoort nu
-bij het verbinden en niet bij het starten, en de stub kan het niet nabootsen zonder zelf een
-momentopname samen te stellen. Speel je hem af met een `POST`, dan zie je een run die bij
-stap 3 begint zonder `run-gestart` — inclusief `afgerondeStappen` en `lopendeStap` in de
-openingsmomentopname, dus de plaat is nog steeds meteen correct, maar het is niet meer het
-late-kijkersgeval.
+**`midden` speelt af als een run die bij stap 3 begint.** Die opname was er voor de late
+kijker, en dat geval hoort sinds 0.11.0 bij het verbinden en niet bij het starten. Start je
+hem met een `POST`, dan zie je dus een run zonder `run-gestart` die bij stap 3 instapt. De
+plaat is wel meteen correct — `afgerondeStappen` en `lopendeStap` staan in de
+openingsmomentopname.
 
-**Dat gat is er echt.** Het late-kijkersgeval is tegen deze bundel niet meer te oefenen. Wij
-hebben liever een fixture die minder toont dan een stub die iets aanwijst wat niet is
-vastgelegd. Loopt jullie werk erop vast, zeg het — dan is het een gesprek over de fixtures
-en niet over een instelling.
+**Het late-kijkersgeval oefen je nu langs de andere kant:** start een run en verbind er een
+tweede keer bij terwijl hij loopt. Dan bouwt de stub de momentopname uit wat hij verstuurd
+heeft. Dat is dichter bij de werkelijkheid dan een opname met een vastgelegd beginpunt, want
+je kunt zelf kiezen op welk moment je aansluit.
 
 **`midden` heeft een leeg CLI-paneel.** De uitvoer van al afgeronde stappen komt niet
 opnieuw; die draagt geen betekenis en zou je eerst een inhaalslag laten afwachten.

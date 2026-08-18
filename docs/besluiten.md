@@ -1114,6 +1114,68 @@ vanaf nu de enige plek in de repository die de gepubliceerde spec tegenspreekt. 
 als O16, niet nu opgelost: WireMock kan een rotatie op een POST en een periodieke
 commentaarregel vermoedelijk niet, en dat uitzoeken hoort niet in de levering van deel B.
 
+## 2026-08-18 — De stub leidt zijn toestand af uit wat hij verstuurd heeft
+
+Herziening van de regel van gisteren, en van de kwalificatie eronder.
+
+**Wat er stond.** "De stub stelt nooit zelf een momentopname samen", met als gevolg dat wie
+midden in een run verbindt de opgenomen openingsregel van die opname kreeg. Dat is als grens
+van de bundel opgeschreven, in de README en in de melding aan squad 2.
+
+**Wat het was.** Squad 2 heeft het gemeten: verbind terwijl `voltooid` op stap 5 staat, en de
+stub stuurt `run: null` — waarna de losse stapberichten volgen die nergens meer aan te hangen
+zijn, want `stap-gestart` en `stap-afgerond` dragen geen `scenarioId`. In het schema staat bij
+`run`: *"Null wanneer er geen run loopt. Zwijgen zou dubbelzinnig zijn."* De stub sprak dus de
+spec tegen die hij hoort voor te doen. **Dat is geen beperking maar non-conformiteit**, en het
+verschil is niet academisch: een beperking beschrijf je, een non-conformiteit repareer je.
+
+**De regel die het had moeten zijn.** De oorspronkelijke formulering was in bedoeling goed en
+in bereik te breed. Nu:
+
+> De stub leidt zijn toestand uitsluitend af uit wat hij verstuurd heeft, nooit uit wat hij
+> vermoedt.
+
+Dat sluit verzinnen nog steeds uit en laat toe wat feitelijk is. De stand begint bij de
+openingsmomentopname van de opname — zelf een opgenomen uitspraak over de toestand — en wordt
+bijgewerkt door precies de berichten die de deur uit gaan. Eén detail dat blijft: `Run` eist
+`gestartOp` en `run-gestart` draagt dat niet, dus dat wordt de `tijd` van dat bericht. In de
+fixtures scheelt dat een seconde met de opgenomen waarde. Wij melden het moment waarop wij de
+start gemeld hebben, en dat is wat wij kunnen weten.
+
+**Het late-kijkersgeval komt hiermee terug, langs de goede kant.** Bij het knippen van deel B
+is gekozen `midden` in de rotatie te laten en het late-kijkersgeval op te geven, omdat het
+alternatief een momentopname was die over de lopende run loog. Die afweging klopte. Wat toen
+niet gezien is: er was een derde weg, en die lag niet in de fixtures maar in de stub. Je kunt
+nu op elk zelfgekozen moment aansluiten, wat dichter bij de werkelijkheid staat dan een opname
+met een vastgelegd instappunt.
+
+**De bundelversie is losgemaakt van de contractversie.** `controle.sh` gaf `VERSIE` door als
+bundelversie, dus deze reparatie — die geen enkele spec raakt — zou om een contractversie
+hebben gevraagd. Dat ontkent "drie versies, elk hun eigen levenscyclus" in de code terwijl het
+document het belijdt. Nu staat `BUNDELVERSIE` er apart. Dezelfde klasse als de
+compatibiliteitsrichting die overal hardgecodeerd op `BACKWARD` stond: een keuze die nooit is
+gemaakt omdat er een standaardwaarde in de weg zat.
+
+## 2026-08-18 — Afgekeurde specs horen bij het scenario, niet bij de contracten
+
+Vooruitlopend op scenario 02 en 03, en vastgelegd omdat het de eerste toepassing is van
+"scenariospecifieke specs" uit `CLAUDE.md`.
+
+De tegenvoorbeelden — `merchantId` verplicht toevoegen onder 1.1.0, en de brekende wijziging
+aangeboden als 1.2.0 — worden nooit gepubliceerd. Ze bestaan om door de gate tegengehouden te
+worden. **Het zijn dus geen contractversies**, en in `contracts/` staan uitsluitend
+contractversies: dat is de map waar het register uit gevuld wordt en waar onveranderlijkheid
+geldt. Een spec die per definitie wordt afgekeurd, hoort daar niet tussen te staan alsof hij
+een kandidaat is.
+
+Ze komen in `02-wijziging-zonder-breuk/specs/` en `03-breaking/specs/`, bij het demoscript dat
+ze aanbiedt. Dat is dezelfde regel als voor de rest van een genummerde map: wat er staat is
+testmateriaal van dat scenario en niets anders.
+
+**De precedent, breder dan deze twee bestanden:** de vraag is niet welk formaat een bestand
+heeft maar welke rol het speelt. Een OpenAPI-bestand dat bedoeld is om te falen is een
+testgeval in de vorm van een spec, en het hoort waar de andere testgevallen staan.
+
 ---
 
 # Geleerd
@@ -1673,3 +1735,38 @@ die nergens draait geen gate is.
 **Wat nog openstaat.** 18 van de 28 scripts draaien nog steeds alleen in een demo, en dus
 alleen als iemand kijkt. Zie het besluit van dezelfde datum hierboven.
 
+
+## 2026-08-18 — Een beperking die je opschrijft in plaats van toetst, is een belofte zonder net
+
+Bij `stubbundel-0.11.0` stond in de README: wie midden in een run verbindt, krijgt de
+opgenomen opening van die run en niet de stand van dat moment. Eerlijk opgeschreven, met de
+reden erbij, op twee plekken — de bundel-README en de melding aan squad 2.
+
+Squad 2 liep er binnen een dag op stuk. En toen bleek het geen beperking te zijn maar een
+stub die zijn eigen spec tegensprak: `run: null` betekent volgens het schema dat er geen run
+loopt.
+
+**Dat is de derde keer deze maand**, en de drie zijn dezelfde beweging:
+
+| | Wat er is opgeschreven | Wat het was |
+|---|---|---|
+| README stubbundel | "twee draaiwijzen, allebei getoetst" | één keer met de hand nagekeken |
+| kanaalbeschrijving | de hartslag staat in proza, er is geen schema onder | ongedekt tot er een `HARTSLAG_MS` kwam |
+| bundel-README | "wie midden in een run aansluit, krijgt een momentopname die achterloopt" | non-conformiteit met de eigen spec |
+
+**Waarom opschrijven zo aantrekkelijk is:** het voelt als het tegenovergestelde van verzwijgen.
+Je bent eerlijk over een tekort, je zet het op de plek waar de lezer het vindt, en je bent
+klaar. Wat je in werkelijkheid hebt gedaan is de verantwoordelijkheid verplaatst naar iemand
+die het document leest op het moment dat het ertoe doet — en dat moment komt bij niemand.
+
+**Wat het onderscheid wél is.** Een beperking is legitiem als hij volgt uit iets wat je niet
+kúnt: geen schema in AsyncAPI 2.6.0 voor een commentaarregel, geen `asyncapi diff` die als
+non-root draait. Dan schrijf je hem op met een naam en een herzieningsmoment, zoals O13. Wat
+hier gebeurde was iets anders: er was geen belemmering, alleen een regel die ik zelf te breed
+had geformuleerd. Een beperking die uit een eigen keuze volgt, is geen beperking maar een
+besluit — en een besluit hoort een toets te krijgen of te worden teruggedraaid.
+
+**De vuistregel die eruit volgt.** Ga je een tekort opschrijven, stel dan eerst één vraag:
+kan ik hier een toets omheen zetten die rood wordt als het misgaat? Kan dat, dan is
+opschrijven het verkeerde antwoord. Kan het niet, dan is het opschrijven pas het goede — en
+dan hoort er een naam en een datum bij, want anders is het over drie weken niemands probleem.
