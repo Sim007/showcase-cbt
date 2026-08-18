@@ -1,0 +1,520 @@
+openapi: 3.0.3
+info:
+  title: Scenario API
+  version: 0.12.0
+  description: >
+    De structuur van een scenario, en de besturing van een run. Alles hier is bekend
+    vóórdat er iets draait.
+
+    Wat tijdens een run ontstaat staat nadrukkelijk niet in deze spec: geen uitkomst, geen
+    bijzonderheden, geen status. Dat komt uitsluitend uit run-stream. Die scheiding is de
+    kern van deze grens — stamdata beschrijft wat er zou gebeuren, de stream meldt wat er
+    gebeurde.
+
+    Besturing staat hier en niet in de stream omdat een commando een antwoord nodig heeft:
+    of het scenario bestaat, of er al een run loopt, en welk runId je moet volgen.
+
+servers:
+  - url: http://localhost:8090
+    description: >
+      Lokaal, zowel voor de stub als voor showcase-CBT zelf. Er is verder geen omgeving:
+      dit is een showcase en er draait niets op een server.
+
+paths:
+  /v1/scenarios:
+    get:
+      operationId: lijstScenarios
+      summary: Alle scenario's, zonder stappen
+      description: Genoeg om een keuzelijst te tonen. De stappen volgen per scenario.
+      responses:
+        '200':
+          description: De scenario's
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScenarioSamenvatting'
+              example:
+                - id: '00'
+                  titel: Startsituatie
+                  ondertitel: Hoe het gaat zonder contracttesten
+                - id: '01'
+                  titel: Basis (API)
+                  ondertitel: Hoe het gaat met contracttesten
+
+  /v1/scenarios/{scenarioId}:
+    get:
+      operationId: haalScenario
+      summary: Eén scenario, met omgevingen, deelsystemen en stappen
+      parameters:
+        - name: scenarioId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/ScenarioId'
+      responses:
+        '200':
+          description: Het scenario
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+              example:
+                id: '01'
+                titel: Basis (API)
+                ondertitel: Hoe het gaat met contracttesten
+                omgevingen:
+                  - id: ci
+                    naam: CI
+                  - id: test
+                    naam: Test
+                  - id: acceptatie
+                    naam: Acceptatie
+                deelsystemen:
+                  - id: payment
+                    naam: Payment
+                  - id: order
+                    naam: Order
+                stappen:
+                  - nummer: 1
+                    type: actie
+                    omschrijving: Het schema publiceren in het register
+                    deelsysteem: payment
+                    testsoort: geen
+                    gereedschap: oasdiff
+                    cli: ci/pipeline-contract.sh payment payment-api 1.0.0 contracts/payment/payment-api/1.0.0/openapi.yaml
+                  - nummer: 2
+                    type: actie
+                    omschrijving: Unittests van payment-api
+                    deelsysteem: payment
+                    testsoort: unit
+                    gereedschap: Maven
+                    cli: ci/pipeline-microservice.sh payment payment-api
+                  - nummer: 3
+                    type: gate
+                    omschrijving: Contractverificatie van de provider tegen de gepubliceerde spec
+                    deelsysteem: payment
+                    omgeving: ci
+                    testsoort: contract
+                    gereedschap: Schemathesis
+                    cli: ci/pipeline-ci.sh payment 1.0.0
+                  - nummer: 4
+                    type: actie
+                    omschrijving: Unittests van order-api
+                    deelsysteem: order
+                    testsoort: unit
+                    gereedschap: Maven
+                    cli: ci/pipeline-microservice.sh order order-api
+                  - nummer: 5
+                    type: gate
+                    omschrijving: Contractverificatie van de consumer tegen dezelfde spec
+                    deelsysteem: order
+                    omgeving: ci
+                    testsoort: contract
+                    gereedschap: swagger-request-validator
+                    cli: ci/pipeline-ci.sh order 1.0.0
+                  - nummer: 6
+                    type: gate
+                    omschrijving: De gebruikersflows over de keten
+                    omgeving: acceptatie
+                    testsoort: e2e
+                    gereedschap: Playwright
+                    cli: ci/pipeline-gebruikersflows.sh acceptatie
+        '404':
+          description: Onbekend scenario
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: SCENARIO_ONBEKEND
+                message: er is geen scenario met id 42
+
+  /v1/runs:
+    options:
+      operationId: preflightStartRun
+      summary: Preflight voor het starten van een run
+      description: >
+        Staat hier omdat de browser hem stuurt, niet omdat iemand hem aanroept. Een POST
+        met `Content-Type: application/json` is geen simple request, dus de browser vraagt
+        eerst toestemming. Ontbreekt dit antwoord, dan komt de POST er nooit — en dat is
+        geen implementatiedetail maar een eigenschap van deze grens.
+      responses:
+        '204':
+          description: De browser mag de POST sturen
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+    post:
+      operationId: startRun
+      summary: Een scenario starten
+      description: >
+        Er kan één run tegelijk lopen. Loopt er al een, dan levert dit een 409 met het
+        runId van die lopende run, zodat de aanroeper hem alsnog kan volgen of afbreken.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartVerzoek'
+            example:
+              scenarioId: '01'
+      responses:
+        '201':
+          description: De run is gestart
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+              example:
+                runId: run-7c41a9
+                scenarioId: '01'
+                gestartOp: '2026-08-06T09:12:44Z'
+        '404':
+          description: Onbekend scenario
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: SCENARIO_ONBEKEND
+                message: er is geen scenario met id 42
+        '409':
+          description: Er loopt al een run
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: RUN_LOOPT_AL
+                message: run-7c41a9 loopt nog voor scenario 01
+
+  /v1/runs/{runId}/afbreken:
+    options:
+      operationId: preflightBreekRunAf
+      summary: Preflight voor het afbreken van een run
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RunId'
+      responses:
+        '204':
+          description: De browser mag de POST sturen
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+    post:
+      operationId: breekRunAf
+      summary: Een lopende run afbreken
+      description: >
+        Het antwoord zegt dat het verzoek is aangenomen, niet dat de run al stil staat.
+        Dat laatste blijkt uit run-afgerond op de stream, met reden afgebroken.
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/RunId'
+      responses:
+        '202':
+          description: Het verzoek is aangenomen
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+              example:
+                runId: run-7c41a9
+                scenarioId: '01'
+                gestartOp: '2026-08-06T09:12:44Z'
+        '404':
+          description: Onbekende run
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: RUN_ONBEKEND
+                message: er is geen run met id run-000000
+        '409':
+          description: De run is al afgerond
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: RUN_AL_AFGEROND
+                message: run-7c41a9 is al afgerond
+
+components:
+
+  headers:
+
+    AccessControlAllowOrigin:
+      description: >
+        De browser van showcase-website praat rechtstreeks met showcase-CBT; er zit geen
+        proxy tussen. Daarmee is CORS onderdeel van deze grens en geen implementatiedetail:
+        ontbreekt deze header, dan weigert de browser het antwoord en ziet de consumer een
+        fout die niets met het contract te maken lijkt te hebben.
+
+        Eén concrete origin en met opzet geen wildcard. Een `*` maakt de spec makkelijker
+        en de afspraak vager, en in een showcase over zorgvuldigheid roept dat de verkeerde
+        vraag op. In een echte opstelling komt deze waarde uit configuratie per omgeving;
+        hier staat de enige die bestaat.
+      required: true
+      schema:
+        type: string
+        enum: ['http://localhost:5173']
+        example: 'http://localhost:5173'
+
+    AccessControlAllowMethods:
+      description: Welke methoden op dit pad zijn toegestaan, als antwoord op de preflight.
+      required: true
+      schema:
+        type: string
+        example: 'POST, OPTIONS'
+
+    AccessControlAllowHeaders:
+      description: >
+        Welke requestheaders de browser mag meesturen. `Content-Type` staat erin omdat een
+        JSON-body de preflight juist veroorzaakt.
+      required: true
+      schema:
+        type: string
+        example: 'Content-Type'
+
+  schemas:
+
+    ScenarioId:
+      type: string
+      description: Twee cijfers, zoals de scenarionummers van de showcase.
+      pattern: '^[0-9]{2}$'
+      example: '01'
+
+    RunId:
+      type: string
+      description: Door showcase-CBT toegekend bij het starten.
+      pattern: '^run-[0-9a-f]{6}$'
+      example: run-7c41a9
+
+    ScenarioSamenvatting:
+      type: object
+      required: [id, titel]
+      additionalProperties: false
+      properties:
+        id:
+          $ref: '#/components/schemas/ScenarioId'
+        titel:
+          type: string
+          example: Basis (API)
+        ondertitel:
+          type: string
+          example: Hoe het gaat met contracttesten
+
+    Scenario:
+      type: object
+      required: [id, titel, omgevingen, deelsystemen, stappen]
+      additionalProperties: false
+      properties:
+        id:
+          $ref: '#/components/schemas/ScenarioId'
+        titel:
+          type: string
+          example: Basis (API)
+        ondertitel:
+          type: string
+          example: Hoe het gaat met contracttesten
+        omgevingen:
+          type: array
+          description: In de volgorde waarin ze doorlopen worden.
+          items:
+            $ref: '#/components/schemas/Omgeving'
+        deelsystemen:
+          type: array
+          description: In de volgorde waarin ze aan bod komen.
+          items:
+            $ref: '#/components/schemas/Deelsysteem'
+        stappen:
+          type: array
+          description: Op volgnummer, oplopend over het hele scenario.
+          items:
+            $ref: '#/components/schemas/Stap'
+
+    Omgeving:
+      type: object
+      description: >
+        Er zijn er drie. De code is er geen: unit- en integratietests van een microservice
+        draaien op de code zelf en hebben geen omgeving nodig. Een stap zonder omgeving is
+        daarmee een stap op de code.
+      required: [id, naam]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          enum: [ci, test, acceptatie]
+          example: ci
+        naam:
+          type: string
+          example: CI
+
+    Deelsysteem:
+      type: object
+      description: >
+        Naam en id komen hiervandaan zodat een nieuw deelsysteem geen wijziging aan de
+        andere kant vraagt.
+      required: [id, naam]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          pattern: '^[a-z][a-z0-9-]*$'
+          example: payment
+        naam:
+          type: string
+          example: Payment
+
+    Stap:
+      type: object
+      description: >
+        Wat deze stap is en waar hij hoort. Nooit hoe hij afliep — dat komt uit de stream.
+
+
+        Twee velden dragen hun betekenis in hun afwezigheid, en dat is opzet. Ontbreekt
+        `omgeving`, dan draait de stap op de code en niet op een omgeving. Ontbreekt
+        `deelsysteem`, dan is de stap van geen enkel deelsysteem en spant hij over de keten.
+
+
+        Er is dus géén waarde `code` en géén waarde `keten`: die zouden een omgeving en een
+        deelsysteem suggereren die niet bestaan, en de enums hierboven laten ze ook niet toe.
+        Dit staat hier omdat een schema "ontbreken betekent dit" niet kan uitdrukken — wie de
+        enums leest komt het anders nooit tegen, en dat is twee keer gebeurd.
+      required: [nummer, type, omschrijving, testsoort, gereedschap, cli]
+      additionalProperties: false
+      properties:
+        nummer:
+          type: integer
+          minimum: 1
+          description: Uniek en oplopend binnen het scenario. De stream verwijst hiernaar.
+          example: 3
+        type:
+          type: string
+          enum: [actie, gate]
+          description: Een actie voert iets uit, een gate toetst of er verder gegaan mag worden.
+          example: gate
+        omschrijving:
+          type: string
+          example: Contractverificatie van de provider tegen de gepubliceerde spec
+        deelsysteem:
+          type: string
+          description: >
+            Verwijst naar een id uit deelsystemen. Ontbreekt hij, dan is de stap van geen
+            enkel deelsysteem en spant hij over de keten — zoals de gebruikersflows.
+          pattern: '^[a-z][a-z0-9-]*$'
+          example: payment
+        omgeving:
+          type: string
+          enum: [ci, test, acceptatie]
+          description: >
+            Verwijst naar een id uit omgevingen. Ontbreekt hij, dan draait de stap op de
+            code en niet op een omgeving.
+          example: ci
+        testsoort:
+          type: string
+          description: >
+            Bewust een vrije tekst en geen lijst met vaste waarden: de tribe houdt een
+            eigen terminologielijst bij en die is leidend. Een vaste lijst hier zou bij elke
+            aanvulling een contractwijziging vragen. Voorkomende waarden vandaag zijn unit,
+            integratie, contract, e2e, artefactcontrole en geen.
+          example: contract
+        gereedschap:
+          type: string
+          description: Waarmee de stap wordt uitgevoerd.
+          example: Schemathesis
+        cli:
+          type: string
+          description: >
+            Het commando waar deze stap onder valt, zoals je het zelf zou typen. **Meerdere
+            stappen kunnen hetzelfde commando dragen**: één pipeline-aanroep voert er vaak
+            een handvol uit, en de stappen zijn fijner dan de commando's omdat elke gate
+            apart zichtbaar hoort te zijn.
+
+
+            Lees het dus als "hier hoort deze stap bij" en niet als "dit start deze stap".
+            Tot 0.11.0 stond hier "het commando dat deze stap uitvoert"; dat werd onwaar
+            zodra de stappen fijner werden dan de pipelines.
+          example: ci/pipeline-ci.sh payment 1.0.0
+
+    StartVerzoek:
+      type: object
+      required: [scenarioId]
+      additionalProperties: false
+      properties:
+        scenarioId:
+          $ref: '#/components/schemas/ScenarioId'
+
+    Run:
+      type: object
+      required: [runId, scenarioId, gestartOp]
+      additionalProperties: false
+      properties:
+        runId:
+          $ref: '#/components/schemas/RunId'
+        scenarioId:
+          $ref: '#/components/schemas/ScenarioId'
+        gestartOp:
+          type: string
+          format: date-time
+          example: '2026-08-06T09:12:44Z'
+
+    Error:
+      type: object
+      description: >
+        Dezelfde vorm als op de andere grenzen in deze showcase. De waarden van code horen
+        niet bij het contract: een aanroeper reageert op de HTTP-status, niet op een
+        tekenreeks — anders wordt elke nieuwe foutsituatie een contractwijziging.
+      required: [code, message]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          example: RUN_LOOPT_AL
+        message:
+          type: string
+          example: run-7c41a9 loopt nog voor scenario 01
