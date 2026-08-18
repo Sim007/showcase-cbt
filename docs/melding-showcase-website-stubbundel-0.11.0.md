@@ -1,5 +1,10 @@
 # Melding aan showcase-website — de bundel heeft de specs ingehaald
 
+> **Deels achterhaald op 2026-08-18 door `melding-showcase-website-stubbundel-0.11.1.md`.**
+> De paragraaf "Wat u kwijtraakt" klopt niet meer: wat daar als beperking staat, was een
+> fout in de bundel. Het late-kijkersgeval is weer te oefenen. Dit bericht blijft verder
+> staan zoals het verstuurd is.
+
 Vervolg op `melding-showcase-website-0.11.0.md`. Daar stond vooraan dat de specs iets
 beloofden wat het gereedschap nog niet deed. Dat is nu weg: **`stubbundel-0.11.0` doet het
 gedrag van `run-stream 0.11.0`.**
