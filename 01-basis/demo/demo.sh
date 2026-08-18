@@ -150,6 +150,11 @@ opmerking "blokkade voor een squad."
 echo
 CBT_LIVE= ci/rapport-html.sh
 
+# De stamdata die showcase-website toont, tegen wat er zojuist werkelijk is gedraaid. Alleen
+# hier te doen: op een runner bestaat dit rapport niet.
+echo
+ci/toets-stamdata.sh 01 "${CBT_RAPPORT:-${CBT_ROOT}/01-basis/rapport/rapport-cbt-01.md}" | sed 's/^/  /'
+
 # --- de aftrekking ---------------------------------------------------------------------
 
 RAPPORT_00="${CBT_ROOT}/00-start/rapport/rapport-cbt-00.md"

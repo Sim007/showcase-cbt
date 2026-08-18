@@ -111,6 +111,11 @@ opmerking "Die mock is niet fout — hij is onbewijsbaar, en blijft groen als Pa
 echo
 CBT_LIVE= ci/rapport-html.sh "${CBT_RAPPORT}"
 
+# De stamdata die showcase-website toont, tegen wat er zojuist werkelijk is gedraaid. Alleen
+# hier te doen: op een runner bestaat dit rapport niet.
+echo
+ci/toets-stamdata.sh 00 "${CBT_RAPPORT}" | sed 's/^/  /'
+
 echo
 echo "─────────────────────────────────────────────────────────────────────"
 echo "  Klaar. Scenario 1 doet dit nog een keer, met contracttesten."

@@ -29,7 +29,12 @@ fout() {
 GROEP=showcase-cbt
 SCENARIO=scenario-api
 STREAM=run-stream
-VERSIE=0.11.0
+
+# Twee contracten, twee levenscycli. Ze stonden op één nummer zolang ze toevallig gelijk
+# liepen; sinds scenario-api 0.12.0 (het cli-veld geherformuleerd) lopen ze uiteen, en dan is
+# één VERSIE geen versimpeling meer maar een onwaarheid.
+SCENARIO_VERSIE=0.12.0
+STREAM_VERSIE=0.11.0
 
 # De bundel heeft een eigen nummer, en dat is niet netjes maar noodzakelijk: hij is afgeleid
 # van twee specs en is gereedschap, geen contract. Een reparatie in de stub die geen enkele
@@ -56,10 +61,10 @@ docker compose -f "${CBT_ROOT}/compose/registry.yml" down >/dev/null 2>&1 || tru
 docker compose -f "${CBT_ROOT}/compose/registry.yml" up -d >/dev/null 2>&1
 "${CBT_ROOT}/ci/wacht-op-gezond.sh" registry "${CBT_ROOT}/compose/registry.yml" >/dev/null 2>&1 || sleep 12
 
-"${CBT_ROOT}/ci/publish-contract.sh" "${GROEP}" "${SCENARIO}" "${VERSIE}" \
-  "contracts/${GROEP}/${SCENARIO}/${VERSIE}/openapi.yaml" >/dev/null
-"${CBT_ROOT}/ci/publish-contract.sh" "${GROEP}" "${STREAM}" "${VERSIE}" \
-  "contracts/${GROEP}/${STREAM}/${VERSIE}/asyncapi.yaml" >/dev/null
+"${CBT_ROOT}/ci/publish-contract.sh" "${GROEP}" "${SCENARIO}" "${SCENARIO_VERSIE}" \
+  "contracts/${GROEP}/${SCENARIO}/${SCENARIO_VERSIE}/openapi.yaml" >/dev/null
+"${CBT_ROOT}/ci/publish-contract.sh" "${GROEP}" "${STREAM}" "${STREAM_VERSIE}" \
+  "contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/asyncapi.yaml" >/dev/null
 
 echo "  specs gepubliceerd"
 
@@ -72,13 +77,13 @@ echo "  specs gepubliceerd"
 # Bij elke push levert dit één ding op dat altijd waar is: de afleiding klopt nog. Het net
 # zelf vuurt pas bij een tweede versie, en die is er in deze run niet.
 
-"${CBT_ROOT}/ci/ontvangstschemas.sh" "${GROEP}" "${STREAM}" "${VERSIE}" | sed 's/^/  /'
+"${CBT_ROOT}/ci/ontvangstschemas.sh" "${GROEP}" "${STREAM}" "${STREAM_VERSIE}" | sed 's/^/  /'
 
 # --- 3: de fixtures lopen niet uit de pas -------------------------------------------------
 
-"${CBT_ROOT}/ci/generate-stub.sh" "${GROEP}" "${SCENARIO}" "${VERSIE}" >/dev/null
-"${CBT_ROOT}/ci/generate-stream-stub.sh" "${GROEP}" "${STREAM}" "${VERSIE}" \
-  "${SCENARIO}" "${VERSIE}" --controleer >/dev/null
+"${CBT_ROOT}/ci/generate-stub.sh" "${GROEP}" "${SCENARIO}" "${SCENARIO_VERSIE}" >/dev/null
+"${CBT_ROOT}/ci/generate-stream-stub.sh" "${GROEP}" "${STREAM}" "${STREAM_VERSIE}" \
+  "${SCENARIO}" "${SCENARIO_VERSIE}" --controleer >/dev/null
 
 echo "  fixtures komen overeen met de spec"
 
@@ -88,7 +93,7 @@ echo "  fixtures komen overeen met de spec"
 # maakt klopt. Volgorde is een eigenschap waar de consumer op steunt — hij bouwt er zijn
 # tijdlijn mee op — dus die wordt apart getoetst en niet weggenormaliseerd.
 
-RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${VERSIE}/runs"
+RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/runs"
 GECONTROLEERD=0
 for fixture in "${RUNS}"/*.jsonl; do
   VORIGE=""
@@ -110,7 +115,19 @@ echo "  ${GECONTROLEERD} berichten, tijd loopt overal vooruit"
 
 # --- 5: streng weigert en tolerant accepteert ---------------------------------------------
 
-"${CBT_ROOT}/ci/toets-tolerantie.sh" "${GROEP}" "${STREAM}" "${VERSIE}" | sed 's/^/  /'
+"${CBT_ROOT}/ci/toets-tolerantie.sh" "${GROEP}" "${STREAM}" "${STREAM_VERSIE}" | sed 's/^/  /'
+
+# --- 5b: de stamdata van de scenario's ------------------------------------------------------
+#
+# De structuurkant, die altijd kan draaien: elk scenario geldig tegen het Scenario-schema uit
+# het register, en scenario 01 is scenario 00 plus de acht stappen die contracttesten
+# toevoegen. Die insluiting is de gecontroleerde vergelijking waar de hele showcase op rust;
+# staat er geen gate op, dan drift hij terug zodra iemand een pipeline aanpast.
+#
+# De vergelijking met een écht rapport kan hier niet — daar is een volledige demo voor nodig.
+# Die aanroep staat aan het eind van beide demoscripts.
+
+CBT_STAMDATA_VERSIE="${SCENARIO_VERSIE}" "${CBT_ROOT}/ci/toets-stamdata.sh" | sed 's/^/  /'
 
 # --- 6: de stubbundel bouwt nog -----------------------------------------------------------
 #
@@ -119,7 +136,7 @@ echo "  ${GECONTROLEERD} berichten, tijd loopt overal vooruit"
 # schone runner nog bouwt, vangt precies die soort drift — en dit is de enige plek waar dat
 # automatisch gebeurt.
 
-"${CBT_ROOT}/ci/bouw-stubbundel.sh" "${GROEP}" "${SCENARIO}" "${VERSIE}" "${STREAM}" "${VERSIE}" "${BUNDELVERSIE}" \
+"${CBT_ROOT}/ci/bouw-stubbundel.sh" "${GROEP}" "${SCENARIO}" "${SCENARIO_VERSIE}" "${STREAM}" "${STREAM_VERSIE}" "${BUNDELVERSIE}" \
   >/dev/null || fout "de stubbundel bouwt niet meer"
 
 echo "  stubbundel gebouwd"
@@ -135,8 +152,8 @@ echo "  stubbundel gebouwd"
 # dat de weg naar een release begaanbaar is, inclusief de controle dat het manifest van de
 # bundel klopt met wat de gates hebben gezien.
 
-"${CBT_ROOT}/ci/bouw-release.sh" spec "${GROEP}" "${SCENARIO}" "${VERSIE}" >/dev/null
-"${CBT_ROOT}/ci/bouw-release.sh" spec "${GROEP}" "${STREAM}" "${VERSIE}" >/dev/null
+"${CBT_ROOT}/ci/bouw-release.sh" spec "${GROEP}" "${SCENARIO}" "${SCENARIO_VERSIE}" >/dev/null
+"${CBT_ROOT}/ci/bouw-release.sh" spec "${GROEP}" "${STREAM}" "${STREAM_VERSIE}" >/dev/null
 "${CBT_ROOT}/ci/bouw-release.sh" bundel "${BUNDELVERSIE}" >/dev/null
 
 echo "  release-assets gebouwd en tegen het werkregister gehouden"
