@@ -1,0 +1,43 @@
+{
+  "id": "01",
+  "titel": "Basis (API)",
+  "ondertitel": "Hoe het gaat met contracttesten",
+  "omgevingen": [
+    { "id": "ci", "naam": "CI" },
+    { "id": "test", "naam": "Test" },
+    { "id": "acceptatie", "naam": "Acceptatie" }
+  ],
+  "deelsystemen": [
+    { "id": "payment", "naam": "Payment" },
+    { "id": "order", "naam": "Order" }
+  ],
+  "stappen": [
+    { "nummer": 1, "type": "gate", "omschrijving": "diff-gate en publiceren", "deelsysteem": "payment", "testsoort": "geen", "gereedschap": "oasdiff", "cli": "ci/pipeline-contract.sh payment payment-api 1.0.0 contracts/payment/payment-api/1.0.0/openapi.yaml" },
+    { "nummer": 2, "type": "gate", "omschrijving": "ophalen ter controle", "deelsysteem": "payment", "testsoort": "artefactcontrole", "gereedschap": "curl", "cli": "ci/pipeline-contract.sh payment payment-api 1.0.0 contracts/payment/payment-api/1.0.0/openapi.yaml" },
+    { "nummer": 3, "type": "actie", "omschrijving": "unit", "deelsysteem": "payment", "testsoort": "unit", "gereedschap": "Maven", "cli": "ci/pipeline-microservice.sh payment payment-api" },
+    { "nummer": 4, "type": "actie", "omschrijving": "integratie", "deelsysteem": "payment", "testsoort": "integratie", "gereedschap": "Maven", "cli": "ci/pipeline-microservice.sh payment payment-api" },
+    { "nummer": 5, "type": "actie", "omschrijving": "jar bouwen", "deelsysteem": "payment", "testsoort": "geen", "gereedschap": "Maven", "cli": "ci/pipeline-microservice.sh payment payment-api" },
+    { "nummer": 6, "type": "actie", "omschrijving": "image bouwen", "deelsysteem": "payment", "testsoort": "geen", "gereedschap": "Docker", "cli": "ci/pipeline-microservice.sh payment payment-api" },
+    { "nummer": 7, "type": "actie", "omschrijving": "deploy op ci-payment", "deelsysteem": "payment", "omgeving": "ci", "testsoort": "geen", "gereedschap": "Docker Compose", "cli": "ci/pipeline-ci.sh payment 1.0.0" },
+    { "nummer": 8, "type": "gate", "omschrijving": "drift", "deelsysteem": "payment", "omgeving": "ci", "testsoort": "artefactcontrole", "gereedschap": "jq", "cli": "ci/pipeline-ci.sh payment 1.0.0" },
+    { "nummer": 9, "type": "gate", "omschrijving": "contractverificatie, provider", "deelsysteem": "payment", "omgeving": "ci", "testsoort": "contract", "gereedschap": "Schemathesis", "cli": "ci/pipeline-ci.sh payment 1.0.0" },
+    { "nummer": 10, "type": "gate", "omschrijving": "e2e binnen payment", "deelsysteem": "payment", "omgeving": "ci", "testsoort": "e2e", "gereedschap": "Playwright", "cli": "ci/pipeline-ci.sh payment 1.0.0" },
+    { "nummer": 11, "type": "actie", "omschrijving": "deploy op Test", "deelsysteem": "payment", "omgeving": "test", "testsoort": "geen", "gereedschap": "Docker Compose", "cli": "ci/pipeline-test.sh payment 1.0.0" },
+    { "nummer": 12, "type": "gate", "omschrijving": "versieconformiteit", "deelsysteem": "payment", "omgeving": "test", "testsoort": "artefactcontrole", "gereedschap": "jq", "cli": "ci/pipeline-test.sh payment 1.0.0" },
+    { "nummer": 13, "type": "gate", "omschrijving": "smoke van payment", "deelsysteem": "payment", "omgeving": "test", "testsoort": "e2e", "gereedschap": "Playwright", "cli": "ci/pipeline-test.sh payment 1.0.0" },
+    { "nummer": 14, "type": "actie", "omschrijving": "deploy op Acceptatie", "deelsysteem": "payment", "omgeving": "acceptatie", "testsoort": "geen", "gereedschap": "Docker Compose", "cli": "ci/pipeline-acceptatie.sh payment 1.0.0" },
+    { "nummer": 15, "type": "actie", "omschrijving": "unit", "deelsysteem": "order", "testsoort": "unit", "gereedschap": "Maven", "cli": "ci/pipeline-microservice.sh order order-api" },
+    { "nummer": 16, "type": "actie", "omschrijving": "integratie", "deelsysteem": "order", "testsoort": "integratie", "gereedschap": "Maven", "cli": "ci/pipeline-microservice.sh order order-api" },
+    { "nummer": 17, "type": "actie", "omschrijving": "jar bouwen", "deelsysteem": "order", "testsoort": "geen", "gereedschap": "Maven", "cli": "ci/pipeline-microservice.sh order order-api" },
+    { "nummer": 18, "type": "actie", "omschrijving": "image bouwen", "deelsysteem": "order", "testsoort": "geen", "gereedschap": "Docker", "cli": "ci/pipeline-microservice.sh order order-api" },
+    { "nummer": 19, "type": "actie", "omschrijving": "stub uit payment payment-api 1.0.0", "deelsysteem": "order", "omgeving": "ci", "testsoort": "geen", "gereedschap": "WireMock", "cli": "ci/pipeline-ci.sh order 1.0.0" },
+    { "nummer": 20, "type": "actie", "omschrijving": "deploy op ci-order", "deelsysteem": "order", "omgeving": "ci", "testsoort": "geen", "gereedschap": "Docker Compose", "cli": "ci/pipeline-ci.sh order 1.0.0" },
+    { "nummer": 21, "type": "gate", "omschrijving": "contractverificatie, consumer", "deelsysteem": "order", "omgeving": "ci", "testsoort": "contract", "gereedschap": "swagger-request-validator", "cli": "ci/pipeline-ci.sh order 1.0.0" },
+    { "nummer": 22, "type": "gate", "omschrijving": "e2e binnen order", "deelsysteem": "order", "omgeving": "ci", "testsoort": "e2e", "gereedschap": "Playwright", "cli": "ci/pipeline-ci.sh order 1.0.0" },
+    { "nummer": 23, "type": "actie", "omschrijving": "deploy op Test", "deelsysteem": "order", "omgeving": "test", "testsoort": "geen", "gereedschap": "Docker Compose", "cli": "ci/pipeline-test.sh order 1.0.0" },
+    { "nummer": 24, "type": "gate", "omschrijving": "versieconformiteit", "deelsysteem": "order", "omgeving": "test", "testsoort": "artefactcontrole", "gereedschap": "jq", "cli": "ci/pipeline-test.sh order 1.0.0" },
+    { "nummer": 25, "type": "gate", "omschrijving": "smoke van order", "deelsysteem": "order", "omgeving": "test", "testsoort": "e2e", "gereedschap": "Playwright", "cli": "ci/pipeline-test.sh order 1.0.0" },
+    { "nummer": 26, "type": "actie", "omschrijving": "deploy op Acceptatie", "deelsysteem": "order", "omgeving": "acceptatie", "testsoort": "geen", "gereedschap": "Docker Compose", "cli": "ci/pipeline-acceptatie.sh order 1.0.0" },
+    { "nummer": 27, "type": "gate", "omschrijving": "gebruikersflows over de keten", "omgeving": "acceptatie", "testsoort": "e2e", "gereedschap": "Playwright", "cli": "ci/pipeline-gebruikersflows.sh acceptatie" }
+  ]
+}
