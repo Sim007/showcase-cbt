@@ -141,6 +141,53 @@ TOEGEVOEGD="$(wc -l < "${WERK}/toevoeging" | tr -d ' ')"
 verwacht_minstens "${TOEGEVOEGD}" 8 "stappen die 01 toevoegt aan 00"
 echo "  ok    01 is 00 plus ${TOEGEVOEGD} stappen, met naam en in volgorde"
 
+# --- 2b: de opnames tegen de versie waartegen ze gegenereerd zijn ----------------------------
+#
+# De fixtures stonden tot 2026-08-20 onder contracts/<artifact>/<versie>/runs/, en die map was
+# tegelijk hun adres én hun norm. Nu ze bij de stamdata staan, is dat adres weg — en dan moet
+# de norm ergens anders vandaan komen, als gegeven en niet als aantekening.
+#
+# Het manifest zegt tegen welke run-stream-versie ze gegenereerd zijn. Die versie wordt hier
+# uit het register gehaald en elk bericht gaat langs het payloadschema dat erbij hoort. Zonder
+# dit zou een fixture ooit onder een spec schuiven waar hij niet meer aan voldoet, en dat zou
+# niemand merken.
+
+RUNS="${CBT_ROOT}/stamdata/runs"
+if [ -f "${RUNS}/manifest.json" ]; then
+  R_GROEP="$(jq -r '.gegenereerdTegen.groep' < "${RUNS}/manifest.json")"
+  R_ARTIFACT="$(jq -r '.gegenereerdTegen.artifact' < "${RUNS}/manifest.json")"
+  R_VERSIE="$(jq -r '.gegenereerdTegen.versie' < "${RUNS}/manifest.json")"
+
+  R_SPEC="$("${CBT_ROOT}/ci/get-contract.sh" "${R_GROEP}" "${R_ARTIFACT}" "${R_VERSIE}")"
+  yq -o=json '.' "${R_SPEC#"${CBT_ROOT}/"}" > "${WERK}/stream.json"
+
+  # Van de waarde in `soort` naar het schema dat erbij hoort — dezelfde index die de bundel
+  # meekrijgt, hier om de andere kant op te toetsen.
+  jq '.components.messages | to_entries
+      | map({ key: .value.name, value: (.value.payload["$ref"] | split("/") | last) })
+      | from_entries' "${WERK_REL}/stream.json" > "${WERK}/index.json"
+
+  BERICHTEN=0
+  for opname in "${RUNS}"/*.jsonl; do
+    naam="$(basename "${opname}" .jsonl)"
+    regel=0
+    while IFS= read -r bericht; do
+      regel=$((regel + 1))
+      soort="$(printf '%s' "${bericht}" | sed -n 's/.*"soort":"\([^"]*\)".*/\1/p')"
+      schema="$(jq -r --arg s "${soort}" '.[$s] // empty' < "${WERK}/index.json")"
+      [ -n "${schema}" ] \
+        || fout "${naam}.jsonl regel ${regel}: soort '${soort}' staat niet in ${R_ARTIFACT} ${R_VERSIE}"
+      BERICHTEN=$((BERICHTEN + 1))
+    done < "${opname}"
+  done
+
+  # De vorm van elk bericht is bij het genereren al tegen zijn schema gehouden; wat hier
+  # bijkomt is dat elke soort nog bestáát in de versie waartegen dit materiaal staat. Dat is
+  # wat er wegviel toen de map niet langer de versie noemde.
+  verwacht_minstens "${BERICHTEN}" 3 "berichten in de opnames"
+  echo "  ok    ${BERICHTEN} berichten uit ${RUNS#"${CBT_ROOT}/"}, elke soort bestaat in ${R_ARTIFACT} ${R_VERSIE}"
+fi
+
 # --- 3: tegen een echt rapport, als er een is -----------------------------------------------
 #
 # Alleen zinvol na een demo. De staprijen van het rapport zijn wat er werkelijk gedraaid heeft;

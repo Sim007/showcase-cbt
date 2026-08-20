@@ -2,18 +2,23 @@
 #
 # Genereert de stub van de run-stream, uit de spec uit het register.
 #
-#   generate-stream-stub.sh <groep> <stream-artifact> <versie> <scenario-artifact> <scenario-versie>
+#   generate-stream-stub.sh <groep> <stream-artifact> <versie> <scenario-id>
 #
 # De tegenhanger van generate-stub.sh, voor een grens zonder request-response. Een stream
 # heeft geen operaties om te beantwoorden maar een verloop om af te spelen, dus wat hier
 # gegenereerd wordt zijn runs: de berichten in de volgorde waarin ze zouden komen.
 #
-# Twee bronnen, allebei uit het register en niet van schijf:
-#   de AsyncAPI-spec   levert de vorm van elk bericht, uit zijn schema
-#   de OpenAPI-spec    levert welke stappen er zijn, uit het example van het scenario
+# Twee bronnen:
+#   de AsyncAPI-spec   levert de vorm van elk bericht, uit zijn schema — uit het register
+#   de stamdata        levert welke stappen er zijn — uit stamdata/scenarios/<id>.json
 #
 # Dat de volgorde uit de stamdata komt is geen omweg maar de bedoeling: een stub die zelf
 # stappen verzint, toont een run die nergens beschreven staat.
+#
+# **De stappen kwamen tot 2026-08-20 uit het example van de scenario-spec.** Dat is verplaatst
+# omdat een example illustratie is en stamdata inhoud: met tien scenario's zou elk nieuw
+# scenario een contractwijziging van scenario-api zijn. De scenario-spec is daarmee geen bron
+# meer voor dit script — de vorm van een scenario staat er nog steeds in, de inhoud niet.
 #
 # --- Drie situaties, en waarom precies deze ------------------------------------------
 #
@@ -54,16 +59,15 @@ for _arg in "$@"; do
   [ "${_arg}" = "--controleer" ] && CONTROLEER=ja
 done
 if [ -n "${CONTROLEER}" ]; then
-  set -- "$1" "$2" "$3" "$4" "$5"
+  set -- "$1" "$2" "$3" "$4"
 fi
 
-[ "$#" -eq 5 ] || fout "gebruik: generate-stream-stub.sh <groep> <stream-artifact> <versie> <scenario-artifact> <scenario-versie> [--controleer]"
+[ "$#" -eq 4 ] || fout "gebruik: generate-stream-stub.sh <groep> <stream-artifact> <versie> <scenario-id> [--controleer]"
 
 GROEP="$1"
 STREAM="$2"
 STREAM_VERSIE="$3"
-SCENARIO="$4"
-SCENARIO_VERSIE="$5"
+SCENARIO_ID="$4"
 
 UIT="${CBT_ROOT}/build/stub"
 TMP="${UIT}/tmp"
@@ -78,24 +82,21 @@ rm -f "${UIT}"/mappings/run-stream-*.json
 # --- stap 1: beide specs ophalen, altijd uit het register -------------------------------
 
 STREAM_SPEC="$("${CBT_ROOT}/ci/get-contract.sh" "${GROEP}" "${STREAM}" "${STREAM_VERSIE}")"
-SCENARIO_SPEC="$("${CBT_ROOT}/ci/get-contract.sh" "${GROEP}" "${SCENARIO}" "${SCENARIO_VERSIE}")"
 
 # Het gereedschap draait in een container die de hoofdmap als /work ziet, dus krijgt het
 # relatieve paden. De shell zelf werkt met absolute — zelfde afspraak als in generate-stub.
-yq -o=json '.' "${STREAM_SPEC#"${CBT_ROOT}/"}"   > "${TMP}/stream.json"
-yq -o=json '.' "${SCENARIO_SPEC#"${CBT_ROOT}/"}" > "${TMP}/scenario.json"
+yq -o=json '.' "${STREAM_SPEC#"${CBT_ROOT}/"}" > "${TMP}/stream.json"
 
-echo "stap 1: ${GROEP}/${STREAM} ${STREAM_VERSIE} en ${GROEP}/${SCENARIO} ${SCENARIO_VERSIE} opgehaald"
+echo "stap 1: ${GROEP}/${STREAM} ${STREAM_VERSIE} opgehaald uit het register"
 
-# --- stap 2: de stappen uit het scenario-example ----------------------------------------
+# --- stap 2: de stappen uit de stamdata ---------------------------------------------------
 
-jq -c '.paths."/v1/scenarios/{scenarioId}".get.responses."200".content."application/json".example
-       // error("geen example op haalScenario — zonder example valt er geen run af te spelen")' \
-  "${REL}/tmp/scenario.json" > "${TMP}/scenario-example.json"
+STAMDATA="${CBT_ROOT}/stamdata/scenarios/${SCENARIO_ID}.json"
+[ -f "${STAMDATA}" ] || fout "geen stamdata op stamdata/scenarios/${SCENARIO_ID}.json"
+cp "${STAMDATA}" "${TMP}/scenario-example.json"
 
 STAPPEN="$(jq -r '.stappen | length' "${REL}/tmp/scenario-example.json")"
-[ "${STAPPEN}" -ge 3 ] || fout "het scenario-example heeft ${STAPPEN} stappen; er zijn er minstens drie nodig om een run te laten stoppen met stappen erna"
-SCENARIO_ID="$(jq -r '.id' "${REL}/tmp/scenario-example.json")"
+[ "${STAPPEN}" -ge 3 ] || fout "scenario ${SCENARIO_ID} heeft ${STAPPEN} stappen; er zijn er minstens drie nodig om een run te laten stoppen met stappen erna"
 
 # Waar het misgaat in situatie 2. Bij voorkeur een gate — dat is de stap die bedoeld is om
 # tegen te houden — en nooit de laatste, want dan blijft er niets over om stil te laten.
@@ -304,7 +305,7 @@ mapping "${UIT}/mappings/run-stream-3-midden.json"   "${V3}" midden Started
 
 echo "stap 5: drie mappings in ${REL}/mappings/ — elke verbinding krijgt de volgende situatie"
 
-# --- stap 6: de runs als bestand naast het contract --------------------------------------
+# --- stap 6: de runs als bestand bij de stamdata ------------------------------------------
 #
 # Deze drie worden gegenereerd én gecommit, en dat is een uitzondering op "nooit committen
 # wat gegenereerd is". De reden staat in docs/besluiten.md; de voorwaarde staat hier.
@@ -315,9 +316,26 @@ echo "stap 5: drie mappings in ${REL}/mappings/ — elke verbinding krijgt de vo
 # De voorwaarde is `--controleer`: opnieuw genereren en vergelijken, en falen bij verschil.
 # Zonder die controle vervalt de uitzondering, want dan is dit gewoon een gekopieerd
 # bestand dat stil veroudert.
+#
+# **Ze stonden tot 2026-08-20 onder contracts/<artifact>/<versie>/runs/.** Dat verwarde
+# locatie met eigenaarschap: een fixture moet aan een specversie *voldoen*, hij hoort er niet
+# aan toe. Hij is afgeleid van de stamdata, en die beweegt op zijn eigen tempo — met de oude
+# plek vroeg elke inhoudswijziging om een contractversie die niets zou betekenen.
+#
+# Waar hij wél aan moet voldoen, staat daarom in het manifest hiernaast, als gegeven en niet
+# als aantekening: ci/toets-stamdata.sh leest die versie, haalt het schema erbij en valideert
+# elk bericht. Zonder dat zou een fixture ooit onder een spec schuiven waar hij niet meer aan
+# voldoet, en dat zou niemand merken.
 
-RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/runs"
+RUNS="${CBT_ROOT}/stamdata/runs"
 mkdir -p "${RUNS}"
+
+jq -n --arg groep "${GROEP}" --arg artifact "${STREAM}" --arg versie "${STREAM_VERSIE}" \
+      --arg scenario "${SCENARIO_ID}" \
+  '{
+     scenarioId: $scenario,
+     gegenereerdTegen: { groep: $groep, artifact: $artifact, versie: $versie }
+   }' > "${TMP}/manifest.json"
 
 leg_vast() {
   cut -f2 "$2" > "${TMP}/nieuw.jsonl"
@@ -334,8 +352,15 @@ leg_vast "${RUNS}/voltooid.jsonl" "${V1}"
 leg_vast "${RUNS}/gestopt.jsonl"  "${V2}"
 leg_vast "${RUNS}/midden.jsonl"   "${V3}"
 
+# Het manifest valt onder dezelfde controle. Zou hij er buiten vallen, dan kon de versie
+# waartegen gegenereerd is stil verschuiven terwijl de bestanden gelijk bleven — en dan
+# valideert de gate straks tegen een spec die er niets mee te maken heeft.
 if [ "${CONTROLEER:-}" = "ja" ]; then
-  echo "stap 6: de drie runbestanden komen overeen met de spec"
+  cmp -s "${TMP}/manifest.json" "${RUNS}/manifest.json" \
+    || fout "stamdata/runs/manifest.json loopt uit de pas: gegenereerd tegen een andere versie dan wat er staat.
+  Draai ci/generate-stream-stub.sh zonder --controleer en commit het verschil."
+  echo "stap 6: de drie runbestanden en het manifest komen overeen met wat de spec nu oplevert"
 else
-  echo "stap 6: drie runbestanden in contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/runs/"
+  cp "${TMP}/manifest.json" "${RUNS}/manifest.json"
+  echo "stap 6: drie runbestanden en een manifest in stamdata/runs/"
 fi

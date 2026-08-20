@@ -1,0 +1,6 @@
+{"soort":"momentopname","tijd":"2026-08-06T09:12:44Z","run":null,"afgerondeStappen":[]}
+{"soort":"run-gestart","tijd":"2026-08-06T09:12:45Z","runId":"run-3b8e02","scenarioId":"01"}
+{"soort":"stap-gestart","tijd":"2026-08-06T09:12:46Z","runId":"run-3b8e02","stapNummer":1}
+{"soort":"cli-uitvoer","tijd":"2026-08-06T09:12:47Z","runId":"run-3b8e02","stapNummer":1,"regel":"$ ci/pipeline-contract.sh payment payment-api 1.0.0 contracts/payment/payment-api/1.0.0/openapi.yaml"}
+{"soort":"stap-afgerond","tijd":"2026-08-06T09:12:48Z","runId":"run-3b8e02","stapNummer":1,"uitkomst":"mislukt"}
+{"soort":"run-afgerond","tijd":"2026-08-06T09:12:49Z","runId":"run-3b8e02","reden":"gestopt","gestoptBijStap":1}

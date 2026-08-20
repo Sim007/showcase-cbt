@@ -111,14 +111,56 @@ jq --arg streampad "${STREAMPAD}" '
       ]
     }' "${REL}/tmp/scenario.json" > "${BUNDEL}/stub-data.json"
 
+# --- stap 2b: de scenario's uit de stamdata ------------------------------------------------
+#
+# De twee scenario-routes kregen hun body uit het example van de spec, en één example is één
+# body: de stub antwoordde met scenario 01 op elke scenarioId. showcase-website toonde daardoor
+# de stappen van 01 onder de kop van 00 — en juist het verschil tussen die twee is wat deze
+# showcase te vertellen heeft.
+#
+# Een example is illustratie en stamdata is inhoud. De spec houdt zijn example; wat de stub
+# serveert komt hiervandaan. Dat het geen verzonnen materiaal is, bewaakt ci/toets-stamdata.sh:
+# elk scenario wordt tegen het Scenario-schema uit het register gehouden.
+
+STAMDATA_REL="stamdata/scenarios"
+ls "${CBT_ROOT}/${STAMDATA_REL}"/*.json >/dev/null 2>&1 \
+  || fout "geen stamdata in ${STAMDATA_REL}. Zonder scenario's valt er niets te serveren"
+
+jq -s 'map({id, titel, ondertitel})' "${STAMDATA_REL}"/*.json > "${BUNDEL}/tmp/lijst.json"
+jq -s 'map({key: .id, value: .}) | from_entries' "${STAMDATA_REL}"/*.json > "${BUNDEL}/tmp/per-id.json"
+
+jq -s '
+  .[0] as $stub | .[1] as $lijst | .[2] as $perId
+  | $stub
+  | .routes = [
+      .routes[]
+      | if .operationId == "lijstScenarios" then .body = $lijst
+        elif .operationId == "haalScenario" then (.bodyPerId = $perId | .body = null)
+        else . end
+    ]' "${REL}/stub-data.json" "${REL}/tmp/lijst.json" "${REL}/tmp/per-id.json" \
+  > "${BUNDEL}/tmp/stub-data.json"
+mv "${BUNDEL}/tmp/stub-data.json" "${BUNDEL}/stub-data.json"
+
+SCENARIOS="$(jq -r '.routes[] | select(.operationId == "haalScenario") | .bodyPerId | keys | join(", ")' "${REL}/stub-data.json")"
+[ -n "${SCENARIOS}" ] || fout "de scenario-route kreeg geen enkele body uit de stamdata"
+echo "stap 2b: scenario's uit de stamdata: ${SCENARIOS}"
+
 ROUTES="$(jq -r '.routes | length' "${REL}/stub-data.json")"
 [ "${ROUTES}" -gt 0 ] || fout "geen routes uit de spec gehaald"
 echo "stap 2: ${ROUTES} routes, waarvan $(jq -r '[.routes[] | select(.verzoekSchema)] | length' "${REL}/stub-data.json") met een requestschema"
 
 # --- stap 3: de fixtures ----------------------------------------------------------
 
-RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/runs"
+RUNS="${CBT_ROOT}/stamdata/runs"
 [ -d "${RUNS}" ] || fout "geen runs in ${RUNS}. Draai eerst ci/generate-stream-stub.sh"
+
+# De opnames zijn afgeleid van de stamdata en moeten voldoen aan een specversie; ze horen er
+# niet aan toe. Waar ze aan moeten voldoen staat in hun manifest, en dat hoort te kloppen met
+# de versie die in deze bundel gaat — anders levert de bundel materiaal van een andere spec
+# dan het contract dat ernaast zit.
+MANIFEST_VERSIE="$(jq -r '.gegenereerdTegen.versie' < "${RUNS}/manifest.json")"
+[ "${MANIFEST_VERSIE}" = "${STREAM_VERSIE}" ] \
+  || fout "de opnames zijn gegenereerd tegen ${STREAM} ${MANIFEST_VERSIE}, deze bundel draagt ${STREAM_VERSIE}"
 cp "${RUNS}"/*.jsonl "${BUNDEL}/runs/"
 echo "stap 3: $(ls "${BUNDEL}/runs" | wc -l | tr -d ' ') fixtures"
 

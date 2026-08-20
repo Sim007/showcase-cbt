@@ -62,6 +62,8 @@ const NAMEN = ['voltooid', 'gestopt', 'midden'];
 const RUNS = NAMEN.map((naam) =>
   fs.readFileSync(path.join(HIER, 'runs', `${naam}.jsonl`), 'utf8').trim().split('\n')
 );
+
+const SCENARIOS = (data.routes.find((r) => r.operationId === 'haalScenario') || {}).bodyPerId || {};
 let beurt = 0;
 
 // Het runId komt uit de opname zelf en niet uit een example: de drie fixtures dragen elk hun
@@ -290,6 +292,18 @@ http.createServer(async (verzoek, antwoord) => {
     }
   }
 
+  // Een route met een body per id bedient elk id met zijn eigen inhoud, en een id dat niet
+  // bestaat met de 404 uit de spec. Tot bundel 0.11.1 was er één body voor alle id's: elke
+  // scenarioId gaf scenario 01 terug, en een onbekend id gaf 200 in plaats van 404.
+  if (route.bodyPerId) {
+    const id = decodeURIComponent(pad.split('/').filter(Boolean).pop());
+    const body = Object.prototype.hasOwnProperty.call(route.bodyPerId, id)
+      ? route.bodyPerId[id]
+      : null;
+    if (!body) return json(antwoord, 404, route.fouten['404']);
+    return json(antwoord, route.status, body);
+  }
+
   if (route.operationId === 'startRun') {
     // "Er kan één run tegelijk lopen. Loopt er al een, dan levert dit een 409 met het runId
     // van die lopende run." De body is de example uit de spec; alleen het nummer erin wordt
@@ -318,6 +332,7 @@ http.createServer(async (verzoek, antwoord) => {
 }).listen(POORT, () => {
   console.log(`stub van showcase-CBT luistert op http://localhost:${POORT}`);
   console.log(`  ${routes.length} operaties uit het contract`);
+  console.log(`  scenario's uit de stamdata: ${Object.keys(SCENARIOS).join(', ') || 'geen'}`);
   console.log(`  stream op ${data.streampad} — blijft open, jij sluit hem`);
   console.log(`  POST /v1/runs start de volgende opname: ${NAMEN.join(', ')}`);
   console.log(`  hartslag na ${HARTSLAG_MS / 1000}s stilte`);

@@ -92,13 +92,48 @@ STATUS="$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
   || fout "een niet-gedeclareerd veld gaf ${STATUS} en geen 400 — dan weigert de bundel niet wat de echte kant weigert"
 echo "  ok    onbekend veld op POST /v1/runs geeft 400"
 
+# --- elk scenario zijn eigen inhoud ------------------------------------------------------------
+#
+# Tot 0.11.1 gaf elke scenarioId scenario 01 terug: er was één example in de spec en dus één
+# body voor alle id's. showcase-website toonde de stappen van 01 onder de kop van 00, en juist
+# het verschil tussen die twee is wat deze showcase te vertellen heeft.
+
+for ID in 00 01; do
+  HAAL="${WERK}/scenario-${ID}.json"
+  STATUS="$(curl -sS -o "${HAAL}" -w '%{http_code}' "http://localhost:${POORT}/v1/scenarios/${ID}")"
+  [ "${STATUS}" = "200" ] || fout "GET /v1/scenarios/${ID} gaf ${STATUS}"
+  GEKREGEN="$(jq -r '.id' < "${HAAL}")"
+  [ "${GEKREGEN}" = "${ID}" ] \
+    || fout "GET /v1/scenarios/${ID} gaf scenario ${GEKREGEN} — dan bedient de bundel elk id met dezelfde body"
+
+  # En het aantal stappen komt uit de stamdata in de bundel zelf, niet uit dit script.
+  VERWACHT_STAPPEN="$(jq -r --arg id "${ID}" \
+    '.routes[] | select(.operationId == "haalScenario") | .bodyPerId[$id].stappen | length' \
+    < "${WERK}/bundel/stub-data.json")"
+  GEZIEN_STAPPEN="$(jq -r '.stappen | length' < "${HAAL}")"
+  [ "${GEZIEN_STAPPEN}" = "${VERWACHT_STAPPEN}" ] \
+    || fout "scenario ${ID} leverde ${GEZIEN_STAPPEN} stappen, ${VERWACHT_STAPPEN} in de stamdata"
+  echo "  ok    GET /v1/scenarios/${ID} geeft scenario ${ID} met ${GEZIEN_STAPPEN} stappen"
+done
+
+ONBEKEND="${WERK}/onbekend.json"
+STATUS="$(curl -sS -o "${ONBEKEND}" -w '%{http_code}' "http://localhost:${POORT}/v1/scenarios/42")"
+[ "${STATUS}" = "404" ] \
+  || fout "een onbekende scenarioId gaf ${STATUS} en geen 404 — de spec beschrijft daar SCENARIO_ONBEKEND"
+jq -e '.code == "SCENARIO_ONBEKEND"' < "${ONBEKEND}" >/dev/null \
+  || fout "de 404 draagt niet de code uit de spec"
+echo "  ok    een onbekende scenarioId geeft 404 SCENARIO_ONBEKEND"
+
 # --- de verbinding open, en de momentopname erop ---------------------------------------------
 #
 # --max-time is het vangnet: gaat er iets mis, dan faalt dit in plaats van te hangen.
 
 UITVOER="${WERK}/stream.txt"
 : > "${UITVOER}"
-curl -fsS -N --max-time 60 "http://localhost:${POORT}/v1/runs/stream" > "${UITVOER}" 2>/dev/null &
+# De grens staat ruim: een volledige opname van scenario 01 is 84 berichten op 400 ms, dus
+# ruim een halve minuut, en daar komt de wachttijd op de hartslag nog bij. Dit is een vangnet
+# tegen hangen en geen meetlat — te krap zetten maakt de toets rood op zijn eigen klok.
+curl -fsS -N --max-time 150 "http://localhost:${POORT}/v1/runs/stream" > "${UITVOER}" 2>/dev/null &
 STREAM_PID=$!
 
 WACHT=0

@@ -1,0 +1,8 @@
+{
+  "scenarioId": "01",
+  "gegenereerdTegen": {
+    "groep": "showcase-cbt",
+    "artifact": "run-stream",
+    "versie": "0.11.0"
+  }
+}

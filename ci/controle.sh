@@ -41,7 +41,7 @@ STREAM_VERSIE=0.11.0
 # spec raakt is een patch van de bundel en van niets anders. Stond hier VERSIE, dan zou elke
 # stubwijziging om een contractversie vragen — precies wat "drie versies, elk hun eigen
 # levenscyclus" ontkent.
-BUNDELVERSIE=0.11.1
+BUNDELVERSIE=0.12.0
 
 echo "== controle =="
 
@@ -82,8 +82,7 @@ echo "  specs gepubliceerd"
 # --- 3: de fixtures lopen niet uit de pas -------------------------------------------------
 
 "${CBT_ROOT}/ci/generate-stub.sh" "${GROEP}" "${SCENARIO}" "${SCENARIO_VERSIE}" >/dev/null
-"${CBT_ROOT}/ci/generate-stream-stub.sh" "${GROEP}" "${STREAM}" "${STREAM_VERSIE}" \
-  "${SCENARIO}" "${SCENARIO_VERSIE}" --controleer >/dev/null
+"${CBT_ROOT}/ci/generate-stream-stub.sh" "${GROEP}" "${STREAM}" "${STREAM_VERSIE}" 01 --controleer >/dev/null
 
 echo "  fixtures komen overeen met de spec"
 
@@ -93,7 +92,7 @@ echo "  fixtures komen overeen met de spec"
 # maakt klopt. Volgorde is een eigenschap waar de consumer op steunt — hij bouwt er zijn
 # tijdlijn mee op — dus die wordt apart getoetst en niet weggenormaliseerd.
 
-RUNS="${CBT_ROOT}/contracts/${GROEP}/${STREAM}/${STREAM_VERSIE}/runs"
+RUNS="${CBT_ROOT}/stamdata/runs"
 GECONTROLEERD=0
 for fixture in "${RUNS}"/*.jsonl; do
   VORIGE=""
