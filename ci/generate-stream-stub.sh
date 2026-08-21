@@ -98,14 +98,55 @@ cp "${STAMDATA}" "${TMP}/scenario-example.json"
 STAPPEN="$(jq -r '.stappen | length' "${REL}/tmp/scenario-example.json")"
 [ "${STAPPEN}" -ge 3 ] || fout "scenario ${SCENARIO_ID} heeft ${STAPPEN} stappen; er zijn er minstens drie nodig om een run te laten stoppen met stappen erna"
 
-# Waar het misgaat in situatie 2. Bij voorkeur een gate — dat is de stap die bedoeld is om
-# tegen te houden — en nooit de laatste, want dan blijft er niets over om stil te laten.
-FAALT="$(jq -r --argjson laatste "$((STAPPEN - 1))" \
-  '[.stappen | to_entries[] | select(.key < $laatste) | select(.value.type == "gate") | .value.nummer] | first // empty' \
-  "${REL}/tmp/scenario-example.json")"
-[ -n "${FAALT}" ] || FAALT="$(jq -r --argjson i "$((STAPPEN - 2))" '.stappen[$i].nummer' "${REL}/tmp/scenario-example.json")"
+# Waar het misgaat in situatie 2.
+#
+# **Dit was "de eerste gate die niet de laatste is", en die regel schaalde niet mee.** Bij zes
+# stappen wees hij stap 3 aan — precies het verhaal: Payment faalt, en de stappen van Order
+# erna krijgen niets. Bij 27 stappen is de eerste gate stap 1, dus stierf de run meteen en
+# kregen 26 stappen geen bericht. Er brak niets: de generator bleef een geldige opname maken,
+# alleen leerde die niets meer. Zie docs/besluiten.md, Geleerd.
+#
+# Nu een eigenschap van de stap in plaats van een positie, in drie trappen:
+#
+#   1  de eerste contract-gate           dit is een showcase over contracttesten; de gate die
+#                                        het tegenhoudt nadat er zichtbaar werk is gelukt, is
+#                                        het beeld dat we willen tonen
+#   2  de eerste gate met werk ervoor    voor een scenario zonder contract-gate — scenario 00
+#      en een ánder deelsysteem erna     is er zo een, en dat ís scenario 00
+#   3  de een-na-laatste stap            als er helemaal geen gate is
+#
+# Trap 2 is niet theoretisch: zonder contracttesten bestaat er geen contract-gate, dus voor
+# scenario 00 is dat de enige route.
 
-echo "stap 2: ${STAPPEN} stappen in het example van scenario ${SCENARIO_ID}; stap ${FAALT} mislukt in de gestopte run"
+FAALT="$(jq -r '
+  . as $s
+  | [ $s.stappen | to_entries[]
+      | select(.key < ($s.stappen | length) - 1)
+      | select(.value.type == "gate" and .value.testsoort == "contract")
+      | .value.nummer ] | first // empty' \
+  "${REL}/tmp/scenario-example.json")"
+KEUZE="de eerste contract-gate"
+
+if [ -z "${FAALT}" ]; then
+  FAALT="$(jq -r '
+    . as $s
+    | [ $s.stappen | to_entries[]
+        | select(.key > 0)
+        | select(.key < ($s.stappen | length) - 1)
+        | select(.value.type == "gate")
+        | select(([ $s.stappen[(.key + 1):][] | (.deelsysteem // "keten") ]
+                  - [ (.value.deelsysteem // "keten") ]) | length > 0)
+        | .value.nummer ] | first // empty' \
+    "${REL}/tmp/scenario-example.json")"
+  KEUZE="de eerste gate met werk ervoor en een ander deelsysteem erna"
+fi
+
+if [ -z "${FAALT}" ]; then
+  FAALT="$(jq -r --argjson i "$((STAPPEN - 2))" '.stappen[$i].nummer' "${REL}/tmp/scenario-example.json")"
+  KEUZE="de een-na-laatste stap, want dit scenario heeft geen bruikbare gate"
+fi
+
+echo "stap 2: ${STAPPEN} stappen in scenario ${SCENARIO_ID}; stap ${FAALT} mislukt in de gestopte run (${KEUZE})"
 
 # --- stap 3: de drie verlopen samenstellen ----------------------------------------------
 
@@ -255,24 +296,47 @@ jq '{ components: { schemas: .components.schemas } }' "${REL}/tmp/stream.json" >
 # interactieve container en zou anders de rest van het bestand opslokken. Dan stopt de lus
 # na één bericht en meldt de controle groen over berichten die niemand bekeek — hoe dat
 # ontdekt is, staat in docs/besluiten.md.
+# **Eerst wegschrijven, dan valideren, en per berichtsoort in plaats van per bericht.** Dit
+# draaide één `docker run` per bericht: 167 containerstarts voor scenario 01, ruim vijf
+# minuten. Er zijn zes berichtsoorten, dus zes aanroepen volstaan — ajv neemt een glob.
+#
+# Wat dat kost is de precisie van de foutmelding: een batch zegt dát er iets niet voldoet en
+# niet wat. Daarom valt hij bij een fout terug op bericht-voor-bericht, en die weg is traag
+# maar wijst het aan. Snel als het goed gaat, precies als het misgaat.
+
+rm -rf "${TMP}/berichten"
 GEVALIDEERD=0
 for verloop in "${V1}" "${V2}" "${V3}"; do
   while IFS="$(printf '\t')" read -r schema bericht <&3; do
-    jq --arg ref "#/components/schemas/${schema}" '. + {"$ref": $ref}' \
-      "${REL}/tmp/stream-componenten.json" > "${TMP}/s-${GEVALIDEERD}.json"
-    printf '%s' "${bericht}" > "${TMP}/b-${GEVALIDEERD}.json"
-
-    ajv validate --strict=false -c ajv-formats \
-      -s "${REL}/tmp/s-${GEVALIDEERD}.json" \
-      -d "${REL}/tmp/b-${GEVALIDEERD}.json" >/dev/null 2>&1 \
-      || fout "$(basename "${verloop}"), bericht ${GEVALIDEERD} voldoet niet aan ${schema}: ${bericht}"
-
+    mkdir -p "${TMP}/berichten/${schema}"
+    printf '%s' "${bericht}" > "${TMP}/berichten/${schema}/${GEVALIDEERD}.json"
     GEVALIDEERD=$((GEVALIDEERD + 1))
   done 3< "${verloop}"
 done
 
 verwacht_minstens "${GEVALIDEERD}" 1 "berichten gevalideerd"
-echo "stap 4: ${GEVALIDEERD} berichten voldoen aan hun payloadschema"
+
+SOORTEN=0
+for map in "${TMP}"/berichten/*/; do
+  schema="$(basename "${map}")"
+  jq --arg ref "#/components/schemas/${schema}" '. + {"$ref": $ref}' \
+    "${REL}/tmp/stream-componenten.json" > "${TMP}/schema-${schema}.json"
+
+  if ! ajv validate --strict=false -c ajv-formats \
+      -s "${REL}/tmp/schema-${schema}.json" \
+      -d "${REL}/tmp/berichten/${schema}/*.json" >/dev/null 2>&1; then
+    for bericht in "${map}"*.json; do
+      ajv validate --strict=false -c ajv-formats \
+        -s "${REL}/tmp/schema-${schema}.json" \
+        -d "${REL}/tmp/berichten/${schema}/$(basename "${bericht}")" >/dev/null 2>&1 \
+        || fout "bericht $(basename "${bericht}" .json) voldoet niet aan ${schema}: $(cat "${bericht}")"
+    done
+    fout "berichten van soort ${schema} voldoen niet aan hun schema, maar los gaan ze er wel doorheen"
+  fi
+  SOORTEN=$((SOORTEN + 1))
+done
+
+echo "stap 4: ${GEVALIDEERD} berichten voldoen aan hun payloadschema (${SOORTEN} aanroepen, één per soort)"
 
 # --- stap 5: de mappings wegschrijven ----------------------------------------------------
 
