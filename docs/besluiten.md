@@ -1770,3 +1770,60 @@ besluit — en een besluit hoort een toets te krijgen of te worden teruggedraaid
 kan ik hier een toets omheen zetten die rood wordt als het misgaat? Kan dat, dan is
 opschrijven het verkeerde antwoord. Kan het niet, dan is het opschrijven pas het goede — en
 dan hoort er een naam en een datum bij, want anders is het over drie weken niemands probleem.
+
+## 2026-08-21 — Een regel die niet meeschaalt breekt niet, hij wordt betekenisloos
+
+`generate-stream-stub.sh` koos de faalstap van de gestopte opname met: **de eerste gate die
+niet de laatste is.** Bij zes stappen wees die stap 3 aan, en dat was precies het verhaal —
+Payment faalt, de stappen van Order erna krijgen niets, en een deelsysteem dat nooit aan de
+beurt kwam is het geval waar de afleidregel van de consumer op moet passen.
+
+Toen de stamdata naar 27 stappen ging, was de eerste gate stap 1. De run stierf onmiddellijk,
+26 stappen kregen geen bericht, en de opname toonde niets meer dan "er ging meteen iets mis".
+
+**Er brak niets.** De generator liep door, alle berichten voldeden aan hun schema, elke gate
+bleef groen, en het bestand was geldig. Dat is wat deze klasse anders maakt dan de vier
+gevallen uit de gate-notitie: daar meldde een controle groen over werk dat niet gedaan was.
+Hier werd het werk gedaan, klopte de uitkomst, en was alleen de *betekenis* weg.
+
+**Waar dat aan lag: de regel beschreef een positie en niet een eigenschap.** "De eerste gate"
+viel bij zes stappen toevallig samen met "de gate die iets tegenhoudt nadat er werk gelukt
+is". Dat toeval was de hele werking, en het stond nergens.
+
+Nu staat de eigenschap er wél: de eerste **contract**-gate, met als terugval de eerste gate
+die werk vóór zich heeft en een ander deelsysteem ná zich. Die tweede trap is geen sier —
+scenario 00 heeft per definitie geen contract-gate, dus daar is het de enige route.
+
+**Waar dit nog meer zit.** Elke plek waar een keuze op een index of een volgorde rust in
+plaats van op een kenmerk: `[0]`, "de eerste", "de laatste op één na". Ze werken tot de
+verzameling groeit, en dan blijven ze werken zonder nog te kloppen. Een gate ziet dat niet;
+alleen iemand die de uitkomst léést ziet het, en die kijkt pas als er iets anders misgaat.
+
+## 2026-08-21 — Er bestaat geen echte showcase-CBT
+
+Bij de verkenning voor "de website sluit aan op de echte kant" is gezocht naar wat
+`/v1/runs`, `/v1/scenarios` of een SSE-stream serveert. Het antwoord is: **uitsluitend
+`ci/stubbundel/stub.js`.** Er is geen server, geen endpoint, geen stream. De echte kant is
+een verzameling shellscripts die een markdown-rapport schrijft.
+
+**Er is weken over deze grens gepraat alsof er twee kanten waren.** Er is er één, en de
+andere is de stub. Twee specs gepubliceerd, drie versies uitgegeven, een bundel geleverd,
+een compatibiliteitsrichting per grens gekozen, een heartbeat afgesproken — allemaal over
+een provider die niet draait.
+
+**Dat maakt geen van die stappen verkeerd.** Spec-first betekent dat het contract er eerder
+is dan de implementatie; dat is de bedoeling en niet een fout. Wat er misging is dat niemand
+het verschil hardop maakte. "Showcase-CBT is provider van `run-stream`" en "showcase-CBT
+zóu provider zijn van `run-stream`" zijn in elk document van deze maand hetzelfde opgeschreven.
+
+**Dezelfde klasse als de `/api/hoofdstukken`-aanname**, en als "twee draaiwijzen, allebei
+getoetst". Iedereen ging ervan uit, niemand mat het, en de bewering klonk met elke herhaling
+zekerder. Het verschil is de omvang: dit ging niet over een endpoint of een regel in een
+README maar over de vraag of de helft van de grens bestaat.
+
+**Wat het meteen verklaart.** Waarom de stub zo zwaar leunt: hij is niet het hulpmiddel naast
+de echte kant, hij ís de kant. Elke bevinding van squad 2 deze maand ging over de stub, en
+elke reparatie zat in de stub. Dat leek toeval en was het niet.
+
+**Wat eruit volgt als werkwijze:** bij een grens hoort de vraag "wat serveert dit vandaag" een
+antwoord met een commando, niet met een naam. `curl` het, of het bestaat niet.
