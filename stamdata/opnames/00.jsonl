@@ -1,0 +1,60 @@
+{"soort":"momentopname","tijd":"2026-08-22T06:38:37Z","run":null,"afgerondeStappen":[]}
+{"soort":"run-gestart","tijd":"2026-08-22T06:38:37Z","runId":"run-000000","scenarioId":"00"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:38:37Z","runId":"run-000000","stapNummer":1}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:38:37Z","runId":"run-000000","stapNummer":1,"regel":"$ ci/pipeline-microservice.sh payment payment-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:38:41Z","runId":"run-000000","stapNummer":1,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:38:41Z","runId":"run-000000","stapNummer":2}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:38:41Z","runId":"run-000000","stapNummer":2,"regel":"$ ci/pipeline-microservice.sh payment payment-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:38:49Z","runId":"run-000000","stapNummer":2,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:38:49Z","runId":"run-000000","stapNummer":3}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:38:49Z","runId":"run-000000","stapNummer":3,"regel":"$ ci/pipeline-microservice.sh payment payment-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:38:52Z","runId":"run-000000","stapNummer":3,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:38:52Z","runId":"run-000000","stapNummer":4}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:38:52Z","runId":"run-000000","stapNummer":4,"regel":"$ ci/pipeline-microservice.sh payment payment-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:38:54Z","runId":"run-000000","stapNummer":4,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:38:54Z","runId":"run-000000","stapNummer":5}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:38:54Z","runId":"run-000000","stapNummer":5,"regel":"$ ci/pipeline-ci.sh payment 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:00Z","runId":"run-000000","stapNummer":5,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:00Z","runId":"run-000000","stapNummer":6}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:00Z","runId":"run-000000","stapNummer":6,"regel":"$ ci/pipeline-ci.sh payment 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:03Z","runId":"run-000000","stapNummer":6,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:03Z","runId":"run-000000","stapNummer":7}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:03Z","runId":"run-000000","stapNummer":7,"regel":"$ ci/pipeline-test.sh payment 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:10Z","runId":"run-000000","stapNummer":7,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:10Z","runId":"run-000000","stapNummer":8}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:10Z","runId":"run-000000","stapNummer":8,"regel":"$ ci/pipeline-test.sh payment 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:12Z","runId":"run-000000","stapNummer":8,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:12Z","runId":"run-000000","stapNummer":9}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:12Z","runId":"run-000000","stapNummer":9,"regel":"$ ci/pipeline-acceptatie.sh payment 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:19Z","runId":"run-000000","stapNummer":9,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:19Z","runId":"run-000000","stapNummer":10}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:19Z","runId":"run-000000","stapNummer":10,"regel":"$ ci/pipeline-microservice.sh order order-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:23Z","runId":"run-000000","stapNummer":10,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:23Z","runId":"run-000000","stapNummer":11}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:23Z","runId":"run-000000","stapNummer":11,"regel":"$ ci/pipeline-microservice.sh order order-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:31Z","runId":"run-000000","stapNummer":11,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:31Z","runId":"run-000000","stapNummer":12}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:31Z","runId":"run-000000","stapNummer":12,"regel":"$ ci/pipeline-microservice.sh order order-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:34Z","runId":"run-000000","stapNummer":12,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:34Z","runId":"run-000000","stapNummer":13}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:34Z","runId":"run-000000","stapNummer":13,"regel":"$ ci/pipeline-microservice.sh order order-api"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:35Z","runId":"run-000000","stapNummer":13,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:35Z","runId":"run-000000","stapNummer":14}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:35Z","runId":"run-000000","stapNummer":14,"regel":"$ ci/pipeline-ci.sh order 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:42Z","runId":"run-000000","stapNummer":14,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:42Z","runId":"run-000000","stapNummer":15}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:42Z","runId":"run-000000","stapNummer":15,"regel":"$ ci/pipeline-ci.sh order 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:44Z","runId":"run-000000","stapNummer":15,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:45Z","runId":"run-000000","stapNummer":16}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:45Z","runId":"run-000000","stapNummer":16,"regel":"$ ci/pipeline-test.sh order 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:52Z","runId":"run-000000","stapNummer":16,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:52Z","runId":"run-000000","stapNummer":17}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:52Z","runId":"run-000000","stapNummer":17,"regel":"$ ci/pipeline-test.sh order 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:39:54Z","runId":"run-000000","stapNummer":17,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:39:54Z","runId":"run-000000","stapNummer":18}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:39:54Z","runId":"run-000000","stapNummer":18,"regel":"$ ci/pipeline-acceptatie.sh order 1.0.0"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:40:00Z","runId":"run-000000","stapNummer":18,"uitkomst":"geslaagd"}
+{"soort":"stap-gestart","tijd":"2026-08-22T06:40:00Z","runId":"run-000000","stapNummer":19}
+{"soort":"cli-uitvoer","tijd":"2026-08-22T06:40:00Z","runId":"run-000000","stapNummer":19,"regel":"$ ci/pipeline-gebruikersflows.sh acceptatie"}
+{"soort":"stap-afgerond","tijd":"2026-08-22T06:40:03Z","runId":"run-000000","stapNummer":19,"uitkomst":"geslaagd"}
+{"soort":"run-afgerond","tijd":"2026-08-22T06:40:04Z","runId":"run-000000","reden":"voltooid"}

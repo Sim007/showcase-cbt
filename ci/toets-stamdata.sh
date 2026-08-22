@@ -45,6 +45,41 @@ rm -rf "${WERK}"; mkdir -p "${WERK}"
 BESTANDEN="$(ls "${STAMDATA}"/*.json 2>/dev/null || true)"
 [ -n "${BESTANDEN}" ] || fout "geen scenario's in ${STAMDATA_REL}"
 
+# --- met een rapport erbij: alleen de vergelijking, en géén register --------------------------
+#
+# Deze weg wordt aan het eind van een demo gelopen, en scenario 00 draait per definitie zonder
+# register — dat ís scenario 00. De schemavalidatie hieronder haalt de spec uit het register en
+# kan daar dus niet. Ze draait bij elke push in controle.sh, waar het register wél staat.
+#
+# De vraag die hier hoort is een andere: toont de website straks hetzelfde als wat er zojuist
+# werkelijk gedraaid heeft. Daar is geen spec voor nodig, alleen het rapport ernaast.
+
+if [ "$#" -eq 2 ]; then
+  ID="$1"; RAPPORT="$2"
+  [ -f "${STAMDATA}/${ID}.json" ] || fout "geen stamdata voor scenario ${ID}"
+  [ -f "${RAPPORT}" ] || fout "geen rapport op ${RAPPORT}"
+
+  # De oordeelregels horen bij de run en niet bij de structuur: een oordeel is een uitkomst,
+  # en uitkomsten staan bewust niet in de stamdata.
+  awk -F'|' '/^\| [0-9]/ { gsub(/^ +| +$/, "", $4); if ($4 != "—") print $4 }' "${RAPPORT}" \
+    > "${WERK}/rapport.stappen"
+
+  jq -r '.stappen[].omschrijving' < "${STAMDATA}/${ID}.json" > "${WERK}/stamdata.stappen"
+
+  diff "${WERK}/stamdata.stappen" "${WERK}/rapport.stappen" >/dev/null 2>&1 || {
+    echo "toets-stamdata: de stamdata van scenario ${ID} en zijn rapport lopen uiteen:" >&2
+    echo "    < stamdata, > rapport" >&2
+    diff "${WERK}/stamdata.stappen" "${WERK}/rapport.stappen" | sed 's/^/    /' >&2
+    fout "de website zou iets anders tonen dan de pipeline doet"
+  }
+
+  GEZIEN="$(wc -l < "${WERK}/rapport.stappen" | tr -d ' ')"
+  verwacht_minstens "${GEZIEN}" 19 "staprijen in het rapport van scenario ${ID}"
+  echo "  ok    scenario ${ID}: ${GEZIEN} staprijen, gelijk aan de stamdata"
+  rm -rf "${WERK}"
+  exit 0
+fi
+
 # --- 1: elk scenario valideert tegen het Scenario-schema uit de gepubliceerde spec ---------
 #
 # Uit het register en niet van schijf, zoals overal. Zonder deze controle is stamdata
@@ -186,36 +221,6 @@ if [ -f "${RUNS}/manifest.json" ]; then
   # wat er wegviel toen de map niet langer de versie noemde.
   verwacht_minstens "${BERICHTEN}" 3 "berichten in de opnames"
   echo "  ok    ${BERICHTEN} berichten uit ${RUNS#"${CBT_ROOT}/"}, elke soort bestaat in ${R_ARTIFACT} ${R_VERSIE}"
-fi
-
-# --- 3: tegen een echt rapport, als er een is -----------------------------------------------
-#
-# Alleen zinvol na een demo. De staprijen van het rapport zijn wat er werkelijk gedraaid heeft;
-# de stamdata is wat wij beloofd hebben dat er zou draaien. Lopen die uiteen, dan toont de
-# website iets anders dan de pipeline doet — precies het gat waar dit script voor bestaat.
-
-if [ "$#" -eq 2 ]; then
-  ID="$1"; RAPPORT="$2"
-  [ -f "${STAMDATA}/${ID}.json" ] || fout "geen stamdata voor scenario ${ID}"
-  [ -f "${RAPPORT}" ] || fout "geen rapport op ${RAPPORT}"
-
-  # De oordeelregels horen bij de run en niet bij de structuur: een oordeel is een uitkomst,
-  # en uitkomsten staan bewust niet in de stamdata.
-  awk -F'|' '/^\| [0-9]/ { gsub(/^ +| +$/, "", $4); if ($4 != "—") print $4 }' "${RAPPORT}" \
-    > "${WERK}/rapport.stappen"
-
-  jq -r '.stappen[].omschrijving' < "${STAMDATA}/${ID}.json" > "${WERK}/stamdata.stappen"
-
-  diff "${WERK}/stamdata.stappen" "${WERK}/rapport.stappen" >/dev/null 2>&1 || {
-    echo "toets-stamdata: de stamdata van scenario ${ID} en zijn rapport lopen uiteen:" >&2
-    echo "    < stamdata, > rapport" >&2
-    diff "${WERK}/stamdata.stappen" "${WERK}/rapport.stappen" | sed 's/^/    /' >&2
-    fout "de website zou iets anders tonen dan de pipeline doet"
-  }
-
-  GEZIEN="$(wc -l < "${WERK}/rapport.stappen" | tr -d ' ')"
-  verwacht_minstens "${GEZIEN}" 19 "staprijen in het rapport van scenario ${ID}"
-  echo "  ok    scenario ${ID}: ${GEZIEN} staprijen, gelijk aan de stamdata"
 fi
 
 rm -rf "${WERK}"

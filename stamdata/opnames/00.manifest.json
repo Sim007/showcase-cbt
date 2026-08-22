@@ -1,0 +1,11 @@
+{
+  "scenarioId": "00",
+  "runId": "run-000000",
+  "berichten": 60,
+  "opgenomenOp": "2026-08-22T06:44:45Z",
+  "voldoetAan": {
+    "groep": "showcase-cbt",
+    "artifact": "run-stream",
+    "versie": "0.11.0"
+  }
+}

@@ -23,6 +23,27 @@ STAP="${1:-}"
 # verschil tussen de twee — de kern van deze opzet — juist niet meer te zien.
 export CBT_RAPPORT="${CBT_ROOT}/00-start/rapport/rapport-cbt-00.md"
 
+# De gebeurtenissen van deze run, naast het rapport en van dezelfde soort: allebei horen ze
+# bij één doorloop en niet bij de broncode. Wordt hier een opname van gemaakt, dan is dat een
+# eigen handeling — zie ci/neem-op.sh.
+export CBT_SCENARIO=00
+export CBT_GEBEURTENISSEN="${CBT_ROOT}/00-start/rapport/gebeurtenissen.jsonl"
+
+# shellcheck source=../../ci/lib/tools.sh
+. "${CBT_ROOT}/ci/lib/tools.sh"
+
+# Een run die halverwege omvalt is een gestopte run en hoort dat te melden. Zonder deze trap
+# eindigt het bestand zonder afsluiter, en dan is niet te zien of hij klaar was of afgebroken.
+afsluiten_run() {
+  _code=$?
+  if [ "${_code}" -eq 0 ]; then
+    gebeurtenis run-afgerond '"reden":"voltooid"'
+  else
+    gebeurtenis run-afgerond '"reden":"gestopt"'
+  fi
+}
+trap afsluiten_run EXIT
+
 case "${CBT_LIVE:-1}" in
   0|nee|off) CBT_LIVE="" ;;
   *)         CBT_LIVE=1 ;;
@@ -33,7 +54,6 @@ RAPPORT="${CBT_RAPPORT%.md}.html"
 
 toon_pagina() {
   [ -n "${CBT_LIVE}" ] || return 0
-  . "${CBT_ROOT}/ci/lib/tools.sh"
   rapport_start "demo"
   ci/rapport-html.sh "${CBT_RAPPORT}" >/dev/null 2>&1 || true
   if command -v open >/dev/null 2>&1; then open "${RAPPORT}"
@@ -55,6 +75,14 @@ opmerking() {
 }
 
 ci/opruimen-alles.sh >/dev/null
+
+# Ná het opruimen en niet ervoor: opruimen-alles.sh wist 00-start/rapport/, en het
+# gebeurtenissenbestand hoort daar — het is een artefact van één run, net als het rapport.
+# Eerder gezet betekent dat de eerste regel meteen weer weg is.
+mkdir -p "$(dirname "${CBT_GEBEURTENISSEN}")"
+rm -f "${CBT_GEBEURTENISSEN}"
+gebeurtenis run-gestart "\"scenarioId\":\"${CBT_SCENARIO}\""
+
 toon_pagina
 
 # --- payment, van code tot Acceptatie ---------------------------------------------------

@@ -188,17 +188,72 @@ stap() {
   _omschrijving="$1"
   shift
   STAP_LOG="$(mktemp)"
+  gebeurtenis stap-gestart "\"omschrijving\":\"$(_json "${_omschrijving}")\""
   printf '  %-44s' "${_omschrijving}"
   if "$@" >"${STAP_LOG}" 2>&1; then
     echo " ok"
+    gebeurtenis stap-afgerond "\"omschrijving\":\"$(_json "${_omschrijving}")\",\"uitkomst\":\"geslaagd\""
     _rapport_regel "${_omschrijving}" "groen"
     return 0
   else
     echo " MISLUKT"
+    # De laatste regels van een mislukte stap gaan mee, één regel per gebeurtenis. Alles
+    # meesturen maakt de stroom onbruikbaar; alleen het commando maakt een echte run armer
+    # dan de opname die hem nabootst. Het middelste is wat de gestopte run zijn kracht geeft.
+    tail -n "${GEBEURTENIS_REGELS:-10}" "${STAP_LOG}" 2>/dev/null | while IFS= read -r _r; do
+      gebeurtenis uitvoer "\"omschrijving\":\"$(_json "${_omschrijving}")\",\"regel\":\"$(_json "${_r}")\""
+    done
+    gebeurtenis stap-afgerond "\"omschrijving\":\"$(_json "${_omschrijving}")\",\"uitkomst\":\"mislukt\""
     _rapport_regel "${_omschrijving}" "**ROOD**"
     sed 's/^/    /' "${STAP_LOG}" >&2
     return 1
   fi
+}
+
+# gebeurtenis <soort> [extra json-velden]
+#
+# Kale gebeurtenissen: omschrijving en uitkomst, meer niet. Géén runId, géén stapNummer,
+# géén contractvorm. De provider maakt er `run-stream`-berichten van, en dat is met opzet:
+# zou dit al contractvorm hebben, dan reikt een wijziging aan `run-stream` tot in de
+# pipeline en zit een grens vast aan dit bestand. Zelfde beweging als de stamdata uit de
+# spec halen, één laag lager.
+#
+# De tijd staat er wél in. Dat is een feit van de gebeurtenis en geen contractveld, en
+# zonder is een opname achteraf niet meer op tijd te leggen.
+#
+# **Twee bestemmingen met twee taken.** Het bestand is het archief en de POST is de
+# levering. Daardoor mág de POST falen: mislukt hij, dan is er niets verloren — de run is
+# volledig opgenomen, alleen het meekijken hapert. Zonder bestand zou elke gemiste POST een
+# gat in de opname zijn en was best-effort niet te verdedigen.
+#
+# Doet niets zonder CBT_GEBEURTENISSEN. Schrijft nooit naar stdout en levert nooit een
+# exitcode die telt: een pipeline hoort hier niet op te kunnen struikelen.
+gebeurtenis() {
+  [ -n "${CBT_GEBEURTENISSEN:-}" ] || return 0
+  _soort="$1"
+  _extra="${2:-}"
+  _regel="{\"soort\":\"${_soort}\",\"tijd\":\"$(date -u '+%Y-%m-%dT%H:%M:%SZ')\"${_extra:+,${_extra}}}"
+
+  printf '%s\n' "${_regel}" >> "${CBT_GEBEURTENISSEN}" 2>/dev/null || true
+
+  # De zekering. Een onbereikbare provider kost anders een seconde per gebeurtenis —
+  # gemeten: 54 seconden bovenop een run van 131. Eén mislukking en de POST ligt eruit voor
+  # de rest van de run. De prijs is stilte, en die staat als O21 opgeschreven: vanaf dat
+  # moment mist de website de rest zonder dat er iets rood wordt. Verdedigbaar omdat het
+  # bestand hierboven het archief is.
+  [ -n "${CBT_PROVIDER:-}" ] || return 0
+  [ -z "${_GEBEURTENIS_UIT:-}" ] || return 0
+  curl -fsS --max-time 1 -o /dev/null -X POST -H 'Content-Type: application/json' \
+    --data "${_regel}" "${CBT_PROVIDER}/intern/gebeurtenis" >/dev/null 2>&1 \
+    || _GEBEURTENIS_UIT=ja
+  return 0
+}
+
+# JSON-tekst zonder gereedschap: uitvoer van een willekeurig commando kan aanhalingstekens,
+# backslashes en stuurtekens bevatten, en dat zou de regel ongeldig maken. Met de hand en
+# niet met jq, want jq draait hier in een container en dat is een seconde per regel.
+_json() {
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\000-\037'
 }
 
 # rapport_start <onderdeel> / bijzonderheid <tekst> / rapport_oordeel <tekst>

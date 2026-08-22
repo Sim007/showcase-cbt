@@ -90,6 +90,7 @@ vrijstelling_telling() {
 # openstaand punt in docs/besluiten.md.
 vrijstelling_uitvoering() {
   case "$1" in
+    neem-op.sh)               echo "zet de gebeurtenissen van een échte run om; vraagt een gedraaide demo|2027-02-22" ;;
     deploy.sh)                echo "zet een deelsysteem neer; vraagt gebouwde images|2027-02-13" ;;
     drift.sh)                 echo "bevraagt een draaiend deelsysteem|2027-02-13" ;;
     gebruikersflow.sh)        echo "Playwright tegen een draaiende keten|2027-02-13" ;;
