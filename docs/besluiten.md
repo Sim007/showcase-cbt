@@ -1827,3 +1827,41 @@ elke reparatie zat in de stub. Dat leek toeval en was het niet.
 
 **Wat eruit volgt als werkwijze:** bij een grens hoort de vraag "wat serveert dit vandaag" een
 antwoord met een commando, niet met een naam. `curl` het, of het bestaat niet.
+
+## 2026-08-22 — Schemavalidatie kan niet vangen dat een geldige opname de verkeerde run beschrijft
+
+De eerste opname van scenario 00 was een geldig bestand. Elke regel voldeed aan zijn
+payloadschema, `ajv` gaf geen kik, `controle.sh` stond groen, en het aantal berichten klopte
+met het aantal stappen.
+
+Hij beschreef alleen de verkeerde run: de `run-gestart` ontbrak en hij eindigde op
+`run-afgerond` met reden `gestopt`, terwijl alle negentien stappen waren geslaagd.
+
+**Wat er gebeurd was.** De startgebeurtenis stond vóór `ci/opruimen-alles.sh` in het
+demoscript, en dat script wist `00-start/rapport/` — waar het gebeurtenissenbestand hoort te
+staan, want het is een artefact van één run. De eerste regel was dus meteen weer weg. En de
+demo eindigde non-zero door een andere fout, dus de trap schreef eerlijk `gestopt` op.
+
+**Waarom geen enkele gate dit kon zien.** Een schema toetst de **vorm** van een bericht.
+`RunAfgerondPayload` met reden `gestopt` is een volmaakt geldig bericht. Dat er geen
+`run-gestart` aan voorafging, dat de negentien stappen allemaal `geslaagd` waren, dat
+`gestopt` daarmee in tegenspraak is met alles ervoor — daar gaat geen payloadschema over. Dat
+zijn uitspraken over de **samenhang** van een reeks, en die staan in geen enkel schema.
+
+**Dat is een nieuwe variant naast de twee die er al stonden.** Eerder: een controle die niets
+bekeek en groen meldde (vandaar `verwacht_minstens`), en een regel die niet meeschaalde en
+betekenisloos werd. Hier is er wél gekeken, is er wél iets vastgesteld, en klopt het
+vastgestelde — alleen ging het over de verkeerde eigenschap. **De gate deed precies wat er
+stond, en wat er stond was niet de vraag.**
+
+**Hoe het gevonden is:** door de opname te openen en te lezen. Niet door een gate, niet door
+een rode regel. Er stond een groen vinkje en het bestand klopte niet.
+
+**Wat eruit volgt.** Voor een reeks is vorm per bericht niet genoeg; er hoort een uitspraak
+over het geheel bij. Voor opnames zijn dat er drie die te toetsen zijn: een run begint met
+`run-gestart`, hij eindigt met `run-afgerond`, en `gestopt` hoort niet samen te gaan met
+uitsluitend geslaagde stappen. Geen daarvan is uit een schema af te leiden — ze moeten
+opgeschreven worden als eigenschap van de reeks, en dan pas is er iets dat rood kan worden.
+
+**En de bredere regel:** wie een artefact genereert, moet het minstens één keer lézen. Groen
+zegt dat er niets is gevonden waar iemand naar zocht.
