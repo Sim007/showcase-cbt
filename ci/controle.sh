@@ -43,6 +43,10 @@ STREAM_VERSIE=0.11.0
 # levenscyclus" ontkent.
 BUNDELVERSIE=0.12.0
 
+# De provider heeft een eigen reeks, om dezelfde reden als de bundel: hij is gereedschap en
+# geen contract. Wat erin zit staat in zijn manifest.
+PROVIDERVERSIE=0.1.0
+
 echo "== controle =="
 
 # --- 1: elke gate declareert wat hij verwachtte ------------------------------------------
@@ -143,6 +147,18 @@ echo "  stubbundel gebouwd"
 # Bouwen is niet hetzelfde als werken. Deze toets start hem en leest zijn stream, begrensd op
 # een aantal berichten en op tijd — want een toets die hangt meldt niets, ook geen rood.
 "${CBT_ROOT}/ci/toets-stubbundel.sh" "${BUNDELVERSIE}" | sed 's/^/  /'
+
+# --- 6c: de provider bouwt nog --------------------------------------------------------------
+#
+# Dezelfde reden als bij de bundel: bouwen is de goedkoopste manier om te merken dat er iets
+# is weggedreven. De image draagt de stamdata, dus dit vangt ook een scenario dat niet meer
+# in de image past.
+
+"${CBT_ROOT}/ci/bouw-provider.sh" "${GROEP}" "${SCENARIO}" "${SCENARIO_VERSIE}" \
+  "${STREAM}" "${STREAM_VERSIE}" "${PROVIDERVERSIE}" >/dev/null \
+  || fout "de provider bouwt niet meer"
+
+echo "  provider gebouwd"
 
 # --- 6b: de release-assets zijn te bouwen -------------------------------------------------
 #
