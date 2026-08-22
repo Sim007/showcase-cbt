@@ -20,6 +20,27 @@ cd "${CBT_ROOT}"
 
 STAP="${1:-}"
 
+# De gebeurtenissen van deze run, naast het rapport en van dezelfde soort: allebei horen ze
+# bij één doorloop en niet bij de broncode. Wordt hier een opname van gemaakt, dan is dat een
+# eigen handeling — zie ci/neem-op.sh.
+export CBT_SCENARIO=01
+export CBT_GEBEURTENISSEN="${CBT_ROOT}/01-basis/rapport/gebeurtenissen.jsonl"
+
+# shellcheck source=../../ci/lib/tools.sh
+. "${CBT_ROOT}/ci/lib/tools.sh"
+
+# Een run die halverwege omvalt is een gestopte run en hoort dat te melden. Zonder deze trap
+# eindigt het bestand zonder afsluiter, en dan is niet te zien of hij klaar was of afgebroken.
+afsluiten_run() {
+  _code=$?
+  if [ "${_code}" -eq 0 ]; then
+    gebeurtenis run-afgerond '"reden":"voltooid"'
+  else
+    gebeurtenis run-afgerond '"reden":"gestopt"'
+  fi
+}
+trap afsluiten_run EXIT
+
 # De pagina bouwt zich tijdens de run op, zodat je ziet wat er gebeurt in plaats van het
 # achteraf te lezen. Met CBT_LIVE=0 blijft alleen de terminal over.
 case "${CBT_LIVE:-1}" in
@@ -34,7 +55,6 @@ toon_pagina() {
   [ -n "${CBT_LIVE}" ] || return 0
   # Een leeg rapport aanmaken en tonen, zodat de pagina er staat voordat de eerste stap
   # begint. Daarna vult hij zichzelf.
-  . "${CBT_ROOT}/ci/lib/tools.sh"
   rapport_start "demo"
   ci/rapport-html.sh >/dev/null 2>&1 || true
   if command -v open >/dev/null 2>&1; then open "${RAPPORT}"
@@ -79,6 +99,15 @@ rm -rf 01-basis/rapport build/stub build/contracts build/drift \
 
 docker compose -f compose/registry.yml up -d >/dev/null 2>&1
 ci/wacht-op-gezond.sh registry compose/registry.yml >/dev/null 2>&1 || sleep 10
+
+# Ná het opruimen en niet ervoor: het blok hierboven wist 01-basis/rapport/, en het
+# gebeurtenissenbestand hoort daar — het is een artefact van één run, net als het rapport.
+# Eerder gezet betekent dat de eerste regel meteen weer weg is. Bij scenario 00 is precies
+# dat de eerste opname komen te bederven.
+mkdir -p "$(dirname "${CBT_GEBEURTENISSEN}")"
+rm -f "${CBT_GEBEURTENISSEN}"
+gebeurtenis run-gestart "\"scenarioId\":\"${CBT_SCENARIO}\""
+
 toon_pagina
 
 ci/pipeline-contract.sh payment payment-api 1.0.0 contracts/payment/payment-api/1.0.0/openapi.yaml

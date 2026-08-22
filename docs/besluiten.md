@@ -1865,3 +1865,40 @@ opgeschreven worden als eigenschap van de reeks, en dan pas is er iets dat rood 
 
 **En de bredere regel:** wie een artefact genereert, moet het minstens één keer lézen. Groen
 zegt dat er niets is gevonden waar iemand naar zocht.
+
+## 2026-08-22 — Identificatie hoort naast het contract, niet erin
+
+De PO ziet op het scherm "verbonden met showcase-CBT" en niet met wélke: de stubbundel en de
+provider luisteren allebei op 8090 en zeggen allebei niets over zichzelf. Voor een demo is dat
+het verschil tussen "de pipeline draait echt" en "een opname speelt af".
+
+**Deel A heeft dit al opgelost, en dat was het antwoord.** Elke service publiceert op
+`/actuator/info` zijn naam, zijn deelsysteemversie en welke contractversies hij serveert, en
+`ci/versieconformiteit.sh` leest dat als gate. Het is dus geen gewoonte maar een afgedwongen
+conventie. Deel B — de stub en de provider — heeft er niets van.
+
+**De scheidslijn.** Het contract draagt wat de grens nodig heeft om te functioneren; de
+conventie ernaast draagt wat de bediener moet weten. Naam en versie van een implementatie zijn
+een eigenschap van díé implementatie en niet van de interface. Zet je ze in het contract, dan
+beschrijft dat contract voortaan zijn implementaties in plaats van zijn grens, en moet elke
+toekomstige stub die eigenschap ook waarmaken.
+
+**Het tegenargument is echt en verdient een antwoord.** `scenario-api` draagt de
+CORS-preflight, met deze motivering in de spec zelf: *"Ontbreekt dit antwoord, dan komt de POST
+er nooit — en dat is geen implementatiedetail maar een eigenschap van deze grens."* Daar staat
+dus al iets in het contract dat niet over het domein gaat. Waarom identificatie dan niet?
+
+Het verschil houdt: **zonder de preflight wérkt de grens niet; zonder identificatie werkt hij
+prima.** Alleen weet de mens ernaast dan niet waar hij naar kijkt. Dat is een bedieningsvraag
+en geen interfacevraag — en de showcase heeft daar een plek voor die al bestaat en al bewaakt
+wordt.
+
+**Wat de voorwaarde is als het gebouwd wordt.** Gaat showcase-website dit tonen, dan is "er
+staat een info-endpoint op" een belofte waar een andere squad op bouwt. Deze maand is drie keer
+gebleken wat dat waard is zonder gate. Dus de conventie op stub én provider, mét een regel in
+`toets-stubbundel.sh` en `toets-provider.sh` die rood wordt als hij ontbreekt.
+
+**En waarom het niet aan de consumer overgelaten kan worden.** Het alternatief is dat
+showcase-website het afleidt uit een poortnummer. Dat is een aanname in het gereedschap, van
+precies de soort die deze maand drie keer is teruggekomen — en niemand zou merken wanneer hij
+niet meer klopt. Vastgelegd als O23.
