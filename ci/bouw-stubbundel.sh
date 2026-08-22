@@ -164,6 +164,58 @@ MANIFEST_VERSIE="$(jq -r '.gegenereerdTegen.versie' < "${RUNS}/manifest.json")"
 cp "${RUNS}"/*.jsonl "${BUNDEL}/runs/"
 echo "stap 3: $(ls "${BUNDEL}/runs" | wc -l | tr -d ' ') fixtures"
 
+# --- stap 3b: de opgenomen runs en de stamdata --------------------------------------------
+#
+# Twee soorten materiaal in dezelfde map, en het verschil is de herkomst. `voltooid.jsonl`,
+# `gestopt.jsonl` en `midden.jsonl` zijn afgeleid uit de stamdata van scenario 01 — een
+# nabootsing die klopt. `<id>-voltooid.jsonl` is een échte run: opgenomen terwijl de pipeline
+# draaide, met de duren die het werkelijk kostte.
+#
+# **De stamdata gaat mee in dezelfde release, en dat is geen gemak maar een voorwaarde.** De
+# stream draagt alleen `stapNummer` en `uitkomst`; wat een stap ís staat in de stamdata. Een
+# opname van 19 stappen zonder de stamdata van 00 toont niets, en een stapnummer dat er niet
+# in staat verdwijnt zonder melding. Los uitgeven zou betekenen dat de twee helften uit de
+# pas kunnen lopen zonder dat iemand het merkt.
+
+OPNAMES="${CBT_ROOT}/stamdata/opnames"
+mkdir -p "${BUNDEL}/scenarios"
+cp "${CBT_ROOT}/stamdata/scenarios"/*.json "${BUNDEL}/scenarios/"
+
+# In een variabele en niet in tmp/: die map wordt in stap 5 opgeruimd, en het manifest wordt
+# daarna pas geschreven.
+OPNAMES_JSON='[]'
+AANTAL_OPNAMES=0
+if [ -d "${OPNAMES}" ]; then
+  for opname in "${OPNAMES}"/*.jsonl; do
+    [ -f "${opname}" ] || continue
+    id="$(basename "${opname}" .jsonl)"
+    bron="${OPNAMES}/${id}.manifest.json"
+    # Relatief, want jq draait in een container met de repo op /work en kent dit hostpad niet.
+    bron_rel="stamdata/opnames/${id}.manifest.json"
+    [ -f "${bron}" ] || fout "opname ${id} heeft geen manifest; draai ci/neem-op.sh opnieuw"
+
+    tegen="$(jq -r '.voldoetAan.versie' < "${bron}")"
+    [ "${tegen}" = "${STREAM_VERSIE}" ] \
+      || fout "opname ${id} is opgenomen tegen ${STREAM} ${tegen}, deze bundel draagt ${STREAM_VERSIE}"
+
+    bestand="${id}-voltooid.jsonl"
+    cp "${opname}" "${BUNDEL}/runs/${bestand}"
+    som="$(sha256som "${REL}/runs" "${bestand}" | cut -d' ' -f1)"
+
+    OPNAMES_JSON="$(jq -c -n \
+       --argjson huidig "${OPNAMES_JSON}" \
+       --arg bestand "runs/${bestand}" --arg som "${som}" --arg tegen "${tegen}" \
+       --argjson stappen "$(jq '.stappen | length' < "${CBT_ROOT}/stamdata/scenarios/${id}.json")" \
+       --slurpfile m "${bron_rel}" \
+      '$huidig + [ { scenarioId: $m[0].scenarioId, runId: $m[0].runId, stappen: $stappen,
+                     berichten: $m[0].berichten, opgenomenTegen: $tegen,
+                     bestand: $bestand, sha256: $som } ]')"
+    AANTAL_OPNAMES=$((AANTAL_OPNAMES + 1))
+  done
+fi
+
+echo "stap 3b: $(ls "${BUNDEL}/scenarios" | wc -l | tr -d ' ') scenario's en ${AANTAL_OPNAMES} opgenomen run(s)"
+
 # --- stap 4: het ontvangstschema ---------------------------------------------------------
 #
 # De replayer toetst niets. Dit schema is er zodat de consumer de berichten in zijn eigen
@@ -237,13 +289,15 @@ jq -n \
   --arg groep "${GROEP}" \
   --arg scenario "${SCENARIO}" --arg scenarioversie "${SCENARIO_VERSIE}" --arg scenariosom "${SCENARIO_SOM}" \
   --arg stream "${STREAM}" --arg streamversie "${STREAM_VERSIE}" --arg streamsom "${STREAM_SOM}" \
+  --argjson opnames "${OPNAMES_JSON}" \
   '{
      bundelversie: $bundelversie,
      groep: $groep,
      specs: [
        { artifact: $scenario, versie: $scenarioversie, bestand: "openapi.yaml",  sha256: $scenariosom },
        { artifact: $stream,   versie: $streamversie,   bestand: "asyncapi.yaml", sha256: $streamsom }
-     ]
+     ],
+     opnames: $opnames
    }' > "${BUNDEL}/manifest.json"
 
 verwacht_minstens "$(jq -r '.specs | length' "${REL}/manifest.json")" 2 "specs in het manifest"

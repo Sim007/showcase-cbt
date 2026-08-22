@@ -18,6 +18,16 @@
 # bij elke opnieuw-opname verandert maakt van elke heropname een wijziging. `run-0000<id>`
 # is stabiel, voldoet aan het patroon uit de spec, en is niet te verwarren met de
 # gegenereerde fixtures.
+#
+# **Bekende grens: twee opnames van hetzelfde scenario dragen hetzelfde nummer.** Vandaag is
+# er één opname per scenario, dus het speelt niet. Zodra er een gestopte opname van 00 naast
+# de voltooide komt, is dit precies het lek dat squad 2 heeft aangetoond: hun reducer slaat
+# het wissen over bij een gelijk `runId` — juist, om een race met de 201 te overleven — en
+# dan komen cli-regels van de ene opname onder de stappen van de andere terecht. Gemeten:
+# met hetzelfde nummer lekken er twee regels, met eigen nummers nul.
+#
+# Wie hier een tweede opname per scenario toevoegt, moet dus eerst het nummer uitbreiden —
+# bijvoorbeeld met een letter per verloop — en niet pas als het lekt.
 
 set -euo pipefail
 

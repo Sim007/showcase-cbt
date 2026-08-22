@@ -32,7 +32,8 @@ los van elkaar en van de bundel.
 | `manifest.json` | welke artifactversies erin zitten, met de checksum van elk |
 | `stub.js` | de stub — REST en stream in één proces |
 | `stub-data.json` | de routes, gegenereerd uit `openapi.yaml` |
-| `runs/*.jsonl` | drie fixtures |
+| `runs/*.jsonl` | drie fixtures, plus de opgenomen runs — zie hieronder |
+| `scenarios/*.json` | de stamdata per scenario: welke stappen er zijn |
 | `schemas/berichten-ontvangst.json` | de payloadschema's, voor **inkomende** berichten |
 | `node_modules/` | ajv en ajv-formats, meer niet |
 
@@ -172,6 +173,42 @@ is, haalt die 20 seconden nooit — dan blijft het een bewering. Zo gebruiken wi
 
 Lees ze dus niet als contractgedrag. Wat jullie client moet kunnen, staat in de spec; deze
 twee zijn er om te controleren dat hij het ook echt kan.
+
+---
+
+## Opgenomen runs — een echte run, geen nabootsing
+
+In `runs/` liggen sinds `0.13.0` twee soorten materiaal, en het verschil is de **herkomst**:
+
+| | Wat het is |
+|---|---|
+| `voltooid.jsonl` · `gestopt.jsonl` · `midden.jsonl` | **afgeleid** uit de stamdata van scenario 01 |
+| `<id>-voltooid.jsonl` | **opgenomen** terwijl de pipeline werkelijk draaide |
+
+De naam met het scenarionummer ervoor is de opname. De drie zonder nummer zijn van scenario
+01 en zijn gegenereerd; dat ze geen nummer dragen is geschiedenis en geen betekenis.
+
+**`manifest.json` heeft een `opnames`-blok** dat per opname zegt welk scenario, welk `runId`,
+hoeveel stappen, hoeveel berichten, tegen welke `run-stream`-versie hij is opgenomen, en de
+`sha256` van het bestand. Dat laatste is te controleren zonder ons:
+
+```sh
+shasum -a 256 runs/00-voltooid.jsonl
+jq '.opnames' manifest.json
+```
+
+**Waarom de stamdata in dezelfde release zit.** De stream draagt alleen `stapNummer` en
+`uitkomst`; wát een stap is staat in `scenarios/<id>.json`. Een opname van 19 stappen zonder
+die stamdata toont niets, en een stapnummer dat er niet in staat verdwijnt zonder melding.
+Los uitgeven zou betekenen dat de twee helften uit de pas kunnen lopen zonder dat iemand het
+merkt — vandaar één release en één checksum.
+
+**Eén bekende grens.** Het `runId` van een opname is afgeleid van het scenario: `run-0000<id>`.
+Dat houdt opnames van verschillende scenario's uit elkaar, maar twee opnames van hetzélfde
+scenario zouden hetzelfde nummer dragen. Vandaag is er één per scenario. Komt er een tweede —
+een gestopte naast een voltooide — dan wordt het nummer eerst uitgebreid, want een gelijk
+`runId` is precies het geval waarbij regels van de ene run onder de stappen van de andere
+belanden.
 
 ---
 

@@ -106,10 +106,10 @@ Naast de scenario's loopt een echte grens: showcase-CBT levert `scenario-api` en
 bouwen — uitpakken en starten, verder niets.
 
 ```sh
-ci/bouw-stubbundel.sh showcase-cbt scenario-api 0.11.0 run-stream 0.11.0 0.11.0
+ci/bouw-stubbundel.sh showcase-cbt scenario-api 0.12.0 run-stream 0.11.0 0.13.0
 ```
 
-Levert `build/stubbundel-0.11.0.tgz` op, ongeveer 330 KB. De drie versies staan er los in:
+Levert `build/stubbundel-0.13.0.tgz` op, ongeveer 300 KB. De drie versies staan er los in:
 de twee specs bewegen elk op hun eigen tempo, en de bundel heeft een eigen nummer omdat hij
 van allebei is afgeleid. Welke versies erin zitten staat in `manifest.json`, met checksum.
 
@@ -135,7 +135,7 @@ release, en dat staat hier omdat het verschil anders onzichtbaar is.
 preflight (OPTIONS /v1/runs)            204
 POST /v1/runs met een onbekend veld     400
 verbinden op /v1/runs/stream            momentopname met run: null, verbinding blijft open
-POST /v1/runs, eerste keer              201 met run-7c41a9, daarna 20 berichten
+POST /v1/runs, eerste keer              201 met run-7c41a9, daarna 83 berichten
 POST /v1/runs tijdens die run           409 met run-7c41a9 erin
 POST /v1/runs, tweede keer              201 met run-3b8e02 — de gestopte run
 stilte op de verbinding                 elke 20 s een `: hartslag`
