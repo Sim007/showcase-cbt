@@ -57,9 +57,18 @@ echo "stap 1: ${SCENARIO} ${SCENARIO_VERSIE} en ${STREAM} ${STREAM_VERSIE} opgeh
 
 jq '{
       origin: (.components.headers.AccessControlAllowOrigin.schema.example // "*"),
+      # Het runId uit het 201-example. De 409-tekst noemt dat nummer, en de provider vervangt
+      # het door de run die écht loopt — anders wijst het antwoord een andere run aan dan de
+      # stream afspeelt.
+      voorbeeldRunId: (.paths."/v1/runs".post.responses."201".content."application/json".example.runId
+                       // error("geen runId in het 201-example van startRun")),
+      voorbeeldScenarioId: (.paths."/v1/runs".post.responses."201".content."application/json".example.scenarioId
+                            // error("geen scenarioId in het 201-example van startRun")),
       fouten: {
         scenarioOnbekend: (.paths."/v1/scenarios/{scenarioId}".get.responses."404".content."application/json".example
-                           // error("geen 404-example op haalScenario"))
+                           // error("geen 404-example op haalScenario")),
+        runLooptAl: (.paths."/v1/runs".post.responses."409".content."application/json".example
+                     // error("geen 409-example op startRun"))
       }
     }' "${REL}/tmp/scenario.json" > "${BOUW}/provider-data.json"
 

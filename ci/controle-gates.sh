@@ -65,6 +65,8 @@ vrijstelling_telling() {
   case "$1" in
     controle-gates.sh)        echo "toetst de gates zelf; zijn verzameling is deze lijst|2027-02-13" ;;
     controle.sh)              echo "roept andere controles aan en velt zelf geen oordeel|2027-02-13" ;;
+    runner.sh)                echo "voert uit wat gevraagd wordt en oordeelt niet; de gates zitten in wat hij start|2027-02-22" ;;
+    start-provider.sh)        echo "zet twee processen neer, telt niets|2027-02-22" ;;
     deploy.sh)                echo "zet iets neer, telt niets|2027-02-13" ;;
     opruimen.sh)              echo "ruimt op, telt niets|2027-02-13" ;;
     opruimen-alles.sh)        echo "ruimt op, telt niets|2027-02-13" ;;
@@ -91,6 +93,8 @@ vrijstelling_telling() {
 vrijstelling_uitvoering() {
   case "$1" in
     neem-op.sh)               echo "zet de gebeurtenissen van een échte run om; vraagt een gedraaide demo|2027-02-22" ;;
+    runner.sh)                echo "wacht op werk en start demo's; draait zolang er gedemonstreerd wordt|2027-02-22" ;;
+    start-provider.sh)        echo "zet provider en runner neer; vraagt een gebouwde image en een vrije poort|2027-02-22" ;;
     deploy.sh)                echo "zet een deelsysteem neer; vraagt gebouwde images|2027-02-13" ;;
     drift.sh)                 echo "bevraagt een draaiend deelsysteem|2027-02-13" ;;
     gebruikersflow.sh)        echo "Playwright tegen een draaiende keten|2027-02-13" ;;

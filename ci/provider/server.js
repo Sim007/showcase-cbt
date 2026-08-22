@@ -61,6 +61,49 @@ const LIJST = Object.values(SCENARIOS)
 const abonnees = new Set();
 let lopend = null;
 
+// --- de runner, en waarom hij trekt in plaats van dat wij duwen ---------------------------
+//
+// De pipeline draait op de host en deze provider in een container. Duwen zou de Docker-socket
+// vragen — root-equivalent — plus een mount van de repository, en dat zijn twee prijzen voor
+// één functie. Dus draait het om: een klein bash-proces op de host haalt zijn werk hier op.
+//
+// Wat dat kost staat in O22: de 201 loopt tot een pollinterval voor op de werkelijkheid, en
+// deze provider kan niet weten of er een runner luistert. Dat laatste is niet weg te poetsen
+// maar wel te zien: elke keer dat de runner werk ophaalt, laat hij een spoor achter. Hoort
+// deze provider al RUNNER_STIL_MS niets, dan weigert hij een start in plaats van hem aan te
+// nemen en er niets mee te doen. Een knop die stil niets doet is erger dan een knop die zegt
+// dat het nu niet kan.
+const RUNNER_STIL_MS = Number(process.env.RUNNER_STIL_MS || 5000);
+let laatsteRunnerPoll = 0;
+
+// Een aanvraag doorloopt drie toestanden, en dat zijn er drie omdat twee te weinig bleek.
+//
+//   werk        aangevraagd, nog niet opgehaald
+//   uitgegeven  aan een runner meegegeven, wachtend op het eerste bericht
+//   lopend      de gebeurtenissen komen binnen
+//
+// **Waarom `uitgegeven` er apart bij hoort.** In de eerste versie werd het werk pas gewist
+// zodra `run-gestart` binnenkwam. Een scenario dat nog geen gebeurtenissen zendt liet het dus
+// staan, en de runner haalde hetzelfde werk elke seconde opnieuw op — hij draaide scenario 01
+// twee keer achter elkaar en zou zijn doorgegaan. Gemeten, niet bedacht.
+//
+// Ophalen wist het werk nu meteen. En omdat er tussen ophalen en het eerste bericht een gat
+// zit — de demo ruimt eerst op, dat duurt tientallen seconden — moet die tussentoestand
+// zichtbaar blijven, anders neemt een tweede druk op de knop de plek in van een run die al
+// onderweg is.
+const UITGEGEVEN_MAX_MS = Number(process.env.UITGEGEVEN_MAX_MS || 300000);
+let werk = null;
+let uitgegeven = null;
+
+// Een runner die omvalt tussen ophalen en starten zou de provider anders blijvend bezet
+// houden. Dit is geen herstel maar een vangnet: na de grens is de plek weer vrij.
+function uitgegevenVerlopen() {
+  if (!uitgegeven) return false;
+  if (Date.now() - uitgegeven.gezet <= UITGEGEVEN_MAX_MS) return false;
+  uitgegeven = null;
+  return true;
+}
+
 function hartslagOpnieuw(abonnee) {
   clearTimeout(abonnee.hartslag);
   abonnee.hartslag = setTimeout(() => {
@@ -159,7 +202,12 @@ function verwerk(g) {
     const scenario = SCENARIOS[g.scenarioId];
     if (!scenario) return { fout: `scenario ${g.scenarioId} staat niet in deze provider` };
 
-    const runId = g.runId || nieuwRunId();
+    // Is deze run via POST /v1/runs aangevraagd, dan heeft de aanroeper dat nummer al in
+    // handen: hij kreeg het in de 201. Een tweede nummer munten zou betekenen dat het
+    // antwoord op de knop een andere run aanwijst dan de stream afspeelt.
+    const runId = (uitgegeven && uitgegeven.scenarioId === g.scenarioId && uitgegeven.runId)
+      || g.runId || nieuwRunId();
+    uitgegeven = null;
     lopend = {
       scenario,
       wijzer: 0,
@@ -239,6 +287,73 @@ http.createServer(async (verzoek, antwoord) => {
       return json(antwoord, 404, data.fouten.scenarioOnbekend);
     }
     return json(antwoord, 200, SCENARIOS[id]);
+  }
+
+  if (verzoek.method === 'POST' && pad === '/v1/runs') {
+    let body;
+    try {
+      body = JSON.parse(await lees(verzoek));
+    } catch {
+      return json(antwoord, 400, { code: 'VERZOEK_ONGELDIG', message: 'geen geldige JSON' });
+    }
+
+    // Eerste van twee controles op het scenario-id, en ze staan los van elkaar met opzet: de
+    // runner doet hem straks opnieuw. Eerst het patroon uit de spec, dan of dít exemplaar het
+    // scenario werkelijk draagt. Een opzoeking in een object dat we zelf hebben gevuld, nooit
+    // een pad dat uit de invoer wordt samengesteld.
+    const id = String((body || {}).scenarioId || '');
+    if (!/^[0-9]{2}$/.test(id) || !Object.prototype.hasOwnProperty.call(SCENARIOS, id)) {
+      return json(antwoord, 404, data.fouten.scenarioOnbekend);
+    }
+
+    // "Er kan één run tegelijk lopen." Deze provider weet dat werkelijk, want hij ontvangt de
+    // gebeurtenissen — het is geen nabootsing.
+    uitgegevenVerlopen();
+    if (lopend || werk || uitgegeven) {
+      const bezet = (lopend && lopend.runId) || (werk && werk.runId) || (uitgegeven && uitgegeven.runId);
+      const bezetScenario = (lopend && lopend.scenario && lopend.scenario.id)
+        || (werk && werk.scenarioId) || (uitgegeven && uitgegeven.scenarioId);
+      const voorbeeld = data.fouten.runLooptAl;
+      // Zowel het nummer als het scenario worden die van de run die écht loopt. Alleen het
+      // runId vervangen liet de tekst "loopt nog voor scenario 01" staan terwijl 00 draaide —
+      // dezelfde soort onwaarheid, een veld verderop.
+      return json(antwoord, 409, {
+        ...voorbeeld,
+        message: voorbeeld.message
+          .split(data.voorbeeldRunId).join(bezet)
+          .split(`scenario ${data.voorbeeldScenarioId}`).join(`scenario ${bezetScenario}`),
+      });
+    }
+
+    // De 503 staat niet in de spec en is een benoemde afwijking — zie O22. Er is daar geen
+    // status voor "er is niemand die dit kan uitvoeren", en de knop stil aannemen is de
+    // slechtste van de mogelijkheden.
+    if (Date.now() - laatsteRunnerPoll > RUNNER_STIL_MS) {
+      return json(antwoord, 503, {
+        code: 'GEEN_RUNNER',
+        message: 'er luistert geen runner op deze machine; start ci/runner.sh',
+      });
+    }
+
+    const runId = nieuwRunId();
+    werk = { scenarioId: id, runId, gezet: Date.now() };
+    return json(antwoord, 201, {
+      runId,
+      scenarioId: id,
+      gestartOp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+    });
+  }
+
+  // De runner haalt hier zijn werk op, en laat met elke aanroep zien dat hij luistert.
+  if (verzoek.method === 'GET' && pad === '/intern/werk') {
+    laatsteRunnerPoll = Date.now();
+    if (!werk) return json(antwoord, 200, { werk: null });
+
+    // Eén keer uitgeven en niet één keer per seconde. Wat hier weggaat is weg; de plek blijft
+    // bezet tot het eerste bericht binnenkomt of de vangnetgrens verstrijkt.
+    uitgegeven = { ...werk, gezet: Date.now() };
+    werk = null;
+    return json(antwoord, 200, { werk: { scenarioId: uitgegeven.scenarioId, runId: uitgegeven.runId } });
   }
 
   if (verzoek.method === 'POST' && pad === '/intern/gebeurtenis') {

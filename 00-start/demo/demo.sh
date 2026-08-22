@@ -146,6 +146,9 @@ ci/toets-stamdata.sh 00 "${CBT_RAPPORT}" | sed 's/^/  /'
 
 echo
 echo "─────────────────────────────────────────────────────────────────────"
+echo "  Wil je dit op showcase-website zien in plaats van in de terminal:"
+echo "    ci/start-provider.sh   — en dan de knop op http://localhost:5173"
+echo
 echo "  Klaar. Scenario 1 doet dit nog een keer, met contracttesten."
 echo "  Zelfde deelsystemen, zelfde versies. Volgende: 01-basis/demo/demo.sh"
 echo "─────────────────────────────────────────────────────────────────────"
