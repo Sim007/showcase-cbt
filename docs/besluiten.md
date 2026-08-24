@@ -1937,3 +1937,25 @@ een bestandsnaam is geen bewering die iemand kan nakijken. Het manifest heeft nu
 **Terzijde, uit dezelfde melding:** de stamdata stond twee keer in de bundel — als bestand in
 `scenarios/` én ingebakken in `stub-data.json`. De stub leest nu `scenarios/`, dezelfde plek
 waar de provider hem leest. Eén bron, en geen tweede die stil kan gaan afwijken.
+
+## 2026-08-24 — Een NUL-byte maakte grep blind, en dat verborg mijn eigen wijzigingen
+
+Bij het repareren van `afbreken` raakte er een NUL-byte in `ci/stubbundel/stub.js`, in wat
+`' '` had moeten zijn. Gevolgen, in de volgorde waarin ze verwarrend waren:
+
+`grep` gaf **niets** terug op patronen die aantoonbaar in het bestand stonden — ook niet op
+regels die er al maanden in staan. Een bestand met een NUL-byte wordt als binair behandeld en
+stilzwijgend overgeslagen. `Edit` kon niet meer matchen op de regel eromheen. `node --check`
+gaf gewoon groen, want een NUL binnen een tekenreeks is geldige JavaScript.
+
+Ik heb daardoor eerst geconcludeerd dat mijn wijziging verdwenen was. `git diff` liet zien dat
+hij er wél stond. **Het gereedschap loog, niet het bestand.**
+
+**Wat eruit volgt voor de werkwijze:** een leeg resultaat van een zoekopdracht is een uitkomst
+die je moet kunnen verklaren, niet een bevestiging dat er niets is. Als grep niets vindt op
+iets waarvan je weet dát het er staat, is de vraag niet "waar is het gebleven" maar "waarom
+ziet mijn gereedschap dit niet".
+
+**Wat er is bijgekomen:** een controle die de hele repository op NUL-bytes nakijkt is er niet,
+en dat hoeft ook niet — dit was een eenmalige vergissing en geen patroon. Wat wel blijft: bij
+een onverklaarbaar leeg zoekresultaat eerst `git diff` of `od -c`, en pas daarna een conclusie.

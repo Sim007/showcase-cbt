@@ -41,7 +41,7 @@ STREAM_VERSIE=0.11.0
 # spec raakt is een patch van de bundel en van niets anders. Stond hier VERSIE, dan zou elke
 # stubwijziging om een contractversie vragen — precies wat "drie versies, elk hun eigen
 # levenscyclus" ontkent.
-BUNDELVERSIE=0.15.0
+BUNDELVERSIE=0.15.1
 
 # De provider heeft een eigen reeks, om dezelfde reden als de bundel: hij is gereedschap en
 # geen contract. Wat erin zit staat in zijn manifest.

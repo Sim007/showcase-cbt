@@ -139,12 +139,16 @@ jq -e '(.afgeleid // []) | length > 0 and all(.herkomst != null and .scenarioId 
 echo "  ok    de afgeleide verlopen noemen hun herkomst en hun scenario"
 
 ONBEKEND="${WERK}/onbekend.json"
-STATUS="$(curl -sS -o "${ONBEKEND}" -w '%{http_code}' "http://localhost:${POORT}/v1/scenarios/42")"
+# Bewust 07 en niet 42: 42 staat in het example van de spec, dus een stub die het voorbeeld
+# klakkeloos teruggeeft zou daarmee toevallig kloppen. Squad 2 vroeg om 07 en kreeg "id 42".
+STATUS="$(curl -sS -o "${ONBEKEND}" -w '%{http_code}' "http://localhost:${POORT}/v1/scenarios/07")"
 [ "${STATUS}" = "404" ] \
   || fout "een onbekende scenarioId gaf ${STATUS} en geen 404 — de spec beschrijft daar SCENARIO_ONBEKEND"
 jq -e '.code == "SCENARIO_ONBEKEND"' < "${ONBEKEND}" >/dev/null \
   || fout "de 404 draagt niet de code uit de spec"
-echo "  ok    een onbekende scenarioId geeft 404 SCENARIO_ONBEKEND"
+jq -e '.message | contains("07")' < "${ONBEKEND}" >/dev/null \
+  || fout "de 404 noemt niet het id dat gevraagd is — dan beweert het antwoord iets anders dan er gebeurt"
+echo "  ok    een onbekende scenarioId geeft 404 SCENARIO_ONBEKEND, met dat id erin"
 
 # --- de verbinding open, en de momentopname erop ---------------------------------------------
 #
@@ -291,6 +295,47 @@ echo "  ok    stille verbinding krijgt een hartslag"
 kill -0 "${STREAM_PID}" 2>/dev/null \
   || fout "de verbinding is gesloten na de run — de consumer sluit hem, niet de provider"
 echo "  ok    de verbinding staat na de run nog open"
+
+# --- afbreken breekt werkelijk af ---------------------------------------------------------------
+#
+# Er was geen tak voor deze operatie, dus viel hij door naar het generieke pad: 202 met de
+# voorbeeldbody uit de spec — met een ánder runId dan er in het pad stond — terwijl de replay
+# doorliep. Elke volgende start gaf daarna RUN_LOOPT_AL. Gemeld door squad 2.
+
+AFBREEK_START="${WERK}/afbreek-start.json"
+curl -sS -o "${AFBREEK_START}" -X POST -H 'Content-Type: application/json' \
+  -d '{"scenarioId":"01"}' "http://localhost:${POORT}/v1/runs" >/dev/null
+AF_RUNID="$(jq -r '.runId' < "${AFBREEK_START}")"
+
+AFBREEK="${WERK}/afbreek.json"
+STATUS="$(curl -sS -o "${AFBREEK}" -w '%{http_code}' -X POST \
+  "http://localhost:${POORT}/v1/runs/${AF_RUNID}/afbreken")"
+[ "${STATUS}" = "202" ] || fout "afbreken van ${AF_RUNID} gaf ${STATUS} en geen 202"
+[ "$(jq -r '.runId' < "${AFBREEK}")" = "${AF_RUNID}" ] \
+  || fout "het antwoord op afbreken noemt een ander runId dan er in het pad staat"
+
+# En het bewijs dat er werkelijk iets gebeurd is: de plek is weer vrij.
+sleep 1
+OPNIEUW="${WERK}/opnieuw.json"
+STATUS="$(curl -sS -o "${OPNIEUW}" -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+  -d '{"scenarioId":"01"}' "http://localhost:${POORT}/v1/runs")"
+[ "${STATUS}" = "201" ] \
+  || fout "na afbreken gaf een nieuwe start ${STATUS} — dan liep de afgebroken run gewoon door"
+echo "  ok    afbreken stopt de run en geeft de plek vrij"
+
+# En die run weer weg, anders staat de stub niet stil voor de rest van deze toets.
+curl -sS -o /dev/null -X POST \
+  "http://localhost:${POORT}/v1/runs/$(jq -r '.runId' < "${OPNIEUW}")/afbreken" >/dev/null
+sleep 1
+
+# Een run die niet bestaat is iets anders dan een run die al klaar is, en de spec kent er twee
+# statussen voor.
+STATUS="$(curl -sS -o "${WERK}/afonbekend.json" -w '%{http_code}' -X POST \
+  "http://localhost:${POORT}/v1/runs/run-abcdef/afbreken")"
+[ "${STATUS}" = "404" ] || fout "afbreken van een onbekende run gaf ${STATUS} en geen 404"
+jq -e '.message | contains("run-abcdef")' < "${WERK}/afonbekend.json" >/dev/null \
+  || fout "de 404 op afbreken noemt niet het runId dat gevraagd is"
+echo "  ok    afbreken van een onbekende run geeft 404, met dat runId erin"
 
 opruimen
 trap - EXIT

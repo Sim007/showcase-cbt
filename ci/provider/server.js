@@ -284,7 +284,14 @@ http.createServer(async (verzoek, antwoord) => {
     // zelf hebben gevuld, en geen bestandsnaam.
     const id = decodeURIComponent(pad.slice('/v1/scenarios/'.length));
     if (!/^[0-9]{2}$/.test(id) || !Object.prototype.hasOwnProperty.call(SCENARIOS, id)) {
-      return json(antwoord, 404, data.fouten.scenarioOnbekend);
+      // Het nummer in de tekst wordt dat van het verzoek. Een 404 die "er is geen scenario
+      // met id 42" zegt terwijl er om 07 gevraagd is, beweert iets anders dan er gebeurt.
+      const voorbeeld = data.fouten.scenarioOnbekend;
+      const gevonden = voorbeeld.message.match(/\b\d{2,}\b/);
+      return json(antwoord, 404, {
+        ...voorbeeld,
+        message: gevonden ? voorbeeld.message.split(gevonden[0]).join(id) : voorbeeld.message,
+      });
     }
     return json(antwoord, 200, SCENARIOS[id]);
   }

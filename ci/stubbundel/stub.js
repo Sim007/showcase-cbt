@@ -173,6 +173,23 @@ function toekomstig(regels) {
   return uit;
 }
 
+// --- foutteksten die over de werkelijkheid gaan ------------------------------------------
+//
+// De `code` en de zin komen uit de spec; het nummer erin niet. Een 404 die "er is geen
+// scenario met id 42" zegt terwijl er om 07 gevraagd is, beweert iets anders dan er gebeurt —
+// dezelfde soort onwaarheid als een 409 die het verkeerde runId noemt.
+//
+// Het schema van `Error` heeft geen veld voor dat nummer: het staat in de tekst. Vandaar deze
+// vervanging en niet een eigen zin — de formulering blijft van de spec, alleen de waarde
+// wordt die van het verzoek. Staat er geen nummer in de tekst, dan blijft hij zoals hij is.
+function metWaarde(bericht, patroon, waarde) {
+  const gevonden = bericht.match(patroon);
+  return gevonden ? bericht.split(gevonden[0]).join(waarde) : bericht;
+}
+
+const RUNID_IN_TEKST = /run-[0-9a-f]{6}/;
+const ID_IN_TEKST = /\b\d{2,}\b/;
+
 function lees(verzoek) {
   return new Promise((klaar) => {
     let ruw = '';
@@ -289,14 +306,17 @@ function startRun(scenarioId) {
   const opening = eerste.soort === 'momentopname' ? regels[0] : IDLE;
   const stroom = eerste.soort === 'momentopname' ? regels.slice(1) : regels;
 
-  lopend = { runId: runIdVan(regels), scenarioId, stand: beginStand(opening) };
+  // De tijdstippen worden bewaard omdat een run afgebroken moet kunnen worden. Zonder deze
+  // lijst liep de replay door nadat afbreken 202 had gemeld, en gaf elke volgende start
+  // RUN_LOOPT_AL — het antwoord zei iets anders dan er gebeurde.
+  lopend = { runId: runIdVan(regels), scenarioId, stand: beginStand(opening), timers: [] };
 
-  stroom.forEach((regel, i) => setTimeout(() => {
+  stroom.forEach((regel, i) => lopend.timers.push(setTimeout(() => {
     abonnees.forEach((abonnee) => zend(abonnee, regel));
     // Bijwerken ná het zenden: de stand is een uitspraak over wat er verstuurd ís.
     werkBij(lopend.stand, JSON.parse(regel));
     if (i === stroom.length - 1) lopend = null;
-  }, (i + 1) * TEMPO_MS));
+  }, (i + 1) * TEMPO_MS)));
 
   return lopend.runId;
 }
@@ -345,7 +365,11 @@ http.createServer(async (verzoek, antwoord) => {
   if (route.operationId === 'haalScenario') {
     const id = decodeURIComponent(pad.split('/').filter(Boolean).pop());
     if (!/^[0-9]{2}$/.test(id) || !Object.prototype.hasOwnProperty.call(SCENARIOS, id)) {
-      return json(antwoord, 404, route.fouten['404']);
+      const voorbeeld = route.fouten['404'];
+      return json(antwoord, 404, {
+        ...voorbeeld,
+        message: metWaarde(voorbeeld.message, ID_IN_TEKST, id),
+      });
     }
     return json(antwoord, route.status, SCENARIOS[id]);
   }
@@ -390,8 +414,45 @@ http.createServer(async (verzoek, antwoord) => {
     return json(antwoord, route.status, { ...route.body, runId, scenarioId: id });
   }
 
-  // Afbreken beantwoordt zijn eigen operatie en raakt de replay niet: de opname bepaalt hoe
-  // een run eindigt. Wie een run wil zien die stopt, start `gestopt`.
+  // Afbreken brak niets af. Er was geen tak voor, dus viel het door naar het generieke pad:
+  // 202 met de voorbeeldbody uit de spec — die een ánder runId noemt dan er in het pad staat —
+  // terwijl de replay gewoon doorliep, zodat elke volgende start RUN_LOOPT_AL gaf. Gemeld door
+  // squad 2, en het is dezelfde vorm als de startbug: het voorbeeld teruggeven in plaats van
+  // de werkelijkheid.
+  if (route.operationId === 'breekRunAf') {
+    const id = decodeURIComponent(pad.split('/').filter(Boolean)[2] || '');
+
+    if (!lopend || lopend.runId !== id) {
+      // Kent de stub dit nummer wél, maar loopt het niet? Dan is de run afgerond en niet
+      // onbekend. Dat onderscheid staat in de spec en de stub kan het maken, want hij kent
+      // alle nummers die hij kan spelen.
+      const bestaat = Object.values(VERLOPEN)
+        .some((v) => v.runs.some((regels) => runIdVan(regels) === id));
+      const status = bestaat ? 409 : 404;
+      const voorbeeld = route.fouten[String(status)];
+      return json(antwoord, status, {
+        ...voorbeeld,
+        message: metWaarde(voorbeeld.message, RUNID_IN_TEKST, id),
+      });
+    }
+
+    // "Het antwoord zegt dat het verzoek is aangenomen, niet dat de run al stil staat. Dat
+    // laatste blijkt uit run-afgerond op de stream, met reden afgebroken."
+    lopend.timers.forEach(clearTimeout);
+    const stil = lopend;
+    lopend = null;
+
+    const tijd = stil.stand.tijd;
+    const bericht = { soort: 'run-afgerond', tijd, runId: stil.runId, reden: 'afgebroken' };
+    abonnees.forEach((abonnee) => zend(abonnee, tolerantRegel(JSON.stringify(bericht))));
+
+    return json(antwoord, route.status, {
+      ...route.body,
+      runId: stil.runId,
+      scenarioId: stil.scenarioId,
+    });
+  }
+
   antwoord.writeHead(route.status, route.kopteksten);
   antwoord.end(route.body === null ? '' : JSON.stringify(route.body));
 }).listen(POORT, () => {
