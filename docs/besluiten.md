@@ -1902,3 +1902,38 @@ gebleken wat dat waard is zonder gate. Dus de conventie op stub én provider, m�
 showcase-website het afleidt uit een poortnummer. Dat is een aanname in het gereedschap, van
 precies de soort die deze maand drie keer is teruggekomen — en niemand zou merken wanneer hij
 niet meer klopt. Vastgelegd als O23.
+
+## 2026-08-24 — Een bundel die zijn eigen materiaal negeert
+
+`stubbundel-0.13.0` en `0.14.0` droegen echte opnames van scenario 00 en 01, met hun
+checksum in het manifest — en speelden ze niet. Een start gaf `run-7c41a9`, de afgeleide
+fixture. De opnames lagen erin als dood gewicht.
+
+**Gemeld door squad 2, en de reden dat wij het niet zagen staat in hun melding:** wij toetsen
+tegen de provider en niet tegen de stub. `toets-stubbundel.sh` startte de bundel wel en las
+zijn stream, maar wat hij eiste was "84 berichten, precies de opname" — en dat klopte, want
+het afgeleide `voltooid.jsonl` heeft toevallig evenveel regels als de opname `01-voltooid.jsonl`.
+De gate mat het juiste getal aan het verkeerde bestand.
+
+**Dat is de vierde variant in deze reeks.** Eerder: een controle die niets bekeek en groen
+meldde; een regel die niet meeschaalde en betekenisloos werd; een geldig bestand dat de
+verkeerde run beschreef. Nu: een controle die het goede aantal ziet uit een bron die er niets
+mee te maken heeft. Ze hebben één ding gemeen — **het getal klopte elke keer.**
+
+**Wat eruit volgt is een andere soort controle dan "tel iets".** Niet alleen: is er iets, en
+hoeveel. Maar: **is alles wat we meeleveren ook bereikbaar, en komt wat we beweren uit een
+bron die de ontvanger kan controleren.** Twee eisen die nu naast elkaar staan:
+
+- de stub start niet als er een verloop in `runs/` staat dat het manifest niet noemt;
+- de toets eist dat manifest en map elkaar precies dekken, in beide richtingen.
+
+**En de herkomst is uit de bestandsnaam gehaald.** `voltooid`, `gestopt` en `midden` zijn
+afgeleid uit de stamdata van scenario 01; alles met een scenarionummer ervoor is een echte
+run. Dat stond in de README, dus alleen wij wisten het. Squad 2 heeft er een gate op gezet die
+eist dat een bewering over herkomst uit het manifest komt en niet uit een naam — terecht, want
+een bestandsnaam is geen bewering die iemand kan nakijken. Het manifest heeft nu naast
+`opnames` een `afgeleid`-blok, met scenario, herkomst en checksum per verloop.
+
+**Terzijde, uit dezelfde melding:** de stamdata stond twee keer in de bundel — als bestand in
+`scenarios/` én ingebakken in `stub-data.json`. De stub leest nu `scenarios/`, dezelfde plek
+waar de provider hem leest. Eén bron, en geen tweede die stil kan gaan afwijken.

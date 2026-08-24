@@ -56,15 +56,62 @@ const routes = data.routes.map((r) => ({
 const startroute = routes.find((r) => r.operationId === 'startRun');
 if (!startroute) throw new Error('geen operatie startRun in stub-data.json');
 
-// De drie fixtures, om en om bij elke start. Zo komt de gestopte run vanzelf aan de beurt,
-// en die heeft de consumer het hardst nodig.
-const NAMEN = ['voltooid', 'gestopt', 'midden'];
-const RUNS = NAMEN.map((naam) =>
-  fs.readFileSync(path.join(HIER, 'runs', `${naam}.jsonl`), 'utf8').trim().split('\n')
-);
+// De stamdata, uit `scenarios/` en niet uit `stub-data.json`. Ze stond er tot 0.14.0 twee
+// keer in: als bestand én ingebakken in de routes. Eén bron, en het is deze — dezelfde plek
+// waar de provider hem ook leest.
+const SCENARIOS = {};
+for (const bestand of fs.readdirSync(path.join(HIER, 'scenarios'))) {
+  if (!bestand.endsWith('.json')) continue;
+  const s = JSON.parse(fs.readFileSync(path.join(HIER, 'scenarios', bestand), 'utf8'));
+  SCENARIOS[s.id] = s;
+}
 
-const SCENARIOS = (data.routes.find((r) => r.operationId === 'haalScenario') || {}).bodyPerId || {};
-let beurt = 0;
+// --- welke run er bij welk scenario hoort -------------------------------------------------
+//
+// Tot 0.14.0 roteerde de stub over drie vaste namen, ongeacht welk scenario je startte. Twee
+// gevolgen die squad 2 heeft gemeld: een start op scenario 00 speelde de run van 01, en de
+// twee échte opnames die de bundel draagt werden nooit gespeeld — de bundel negeerde zijn
+// eigen materiaal.
+//
+// Nu kiest hij op `scenarioId`, en binnen een scenario staat de **opname vooraan**: dat is
+// een echte run, en wie op de knop drukt hoort die het eerst te zien. Wat erachter staat zijn
+// de afgeleide verlopen, en daar zit de gestopte run bij — die heeft de consumer het hardst
+// nodig, want daarin krijgt een deelsysteem dat nooit aan de beurt kwam geen enkel bericht.
+function laad(bestand) {
+  return fs.readFileSync(path.join(HIER, 'runs', bestand), 'utf8').trim().split('\n');
+}
+
+// Welk verloop bij welk scenario hoort staat in het manifest en niet in deze code. De
+// herkomst van de ongenummerde verlopen — afgeleid, en van welk scenario — is anders alleen
+// uit een bestandsnaam af te lezen, en een bestandsnaam is geen bewering die iemand kan
+// controleren.
+const manifest = JSON.parse(fs.readFileSync(path.join(HIER, 'manifest.json'), 'utf8'));
+
+const VERLOPEN = {};
+function voegToe(id, bestand) {
+  if (!SCENARIOS[id]) return;
+  if (!VERLOPEN[id]) VERLOPEN[id] = { namen: [], runs: [], beurt: 0 };
+  VERLOPEN[id].namen.push(bestand);
+  VERLOPEN[id].runs.push(laad(bestand));
+}
+
+// De opname eerst: dat is een echte run, en wie op de knop drukt hoort die het eerst te zien.
+for (const o of manifest.opnames || []) voegToe(o.scenarioId, path.basename(o.bestand));
+for (const a of manifest.afgeleid || []) voegToe(a.scenarioId, path.basename(a.bestand));
+
+// Elk verloop dat de bundel draagt moet ook te spelen zijn. Tot 0.14.0 droeg hij twee echte
+// opnames en speelde ze niet — hij negeerde zijn eigen materiaal, en dat viel niet op omdat
+// wij tegen de provider toetsen en niet tegen de stub. Deze controle maakt dat onmogelijk:
+// een bestand dat nergens in het manifest staat, laat de stub niet starten.
+const GEDEKT = new Set(Object.values(VERLOPEN).flatMap((v) => v.namen));
+for (const bestand of fs.readdirSync(path.join(HIER, 'runs'))) {
+  if (!bestand.endsWith('.jsonl')) continue;
+  if (!GEDEKT.has(bestand)) {
+    throw new Error(`runs/${bestand} staat niet in het manifest en wordt dus nooit gespeeld`);
+  }
+}
+
+const RUNS = Object.values(VERLOPEN).reduce((alles, v) => alles.concat(v.runs), []);
 
 // Het runId komt uit de opname zelf en niet uit een example: de drie fixtures dragen elk hun
 // eigen nummer, en de stub moet zijn twee kanten daarover laten overeenstemmen.
@@ -230,9 +277,10 @@ function verbind(verzoek, antwoord) {
 
 // Het hele replaymechanisme: de regels van één opname, met dezelfde tussenpozen als de
 // opname, naar iedereen die luistert. Het toetst niets en beslist niets.
-function startRun() {
-  const regels = toekomstig(RUNS[beurt % RUNS.length]);
-  beurt += 1;
+function startRun(scenarioId) {
+  const verloop = VERLOPEN[scenarioId];
+  const regels = toekomstig(verloop.runs[verloop.beurt % verloop.runs.length]);
+  verloop.beurt += 1;
 
   // De eerste regel van een opname is de momentopname bij het verbinden. Er wordt nu één
   // keer verbonden en daarna vaker gestart, dus hier hoort hij niet meer in de stroom: hij
@@ -241,7 +289,7 @@ function startRun() {
   const opening = eerste.soort === 'momentopname' ? regels[0] : IDLE;
   const stroom = eerste.soort === 'momentopname' ? regels.slice(1) : regels;
 
-  lopend = { runId: runIdVan(regels), stand: beginStand(opening) };
+  lopend = { runId: runIdVan(regels), scenarioId, stand: beginStand(opening) };
 
   stroom.forEach((regel, i) => setTimeout(() => {
     abonnees.forEach((abonnee) => zend(abonnee, regel));
@@ -276,9 +324,9 @@ http.createServer(async (verzoek, antwoord) => {
     });
   }
 
+  let body = null;
   if (route.keur) {
     const ruw = await lees(verzoek);
-    let body;
     try {
       body = JSON.parse(ruw);
     } catch {
@@ -292,16 +340,20 @@ http.createServer(async (verzoek, antwoord) => {
     }
   }
 
-  // Een route met een body per id bedient elk id met zijn eigen inhoud, en een id dat niet
-  // bestaat met de 404 uit de spec. Tot bundel 0.11.1 was er één body voor alle id's: elke
-  // scenarioId gaf scenario 01 terug, en een onbekend id gaf 200 in plaats van 404.
-  if (route.bodyPerId) {
+  // Elk scenario zijn eigen inhoud, uit de stamdata, en een id dat niet bestaat de 404 uit de
+  // spec. Tot bundel 0.11.1 was er één body voor alle id's: elke scenarioId gaf scenario 01.
+  if (route.operationId === 'haalScenario') {
     const id = decodeURIComponent(pad.split('/').filter(Boolean).pop());
-    const body = Object.prototype.hasOwnProperty.call(route.bodyPerId, id)
-      ? route.bodyPerId[id]
-      : null;
-    if (!body) return json(antwoord, 404, route.fouten['404']);
-    return json(antwoord, route.status, body);
+    if (!/^[0-9]{2}$/.test(id) || !Object.prototype.hasOwnProperty.call(SCENARIOS, id)) {
+      return json(antwoord, 404, route.fouten['404']);
+    }
+    return json(antwoord, route.status, SCENARIOS[id]);
+  }
+
+  if (route.operationId === 'lijstScenarios') {
+    return json(antwoord, route.status, Object.values(SCENARIOS)
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map(({ id, titel, ondertitel }) => ({ id, titel, ondertitel })));
   }
 
   if (route.operationId === 'startRun') {
@@ -310,19 +362,32 @@ http.createServer(async (verzoek, antwoord) => {
     // dat van de run die echt loopt, want anders wijst het antwoord een andere run aan dan
     // de stream afspeelt. Het `Error`-schema heeft geen veld voor een runId — die staat in
     // de tekst, dus daar gebeurt het.
+    // Welk scenario er gestart wordt, bepaalt wat er speelt. Tot 0.14.0 roteerde de stub over
+    // drie vaste verlopen ongeacht het id: een start op 00 speelde de run van 01, en de twee
+    // échte opnames die de bundel draagt kwamen nooit aan de beurt.
+    //
+    // Eerst de invoer en dan pas de toestand: een verzoek om een scenario dat niet bestaat is
+    // fout ongeacht of er iets loopt. Zelfde volgorde als in de provider.
+    const id = String((body || {}).scenarioId || '');
+    if (!/^[0-9]{2}$/.test(id) || !VERLOPEN[id]) {
+      return json(antwoord, 404, routes.find((r) => r.operationId === 'haalScenario').fouten['404']);
+    }
+
     if (lopend) {
       const voorbeeld = route.fouten['409'];
       return json(antwoord, 409, {
         ...voorbeeld,
-        message: voorbeeld.message.split(route.body.runId).join(lopend.runId),
+        message: voorbeeld.message
+          .split(route.body.runId).join(lopend.runId)
+          .split(`scenario ${route.body.scenarioId}`).join(`scenario ${lopend.scenarioId}`),
       });
     }
 
     // Het runId van de opname die nu begint. Het example in de spec is een voorbeeld en geen
     // voorschrift dat elk antwoord dat nummer draagt; de stub houdt hiermee zijn twee kanten
     // over dezelfde run aan het woord.
-    const runId = startRun();
-    return json(antwoord, route.status, { ...route.body, runId });
+    const runId = startRun(id);
+    return json(antwoord, route.status, { ...route.body, runId, scenarioId: id });
   }
 
   // Afbreken beantwoordt zijn eigen operatie en raakt de replay niet: de opname bepaalt hoe
@@ -334,7 +399,9 @@ http.createServer(async (verzoek, antwoord) => {
   console.log(`  ${routes.length} operaties uit het contract`);
   console.log(`  scenario's uit de stamdata: ${Object.keys(SCENARIOS).join(', ') || 'geen'}`);
   console.log(`  stream op ${data.streampad} — blijft open, jij sluit hem`);
-  console.log(`  POST /v1/runs start de volgende opname: ${NAMEN.join(', ')}`);
+  for (const [id, v] of Object.entries(VERLOPEN)) {
+    console.log(`  POST /v1/runs {"scenarioId":"${id}"} — ${v.namen.join(', ')}`);
+  }
   console.log(`  hartslag na ${HARTSLAG_MS / 1000}s stilte`);
   if (TOLERANT) {
     console.log('  TOLERANTIE=ja — de stream stuurt een onbekend veld, een onbekend');

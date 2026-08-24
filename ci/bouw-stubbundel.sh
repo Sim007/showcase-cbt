@@ -126,23 +126,10 @@ STAMDATA_REL="stamdata/scenarios"
 ls "${CBT_ROOT}/${STAMDATA_REL}"/*.json >/dev/null 2>&1 \
   || fout "geen stamdata in ${STAMDATA_REL}. Zonder scenario's valt er niets te serveren"
 
-jq -s 'map({id, titel, ondertitel})' "${STAMDATA_REL}"/*.json > "${BUNDEL}/tmp/lijst.json"
-jq -s 'map({key: .id, value: .}) | from_entries' "${STAMDATA_REL}"/*.json > "${BUNDEL}/tmp/per-id.json"
-
-jq -s '
-  .[0] as $stub | .[1] as $lijst | .[2] as $perId
-  | $stub
-  | .routes = [
-      .routes[]
-      | if .operationId == "lijstScenarios" then .body = $lijst
-        elif .operationId == "haalScenario" then (.bodyPerId = $perId | .body = null)
-        else . end
-    ]' "${REL}/stub-data.json" "${REL}/tmp/lijst.json" "${REL}/tmp/per-id.json" \
-  > "${BUNDEL}/tmp/stub-data.json"
-mv "${BUNDEL}/tmp/stub-data.json" "${BUNDEL}/stub-data.json"
-
-SCENARIOS="$(jq -r '.routes[] | select(.operationId == "haalScenario") | .bodyPerId | keys | join(", ")' "${REL}/stub-data.json")"
-[ -n "${SCENARIOS}" ] || fout "de scenario-route kreeg geen enkele body uit de stamdata"
+# **De stamdata gaat één keer mee en niet twee.** Tot 0.14.0 stond ze zowel als bestand in
+# `scenarios/` als ingebakken in `stub-data.json`, en dat is een tweede plek die stil kan
+# gaan afwijken. De stub leest nu `scenarios/` — dezelfde plek waar de provider hem leest.
+SCENARIOS="$(ls "${CBT_ROOT}/${STAMDATA_REL}" | sed 's/\.json$//' | tr '\n' ' ')"
 echo "stap 2b: scenario's uit de stamdata: ${SCENARIOS}"
 
 ROUTES="$(jq -r '.routes | length' "${REL}/stub-data.json")"
@@ -177,6 +164,8 @@ echo "stap 3: $(ls "${BUNDEL}/runs" | wc -l | tr -d ' ') fixtures"
 # in staat verdwijnt zonder melding. Los uitgeven zou betekenen dat de twee helften uit de
 # pas kunnen lopen zonder dat iemand het merkt.
 
+# De drie ongenummerde verlopen zijn gegenereerd uit de stamdata van dit scenario.
+AFGELEID_VAN=01
 OPNAMES="${CBT_ROOT}/stamdata/opnames"
 mkdir -p "${BUNDEL}/scenarios"
 cp "${CBT_ROOT}/stamdata/scenarios"/*.json "${BUNDEL}/scenarios/"
@@ -214,7 +203,29 @@ if [ -d "${OPNAMES}" ]; then
   done
 fi
 
-echo "stap 3b: $(ls "${BUNDEL}/scenarios" | wc -l | tr -d ' ') scenario's en ${AANTAL_OPNAMES} opgenomen run(s)"
+# **De herkomst van de afgeleide verlopen hoort in het manifest en niet in een bestandsnaam.**
+# `voltooid`, `gestopt` en `midden` zijn afgeleid uit de stamdata van scenario 01; alleen wij
+# weten dat. Squad 2 kan het uit het bestand niet aflezen, en heeft er een gate op gezet die
+# eist dat een bewering over herkomst uit het manifest komt — terecht, want een bestandsnaam
+# is geen bewering die iemand kan controleren.
+#
+# Hiermee is elk bestand in `runs/` gedekt: opgenomen of afgeleid, met scenario en checksum.
+# De stub weigert te starten als er een verloop in de map staat dat hier niet genoemd is.
+
+AFGELEID_JSON='[]'
+for verloop in voltooid gestopt midden; do
+  [ -f "${BUNDEL}/runs/${verloop}.jsonl" ] || continue
+  som="$(sha256som "${REL}/runs" "${verloop}.jsonl" | cut -d' ' -f1)"
+  AFGELEID_JSON="$(jq -c -n --argjson huidig "${AFGELEID_JSON}" \
+     --arg bestand "runs/${verloop}.jsonl" --arg som "${som}" \
+     --arg scenario "${AFGELEID_VAN}" --arg versie "${STREAM_VERSIE}" \
+     --argjson berichten "$(wc -l < "${BUNDEL}/runs/${verloop}.jsonl" | tr -d ' ')" \
+    '$huidig + [ { scenarioId: $scenario, herkomst: "afgeleid uit de stamdata",
+                   berichten: $berichten, geldigTegen: $versie,
+                   bestand: $bestand, sha256: $som } ]')"
+done
+
+echo "stap 3b: $(ls "${BUNDEL}/scenarios" | wc -l | tr -d ' ') scenario's, ${AANTAL_OPNAMES} opgenomen run(s), $(jq 'length' <<<"${AFGELEID_JSON}") afgeleid"
 
 # --- stap 4: het ontvangstschema ---------------------------------------------------------
 #
@@ -290,6 +301,7 @@ jq -n \
   --arg scenario "${SCENARIO}" --arg scenarioversie "${SCENARIO_VERSIE}" --arg scenariosom "${SCENARIO_SOM}" \
   --arg stream "${STREAM}" --arg streamversie "${STREAM_VERSIE}" --arg streamsom "${STREAM_SOM}" \
   --argjson opnames "${OPNAMES_JSON}" \
+  --argjson afgeleid "${AFGELEID_JSON}" \
   '{
      bundelversie: $bundelversie,
      groep: $groep,
@@ -297,7 +309,8 @@ jq -n \
        { artifact: $scenario, versie: $scenarioversie, bestand: "openapi.yaml",  sha256: $scenariosom },
        { artifact: $stream,   versie: $streamversie,   bestand: "asyncapi.yaml", sha256: $streamsom }
      ],
-     opnames: $opnames
+     opnames: $opnames,
+     afgeleid: $afgeleid
    }' > "${BUNDEL}/manifest.json"
 
 verwacht_minstens "$(jq -r '.specs | length' "${REL}/manifest.json")" 2 "specs in het manifest"

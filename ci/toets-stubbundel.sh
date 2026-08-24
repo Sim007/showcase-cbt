@@ -107,14 +107,36 @@ for ID in 00 01; do
     || fout "GET /v1/scenarios/${ID} gaf scenario ${GEKREGEN} — dan bedient de bundel elk id met dezelfde body"
 
   # En het aantal stappen komt uit de stamdata in de bundel zelf, niet uit dit script.
-  VERWACHT_STAPPEN="$(jq -r --arg id "${ID}" \
-    '.routes[] | select(.operationId == "haalScenario") | .bodyPerId[$id].stappen | length' \
-    < "${WERK}/bundel/stub-data.json")"
+  VERWACHT_STAPPEN="$(jq -r '.stappen | length' < "${WERK}/bundel/scenarios/${ID}.json")"
   GEZIEN_STAPPEN="$(jq -r '.stappen | length' < "${HAAL}")"
   [ "${GEZIEN_STAPPEN}" = "${VERWACHT_STAPPEN}" ] \
     || fout "scenario ${ID} leverde ${GEZIEN_STAPPEN} stappen, ${VERWACHT_STAPPEN} in de stamdata"
   echo "  ok    GET /v1/scenarios/${ID} geeft scenario ${ID} met ${GEZIEN_STAPPEN} stappen"
 done
+
+# --- elk verloop dat meegaat, is gedekt en te spelen ------------------------------------------
+#
+# De bundel droeg in 0.14.0 twee echte opnames en speelde ze niet: hij negeerde zijn eigen
+# materiaal. Dat viel hier niet op omdat de rest van de toets tegen de provider is bedacht.
+# Nu twee eisen naast elkaar — elk bestand in runs/ staat in het manifest, en het manifest
+# noemt geen bestand dat er niet is.
+
+GENOEMD="$(jq -r '[(.opnames // [])[], (.afgeleid // [])[]] | .[].bestand' < "${WERK}/bundel/manifest.json" | sed 's|^runs/||' | sort)"
+AANWEZIG="$(ls "${WERK}/bundel/runs" | sort)"
+[ "${GENOEMD}" = "${AANWEZIG}" ] || {
+  echo "toets-stubbundel: het manifest en runs/ lopen uiteen:" >&2
+  diff <(printf '%s\n' "${GENOEMD}") <(printf '%s\n' "${AANWEZIG}") | sed 's/^/    /' >&2
+  fout "een verloop zonder vermelding wordt nooit gespeeld, en een vermelding zonder bestand is een lege belofte"
+}
+verwacht_minstens "$(printf '%s\n' "${GENOEMD}" | wc -l | tr -d ' ')" 3 "verlopen in het manifest"
+echo "  ok    elk verloop in runs/ staat in het manifest, met herkomst"
+
+# Herkomst is een bewering van de provider en niet van een bestandsnaam. Squad 2 toetst dat
+# aan hun kant; hier staat de andere helft.
+jq -e '(.afgeleid // []) | length > 0 and all(.herkomst != null and .scenarioId != null)' \
+  < "${WERK}/bundel/manifest.json" >/dev/null \
+  || fout "de afgeleide verlopen dragen geen herkomst en geen scenario in het manifest"
+echo "  ok    de afgeleide verlopen noemen hun herkomst en hun scenario"
 
 ONBEKEND="${WERK}/onbekend.json"
 STATUS="$(curl -sS -o "${ONBEKEND}" -w '%{http_code}' "http://localhost:${POORT}/v1/scenarios/42")"
@@ -159,7 +181,26 @@ STATUS="$(curl -sS -o "${START}" -w '%{http_code}' -X POST \
 # een absoluut pad van deze kant bestaat daar niet.
 RUNID="$(jq -r '.runId' < "${START}")"
 [ -n "${RUNID}" ] && [ "${RUNID}" != "null" ] || fout "de 201 draagt geen runId"
-echo "  ok    POST /v1/runs geeft 201 met runId ${RUNID}"
+
+# Een start op scenario 01 speelt de opname van 01, en de opname staat vooraan omdat het een
+# échte run is. Tot 0.14.0 kreeg je hier run-7c41a9 — de afgeleide fixture — ongeacht welk
+# scenario je vroeg.
+VERWACHT_RUNID="$(jq -r '(.opnames // [])[] | select(.scenarioId == "01") | .runId' \
+  < "${WERK}/bundel/manifest.json")"
+[ -z "${VERWACHT_RUNID}" ] || [ "${RUNID}" = "${VERWACHT_RUNID}" ] \
+  || fout "een start op scenario 01 gaf ${RUNID} en niet de opname ${VERWACHT_RUNID} — dan speelt de bundel zijn eigen materiaal niet"
+[ "$(jq -r '.scenarioId' < "${START}")" = "01" ] \
+  || fout "de 201 noemt een ander scenario dan er gevraagd is"
+echo "  ok    POST /v1/runs op 01 geeft 201 met de opname ${RUNID}"
+
+# En een start op een scenario dat er niet is, wordt geweigerd in plaats van dat er iets
+# anders gespeeld wordt.
+STATUS="$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+  -H 'Content-Type: application/json' -d '{"scenarioId":"42"}' \
+  "http://localhost:${POORT}/v1/runs")"
+[ "${STATUS}" = "404" ] \
+  || fout "een start op een onbekend scenario gaf ${STATUS} — dan speelt de bundel iets wat niet gevraagd is"
+echo "  ok    een start op een onbekend scenario geeft 404"
 
 # De spec: er kan één run tegelijk lopen. Een stub die hier 201 blijft geven, weigert niet
 # wat de echte kant weigert — en dat is zijn hele bestaansreden.
@@ -209,7 +250,14 @@ echo "  ok    gelezen tot run-afgerond"
 # Het aantal komt uit de opname in de bundel en niet uit dit script: één momentopname bij het
 # verbinden, en daarna de opname zonder de zijne. Zo blijft de gate meebewegen met de fixture
 # in plaats van met een getal dat ik ooit heb gekozen.
-VERWACHT="$(wc -l < "${WERK}/bundel/runs/voltooid.jsonl" | tr -d ' ')"
+# Tegen het verloop dat werkelijk gespeeld is, en dat is het verloop dat het manifest bij dit
+# runId noemt. Stond hier een vaste bestandsnaam, dan zou de toets kloppen zolang twee
+# bestanden toevallig evenveel regels hebben — en dat was hier het geval.
+GESPEELD="$(jq -r --arg r "${RUNID}" \
+  '[(.opnames // [])[], (.afgeleid // [])[]] | .[] | select(.runId == $r) | .bestand' \
+  < "${WERK}/bundel/manifest.json")"
+[ -n "${GESPEELD}" ] || fout "het manifest noemt geen verloop met runId ${RUNID}"
+VERWACHT="$(wc -l < "${WERK}/bundel/${GESPEELD}" | tr -d ' ')"
 BERICHTEN="$(grep -c '^data: ' "${UITVOER}" || true)"
 verwacht_minstens "${BERICHTEN:-0}" "${VERWACHT}" "berichten uit de stream van de bundel"
 # En niet meer dan dat: te veel berichten betekent dat er iets in de stroom zit wat niet in
