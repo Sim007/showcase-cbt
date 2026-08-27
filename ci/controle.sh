@@ -45,7 +45,7 @@ BUNDELVERSIE=0.15.1
 
 # De provider heeft een eigen reeks, om dezelfde reden als de bundel: hij is gereedschap en
 # geen contract. Wat erin zit staat in zijn manifest.
-PROVIDERVERSIE=0.2.1
+PROVIDERVERSIE=0.2.2
 
 echo "== controle =="
 

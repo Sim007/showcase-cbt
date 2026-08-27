@@ -278,6 +278,15 @@ function lees(verzoek) {
 //
 // Op het moment dat er tijdens een demo iets misgaat, is dit de enige vraag die gesteld
 // wordt. Het antwoord hoort te bestaan.
+// Van een concreet pad naar het patroon zoals de spec het schrijft: /v1/runs/run-abc123/afbreken
+// wordt /v1/runs/{runId}/afbreken. Zo hoeft de lijst met preflight-paden niet te weten hoe een
+// runId eruitziet — die komt letterlijk uit de spec.
+function padPatroon(pad) {
+  return pad
+    .replace(/\/v1\/runs\/[^/]+\/afbreken$/, '/v1/runs/{runId}/afbreken')
+    .replace(/\/v1\/scenarios\/[^/]+$/, '/v1/scenarios/{scenarioId}');
+}
+
 function metLog(verzoek, antwoord, pad) {
   const oorspronkelijk = antwoord.writeHead.bind(antwoord);
   antwoord.writeHead = (status, ...rest) => {
@@ -291,6 +300,23 @@ function metLog(verzoek, antwoord, pad) {
 http.createServer(async (verzoek, antwoord) => {
   const pad = verzoek.url.split('?')[0];
   metLog(verzoek, antwoord, pad);
+
+  // **De preflight, en waarom hij hier bovenaan staat.** Een POST met een JSON-body is geen
+  // simple request: de browser vraagt eerst toestemming met OPTIONS en stuurt de POST alleen
+  // als dat antwoord goed is. Deze provider had geen enkele OPTIONS-tak, dus die vraag kreeg
+  // 404 en de POST werd nooit verstuurd. In het log stond daardoor niets — precies het beeld
+  // van "ik druk en er gebeurt niets", terwijl `curl` het altijd deed omdat die geen
+  // preflight stuurt.
+  //
+  // Welke paden er een kennen komt uit de spec: elk pad met een `options`-operatie.
+  if (verzoek.method === 'OPTIONS' && data.preflight.paden.includes(padPatroon(pad))) {
+    antwoord.writeHead(204, {
+      'Access-Control-Allow-Origin': data.origin,
+      'Access-Control-Allow-Methods': data.preflight.methoden,
+      'Access-Control-Allow-Headers': data.preflight.kopteksten,
+    });
+    return antwoord.end();
+  }
 
   if (verzoek.method === 'GET' && pad === '/v1/runs/stream') return verbind(verzoek, antwoord);
 

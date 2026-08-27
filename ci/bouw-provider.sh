@@ -57,6 +57,17 @@ echo "stap 1: ${SCENARIO} ${SCENARIO_VERSIE} en ${STREAM} ${STREAM_VERSIE} opgeh
 
 jq '{
       origin: (.components.headers.AccessControlAllowOrigin.schema.example // "*"),
+      # De preflight. Hij staat in de spec met de reden erbij: "Ontbreekt dit antwoord, dan
+      # komt de POST er nooit — en dat is geen implementatiedetail maar een eigenschap van
+      # deze grens." De provider had hem niet, en dus kwam geen enkele druk op de startknop
+      # ooit aan. Welke paden een preflight kennen komt uit de spec en niet uit een lijst hier.
+      preflight: {
+        methoden: (.components.headers.AccessControlAllowMethods.schema.example
+                   // error("geen example op AccessControlAllowMethods")),
+        kopteksten: (.components.headers.AccessControlAllowHeaders.schema.example
+                     // error("geen example op AccessControlAllowHeaders")),
+        paden: [ .paths | to_entries[] | select(.value.options != null) | .key ]
+      },
       # Het runId uit het 201-example. De 409-tekst noemt dat nummer, en de provider vervangt
       # het door de run die écht loopt — anders wijst het antwoord een andere run aan dan de
       # stream afspeelt.

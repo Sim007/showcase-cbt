@@ -76,6 +76,31 @@ jq -e '.message | contains("07")' < "${WERK}/onbekend.json" >/dev/null \
   || fout "de 404 noemt niet het id dat gevraagd is"
 echo "  ok    een onbekend scenario geeft 404, met dat id erin"
 
+# --- de preflight, want zonder hem komt de POST er nooit ----------------------------------------
+#
+# **Dit ontbrak, en het kostte een demo.** Een POST met een JSON-body is geen simple request:
+# de browser vraagt eerst toestemming met OPTIONS. De provider had geen OPTIONS-tak, dus die
+# vraag kreeg 404 en de POST werd nooit verstuurd — in het providerlog stond niets, en het
+# beeld was "ik druk en er gebeurt niets".
+#
+# Dat het bij mij altijd werkte, kwam doordat `curl -X POST` geen preflight stuurt. Deze toets
+# stuurt hem daarom zoals de browser hem stuurt, mét de drie kopteksten die hem veroorzaken.
+# Een toets die het verzoek anders vormt dan de consumer, meet iets anders dan de grens.
+
+for PAD in /v1/runs /v1/runs/run-000000/afbreken; do
+  KOP="${WERK}/preflight.txt"
+  STATUS="$(curl -sS -D "${KOP}" -o /dev/null -w '%{http_code}' -X OPTIONS \
+    -H 'Origin: http://localhost:5173' \
+    -H 'Access-Control-Request-Method: POST' \
+    -H 'Access-Control-Request-Headers: content-type' \
+    "http://localhost:${POORT}${PAD}")"
+  [ "${STATUS}" = "204" ] \
+    || fout "de preflight op ${PAD} gaf ${STATUS} en geen 204 — dan verstuurt de browser de POST nooit"
+  grep -qi 'access-control-allow-methods' "${KOP}" || fout "de preflight op ${PAD} noemt geen toegestane methoden"
+  grep -qi 'access-control-allow-headers' "${KOP}" || fout "de preflight op ${PAD} noemt geen toegestane kopteksten"
+  echo "  ok    preflight op ${PAD} geeft 204 met de drie kopteksten"
+done
+
 # --- zonder runner: 503, en dat is de helft die bewijst dat het net werkt ----------------------
 #
 # Er polt hier nog niemand, dus de provider hoort een start te weigeren. Zonder deze helft
