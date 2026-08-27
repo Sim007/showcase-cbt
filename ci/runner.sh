@@ -72,6 +72,20 @@ draai() {
 opruimen() { echo; echo "runner: gestopt"; }
 trap opruimen EXIT INT TERM
 
+# **De demo draait op de achtergrond en de lus blijft doorpollen.**
+#
+# Hij riep `draai` synchroon aan, dus tijdens een run van anderhalve minuut vroeg deze runner
+# geen werk op. De provider concludeert uit die stilte dat er niemand luistert, en dat is
+# onwaar op precies het moment dat de runner het hardst aan het werk is. Tijdens de run
+# maskeert de lopende run dat met een 409, maar in het gat tussen `run-afgerond` en de
+# volgende poll krijgt de aanroeper `503 GEEN_RUNNER` — een onwaar antwoord op het moment dat
+# iemand opnieuw drukt.
+#
+# Dubbel starten kan hierdoor niet: de provider geeft geen werk uit zolang er een run loopt,
+# en de wacht hieronder is het tweede net voor het geval dat toch gebeurt.
+DEMO_PID=""
+bezig() { [ -n "${DEMO_PID}" ] && kill -0 "${DEMO_PID}" 2>/dev/null; }
+
 while true; do
   # Elke ophaalpoging laat bij de provider zien dat hier iemand luistert. Blijft dat uit, dan
   # weigert hij een start in plaats van hem stil aan te nemen.
@@ -80,7 +94,14 @@ while true; do
   if [ -n "${ANTWOORD}" ]; then
     ID="$(printf '%s' "${ANTWOORD}" | sed -n 's/.*"scenarioId":"\([^"]*\)".*/\1/p')"
     RUNID="$(printf '%s' "${ANTWOORD}" | sed -n 's/.*"runId":"\([^"]*\)".*/\1/p')"
-    [ -z "${ID}" ] || draai "${ID}" "${RUNID}"
+    if [ -n "${ID}" ]; then
+      if bezig; then
+        echo "runner: werk voor scenario ${ID} genegeerd — er loopt er al een" >&2
+      else
+        draai "${ID}" "${RUNID}" &
+        DEMO_PID=$!
+      fi
+    fi
   fi
 
   sleep "${INTERVAL}"

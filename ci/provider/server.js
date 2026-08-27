@@ -269,8 +269,28 @@ function lees(verzoek) {
   });
 }
 
+// Eén regel per verzoek: methode, pad, status, en het runId als er een in het spel is.
+//
+// **Waarom dit er is.** Op 27 augustus was de vraag "kwam mijn POST binnen" niet te
+// beantwoorden. Er was geen spoor van — niet van een 201, niet van een 409, niet van een
+// weigering. Het antwoord moest worden afgeleid uit de *afwezigheid* van een regel in het log
+// van de runner, en dat is geen bewijs maar een gevolgtrekking.
+//
+// Op het moment dat er tijdens een demo iets misgaat, is dit de enige vraag die gesteld
+// wordt. Het antwoord hoort te bestaan.
+function metLog(verzoek, antwoord, pad) {
+  const oorspronkelijk = antwoord.writeHead.bind(antwoord);
+  antwoord.writeHead = (status, ...rest) => {
+    const tijd = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+    const extra = antwoord.runIdVoorLog ? ` ${antwoord.runIdVoorLog}` : '';
+    console.log(`${tijd} ${verzoek.method} ${pad} ${status}${extra}`);
+    return oorspronkelijk(status, ...rest);
+  };
+}
+
 http.createServer(async (verzoek, antwoord) => {
   const pad = verzoek.url.split('?')[0];
+  metLog(verzoek, antwoord, pad);
 
   if (verzoek.method === 'GET' && pad === '/v1/runs/stream') return verbind(verzoek, antwoord);
 
@@ -343,6 +363,7 @@ http.createServer(async (verzoek, antwoord) => {
     }
 
     const runId = nieuwRunId();
+    antwoord.runIdVoorLog = runId;
     werk = { scenarioId: id, runId, gezet: Date.now() };
     return json(antwoord, 201, {
       runId,
@@ -384,5 +405,5 @@ http.createServer(async (verzoek, antwoord) => {
   console.log(`  scenario's uit de stamdata: ${Object.keys(SCENARIOS).join(', ')}`);
   console.log(`  stream op /v1/runs/stream — blijft open, jij sluit hem`);
   console.log(`  hartslag na ${HARTSLAG_MS / 1000}s stilte`);
-  console.log(`  POST /v1/runs ontbreekt in deze versie — zie O22`);
+  console.log(`  POST /v1/runs/{id}/afbreken ontbreekt in deze versie — zie O22`);
 });

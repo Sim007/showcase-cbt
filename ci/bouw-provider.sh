@@ -104,7 +104,7 @@ jq -n --arg versie "${VERSIE}" --arg groep "${GROEP}" \
        { artifact: $stream,   versie: $tversie }
      ],
      scenarios: $scenarios,
-     ontbreekt: ["POST /v1/runs — zie O22"]
+     ontbreekt: ["POST /v1/runs/{runId}/afbreken — zie O22"]
    }' > "${BOUW}/manifest.json"
 
 echo "stap 4: manifest met ${SCENARIO} ${SCENARIO_VERSIE} en ${STREAM} ${STREAM_VERSIE}"

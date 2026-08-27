@@ -45,7 +45,7 @@ BUNDELVERSIE=0.15.1
 
 # De provider heeft een eigen reeks, om dezelfde reden als de bundel: hij is gereedschap en
 # geen contract. Wat erin zit staat in zijn manifest.
-PROVIDERVERSIE=0.2.0
+PROVIDERVERSIE=0.2.1
 
 echo "== controle =="
 
@@ -159,6 +159,10 @@ echo "  stubbundel gebouwd"
   || fout "de provider bouwt niet meer"
 
 echo "  provider gebouwd"
+
+# Bouwen is niet hetzelfde als werken — dezelfde regel als bij de bundel. Deze toets bestond
+# niet: alles wat er over de provider gemeld is, was één keer met de hand gemeten.
+"${CBT_ROOT}/ci/toets-provider.sh" "${PROVIDERVERSIE}" | sed 's/^/  /'
 
 # --- 6b: de release-assets zijn te bouwen -------------------------------------------------
 #
