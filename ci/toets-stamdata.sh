@@ -32,7 +32,7 @@ fout() {
 
 GROEP="${CBT_STAMDATA_GROEP:-showcase-cbt}"
 ARTIFACT="${CBT_STAMDATA_ARTIFACT:-scenario-api}"
-VERSIE="${CBT_STAMDATA_VERSIE:-0.12.0}"
+VERSIE="${CBT_STAMDATA_VERSIE:-0.13.0}"
 
 STAMDATA="${CBT_ROOT}/stamdata/scenarios"
 STAMDATA_REL="stamdata/scenarios"

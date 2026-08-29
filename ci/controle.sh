@@ -33,7 +33,7 @@ STREAM=run-stream
 # Twee contracten, twee levenscycli. Ze stonden op één nummer zolang ze toevallig gelijk
 # liepen; sinds scenario-api 0.12.0 (het cli-veld geherformuleerd) lopen ze uiteen, en dan is
 # één VERSIE geen versimpeling meer maar een onwaarheid.
-SCENARIO_VERSIE=0.12.0
+SCENARIO_VERSIE=0.13.0
 STREAM_VERSIE=0.11.0
 
 # De bundel heeft een eigen nummer, en dat is niet netjes maar noodzakelijk: hij is afgeleid
@@ -41,11 +41,11 @@ STREAM_VERSIE=0.11.0
 # spec raakt is een patch van de bundel en van niets anders. Stond hier VERSIE, dan zou elke
 # stubwijziging om een contractversie vragen — precies wat "drie versies, elk hun eigen
 # levenscyclus" ontkent.
-BUNDELVERSIE=0.15.1
+BUNDELVERSIE=0.16.0
 
 # De provider heeft een eigen reeks, om dezelfde reden als de bundel: hij is gereedschap en
 # geen contract. Wat erin zit staat in zijn manifest.
-PROVIDERVERSIE=0.2.2
+PROVIDERVERSIE=0.3.0
 
 echo "== controle =="
 

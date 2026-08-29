@@ -25,7 +25,7 @@ cd "${CBT_ROOT}"
 
 NAAM="cbt-provider"
 POORT=8090
-VERSIE="${1:-0.2.2}"
+VERSIE="${1:-0.3.0}"
 
 if [ "${VERSIE}" = "--stop" ]; then
   pkill -f "${CBT_ROOT}/ci/runner.sh" 2>/dev/null || true

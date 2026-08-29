@@ -42,6 +42,10 @@ const HARTSLAG_MS = Number(process.env.HARTSLAG_MS || 20000);
 
 const data = JSON.parse(fs.readFileSync(path.join(HIER, 'provider-data.json'), 'utf8'));
 
+// Het manifest zegt welke versie dit is en welke specs erin zitten. Dat staat daar al voor de
+// levering; `GET /v1/info` maakt het opvraagbaar in plaats van alleen leesbaar in de image.
+const manifest = JSON.parse(fs.readFileSync(path.join(HIER, 'manifest.json'), 'utf8'));
+
 // De stamdata zit in de image en niet in een volume. Een scenario wijzigen is inhoud van de
 // showcase: nieuwe stamdata, nieuwe opname, nieuwe uitgave. Monteren zou de inhoud onder een
 // draaiende container laten veranderen zonder dat het versienummer meebeweegt.
@@ -319,6 +323,22 @@ http.createServer(async (verzoek, antwoord) => {
   }
 
   if (verzoek.method === 'GET' && pad === '/v1/runs/stream') return verbind(verzoek, antwoord);
+
+  // Wie hier staat, en waar wat je ziet vandaan komt. Zie O23: er stond vijf dagen een stub
+  // op deze poort terwijl iedereen aannam dat het de echte kant was, en niemand kon het aan
+  // een antwoord zien.
+  //
+  // `bron: pipeline` — de berichten ontstaan hier terwijl er werkelijk iets draait. Dat blijft
+  // zo ook nu `afbreken` nog ontbreekt: de herkomst van wat je ziet verandert niet doordat een
+  // operatie mist. Dat zou capaciteit beschrijven en geen herkomst.
+  if (verzoek.method === 'GET' && pad === '/v1/info') {
+    return json(antwoord, 200, {
+      naam: 'provider van showcase-CBT',
+      versie: manifest.providerversie,
+      bron: 'pipeline',
+      serveert: manifest.specs.map(({ artifact, versie }) => ({ artifact, versie })),
+    });
+  }
 
   if (verzoek.method === 'GET' && pad === '/v1/scenarios') {
     return json(antwoord, 200, LIJST);

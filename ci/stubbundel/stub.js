@@ -374,6 +374,18 @@ http.createServer(async (verzoek, antwoord) => {
     return json(antwoord, route.status, SCENARIOS[id]);
   }
 
+  // Wie hier staat, en waar wat je ziet vandaan komt. `bron: opname` — deze stub speelt
+  // vastgelegd materiaal af. Dat is geen bekentenis maar de hele reden dat dit veld bestaat:
+  // er stond vijf dagen een stub op de poort van de echte kant en niemand kon het zien.
+  if (route.operationId === 'haalInfo') {
+    return json(antwoord, route.status, {
+      naam: 'stubbundel van showcase-CBT',
+      versie: manifest.bundelversie,
+      bron: 'opname',
+      serveert: manifest.specs.map(({ artifact, versie }) => ({ artifact, versie })),
+    });
+  }
+
   if (route.operationId === 'lijstScenarios') {
     return json(antwoord, route.status, Object.values(SCENARIOS)
       .sort((a, b) => a.id.localeCompare(b.id))

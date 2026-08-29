@@ -114,6 +114,34 @@ for ID in 00 01; do
   echo "  ok    GET /v1/scenarios/${ID} geeft scenario ${ID} met ${GEZIEN_STAPPEN} stappen"
 done
 
+# --- wie zegt hij dat hij is ------------------------------------------------------------------
+#
+# De andere helft van wat in de provider staat. Een stub die `bron: pipeline` zou melden is
+# stil fout: het endpoint werkt en het antwoord liegt — en dan is dit veld erger dan geen veld,
+# want een kijker vertrouwt erop.
+#
+# Elke bewering hangt aan iets buiten zichzelf: de versie aan het manifest van de bundel,
+# `serveert` aan de specs daarin, en `bron` aan een eigenschap die te controleren is — deze
+# bundel draagt verlopen en speelt ze af, en dat is precies wat `opname` betekent.
+
+INFO="${WERK}/info.json"
+STATUS="$(curl -sS -o "${INFO}" -w '%{http_code}' "http://localhost:${POORT}/v1/info")"
+[ "${STATUS}" = "200" ] || fout "GET /v1/info gaf ${STATUS} en geen 200"
+
+[ "$(jq -r '.bron' < "${INFO}")" = "opname" ] \
+  || fout "de stub meldt bron $(jq -r '.bron' < "${INFO}") en niet opname — dan doet hij zich voor als de echte kant"
+
+verwacht_minstens "$(ls "${WERK}/bundel/runs" | wc -l | tr -d ' ')" 1 "verlopen die deze bundel afspeelt"
+
+[ "$(jq -r '.versie' < "${INFO}")" = "${VERSIE}" ] \
+  || fout "GET /v1/info meldt versie $(jq -r '.versie' < "${INFO}") en niet ${VERSIE}"
+
+jq -e --slurpfile m "build/bundeltoets/bundel/manifest.json" \
+  '.serveert == ($m[0].specs | map({artifact, versie}))' < "${INFO}" >/dev/null \
+  || fout "wat /v1/info zegt te serveren komt niet overeen met het manifest van de bundel"
+
+echo "  ok    GET /v1/info: ${VERSIE}, bron opname, $(jq -r '.serveert | length' < "${INFO}") contracten"
+
 # --- elk verloop dat meegaat, is gedekt en te spelen ------------------------------------------
 #
 # De bundel droeg in 0.14.0 twee echte opnames en speelde ze niet: hij negeerde zijn eigen

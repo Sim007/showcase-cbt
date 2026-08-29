@@ -36,6 +36,7 @@ POORT=8398
 NAAM="cbt-providertoets"
 POLL_PID=""
 WERK="${CBT_ROOT}/build/providertoets"
+WERK_REL="build/providertoets"
 rm -rf "${WERK}"; mkdir -p "${WERK}"
 
 docker rm -f "${NAAM}" >/dev/null 2>&1 || true
@@ -75,6 +76,39 @@ STATUS="$(curl -sS -o "${WERK}/onbekend.json" -w '%{http_code}' "http://localhos
 jq -e '.message | contains("07")' < "${WERK}/onbekend.json" >/dev/null \
   || fout "de 404 noemt niet het id dat gevraagd is"
 echo "  ok    een onbekend scenario geeft 404, met dat id erin"
+
+# --- wie zegt hij dat hij is ----------------------------------------------------------------
+#
+# **Niet alleen dát hij antwoordt, maar dat het antwoord waar is.** Een provider die
+# `bron: opname` zou melden is stil fout: het endpoint werkt, het antwoord liegt. Dat is de
+# klasse die deze maand twee keer opdook — de opstartregel die beweerde dat `POST /v1/runs`
+# ontbrak terwijl dat allang niet meer waar was, en de preflight die als argument werd
+# geciteerd terwijl deze provider hem niet nakwam.
+#
+# Daarom hangt elke bewering hier aan iets buiten de bewering zelf: de versie aan het manifest
+# in de image, `serveert` aan de specs in dat manifest, en `bron` aan een eigenschap die je
+# kunt nakijken — een provider draagt geen opnames, want hij speelt niets af.
+
+INFO="${WERK}/info.json"
+STATUS="$(curl -sS -o "${INFO}" -w '%{http_code}' "http://localhost:${POORT}/v1/info")"
+[ "${STATUS}" = "200" ] || fout "GET /v1/info gaf ${STATUS} en geen 200"
+
+[ "$(jq -r '.bron' < "${INFO}")" = "pipeline" ] \
+  || fout "de provider meldt bron $(jq -r '.bron' < "${INFO}") en niet pipeline — dan wijst hij de kijker de verkeerde herkomst aan"
+
+docker exec "${NAAM}" ls /provider/runs >/dev/null 2>&1 \
+  && fout "deze provider draagt opnames; dan is bron: pipeline niet vol te houden"
+
+[ "$(jq -r '.versie' < "${INFO}")" = "${VERSIE}" ] \
+  || fout "GET /v1/info meldt versie $(jq -r '.versie' < "${INFO}") en niet ${VERSIE}"
+
+docker exec "${NAAM}" cat /provider/manifest.json > "${WERK}/manifest.json" 2>/dev/null \
+  || fout "de image draagt geen manifest"
+jq -e --slurpfile m "${WERK_REL}/manifest.json" \
+  '.serveert == ($m[0].specs | map({artifact, versie}))' < "${INFO}" >/dev/null \
+  || fout "wat /v1/info zegt te serveren komt niet overeen met het manifest in de image"
+
+echo "  ok    GET /v1/info: ${VERSIE}, bron pipeline, $(jq -r '.serveert | length' < "${INFO}") contracten"
 
 # --- de preflight, want zonder hem komt de POST er nooit ----------------------------------------
 #
