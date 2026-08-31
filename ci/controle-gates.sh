@@ -67,6 +67,7 @@ vrijstelling_telling() {
     controle.sh)              echo "roept andere controles aan en velt zelf geen oordeel|2027-02-13" ;;
     runner.sh)                echo "voert uit wat gevraagd wordt en oordeelt niet; de gates zitten in wat hij start|2027-02-22" ;;
     start-provider.sh)        echo "zet twee processen neer, telt niets|2027-02-22" ;;
+    start-demo.sh)             echo "zet de omgeving neer voor de PO-sessie; oordeelt per voorwaarde (poort vrij, gezond), telt niets|2027-02-22" ;;
     deploy.sh)                echo "zet iets neer, telt niets|2027-02-13" ;;
     opruimen.sh)              echo "ruimt op, telt niets|2027-02-13" ;;
     opruimen-alles.sh)        echo "ruimt op, telt niets|2027-02-13" ;;
@@ -95,6 +96,7 @@ vrijstelling_uitvoering() {
     neem-op.sh)               echo "zet de gebeurtenissen van een échte run om; vraagt een gedraaide demo|2027-02-22" ;;
     runner.sh)                echo "wacht op werk en start demo's; draait zolang er gedemonstreerd wordt|2027-02-22" ;;
     start-provider.sh)        echo "zet provider en runner neer; vraagt een gebouwde image en een vrije poort|2027-02-22" ;;
+    start-demo.sh)             echo "zet showcase-cbt én showcase-website neer voor de PO-sessie; vraagt internet voor het compose-bestand van squad 2 en vrije poorten — te zwaar en te breed voor elke push|2027-02-22" ;;
     deploy.sh)                echo "zet een deelsysteem neer; vraagt gebouwde images|2027-02-13" ;;
     drift.sh)                 echo "bevraagt een draaiend deelsysteem|2027-02-13" ;;
     gebruikersflow.sh)        echo "Playwright tegen een draaiende keten|2027-02-13" ;;
@@ -146,6 +148,13 @@ bereik_van_controle() {
       _n="$(basename "${_s}")"
       case " ${_bereik} " in *" ${_n} "*) continue ;; esac
       for _b in ${_bereik}; do
+        # controle-gates.sh zelf telt niet mee als aanroeper, om dezelfde reden als bij de
+        # bereikbaarheidscheck verderop: de namen in de vrijstellingslijsten en in de
+        # aanroeppunten-case zijn een declaratie en geen aanroep. Zonder deze uitzondering
+        # neemt elk script dat hier genoemd wordt zichzelf op in het bereik van controle.sh —
+        # gemeten aan ci/start-demo.sh, dat op die manier vals als "draait mee" werd geteld
+        # in plaats van als vrijgesteld, ook nadat de vrijstelling ervoor stond.
+        [ "${_b}" = "controle-gates.sh" ] && continue
         _p="${CBT_ROOT}/ci/${_b}"
         [ -f "${_p}" ] || continue
         if grep -qF "/${_n}" "${_p}"; then
@@ -247,13 +256,16 @@ for script in ${SCRIPTS}; do
 
   # --- 4: bereikbaarheid ---
   #
-  # Een demo en controle.sh zijn aanroeppunten: daar begint iemand, dus die hoeven niet zelf
-  # te worden aangeroepen. Al het andere moet ergens vandaan komen.
+  # Een demo, controle.sh en start-demo.sh zijn aanroeppunten: daar begint iemand, dus die
+  # hoeven niet zelf te worden aangeroepen. start-demo.sh is dezelfde categorie als een
+  # scenario-demo — een mens typt hem, geen ander script — maar staat rechtstreeks in ci/ en
+  # niet onder een scenariomap, want hij zet geen scenario neer maar de omgeving waarin de
+  # PO er zelf een start. Al het andere moet ergens vandaan komen.
   #
   # Dit bestand telt niet mee als aanroeper: de namen in de vrijstellingslijsten zijn een
   # declaratie en geen aanroep, en zonder die uitzondering houdt de lijst zichzelf in stand.
   case "${KORT}" in
-    ci/controle.sh|*/demo/demo.sh) ;;
+    ci/controle.sh|ci/start-demo.sh|*/demo/demo.sh) ;;
     *)
       AANROEPERS=0
       for kandidaat in ${SCRIPTS}; do
