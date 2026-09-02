@@ -193,6 +193,22 @@ stap "3/5 — showcase-CBT bouwen"
   run-stream "${STREAM_VERSIE}" "${PROVIDERVERSIE}" >/dev/null \
   || fout "De image van showcase-CBT bouwde niet."
 
+# Het register was er alleen voor deze stap: publiceren en bouwen. De draaiende provider
+# leest zijn eigen manifest en de contracten die al in de image zitten — hij raakt het
+# register nooit meer aan.
+#
+# **Waarom dit omlaag moet en niet mag blijven staan.** Gemeten op 2026-09-02: scenario 00
+# hoort volledig zonder register te draaien — dat is het hele punt van dat scenario. De
+# gedeelde pipeline (ci/pipeline-ci.sh) beslist of hij de contractstappen uitvoert door te
+# kijken of het register bereikbaar ís, niet of er iets gepubliceerd staat. Bleef het hier
+# staan, dan zag scenario 00's eigen opruimstap het register wél (via een ander
+# compose-project dan waarmee dit script het start, dus opruimen-alles.sh kon het niet zelf
+# afsluiten), en probeerde de pipeline payment-api tegen een spec te toetsen die scenario 00
+# nooit publiceert. Drift viel dan rood, en alles erna "niet uitgevoerd, pipeline gestopt" —
+# een storing die niets met scenario 00 zelf te maken had.
+docker compose -p registry -f compose/registry.yml down >/dev/null 2>&1 \
+  || fout "Het register kon niet worden afgesloten na het bouwen. Draai dit script opnieuw."
+
 stap "4/5 — showcase-CBT starten"
 "${CBT_ROOT}/ci/start-provider.sh" "${PROVIDERVERSIE}" >/dev/null \
   || fout "showcase-CBT startte niet."
