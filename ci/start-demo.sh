@@ -52,9 +52,10 @@ PROVIDERVERSIE=0.3.0
 
 # De tag van showcase-website is hún levering, niet de onze — er is geen manier om "de
 # nieuwste bevestigd werkende" hier automatisch af te leiden. Laatst geverifieerd op
-# 2026-08-31 (zie de smoke-test in docs/besluiten.md). Controleer bij twijfel bij squad 2 of
+# 2026-09-03: v0.1.1 draagt het herkomst-werk (GET /v1/info in de indicator, de datum per
+# rapportrij) waar demo-20260824b nog niets van had. Controleer bij twijfel bij squad 2 of
 # er een nieuwere is voordat je dit wijzigt.
-WEBSITE_TAG="demo-20260824b"
+WEBSITE_TAG="v0.1.1"
 WEBSITE_COMPOSE_URL="https://raw.githubusercontent.com/Sim007/showcase-website/master/docker-compose.release.yml"
 
 POORT_WEBSITE=5173
@@ -235,6 +236,46 @@ stap "5/5 — showcase-website starten"
 mkdir -p "${WEBSITE_MAP}"
 curl -fsSL -o "${WEBSITE_MAP}/docker-compose.release.yml" "${WEBSITE_COMPOSE_URL}" \
   || fout "Het compose-bestand van showcase-website kon niet opgehaald worden. Is er internet?"
+
+# De image expliciet ophalen en niet aan `compose up` overlaten: zo controleren we het
+# versielabel vóórdat er iets start, in plaats van een verkeerde build op te starten en dat
+# pas daarna te ontdekken.
+WEBSITE_CLIENT="ghcr.io/sim007/showcase-website/client:${WEBSITE_TAG}"
+WEBSITE_SERVER="ghcr.io/sim007/showcase-website/server:${WEBSITE_TAG}"
+docker pull -q "${WEBSITE_CLIENT}" >/dev/null 2>&1 \
+  || fout "De image ${WEBSITE_CLIENT} kon niet opgehaald worden. Controleer de tag bij squad 2 of check de internetverbinding."
+docker pull -q "${WEBSITE_SERVER}" >/dev/null 2>&1 \
+  || fout "De image ${WEBSITE_SERVER} kon niet opgehaald worden. Controleer de tag bij squad 2 of check de internetverbinding."
+
+# De image draagt zijn eigen versienummer als OCI-label, sinds v0.1.1. Vergelijken met wat
+# dit script verwacht (WEBSITE_TAG) is een echte controle en geen aanname — dat de tag
+# klopt betekent niet dat de image ook zegt wie hij is.
+#
+# Twee gevallen, en ze krijgen een eigen melding. Een verkéérd nummer is een andere build
+# dan verwacht: de tag is verzet of dit script loopt achter. Een léég label is geen lokale
+# build maar een oude image, van vóór dit label bestond — dat onderscheid moet de PO kunnen
+# maken, want "geen label" en "verkeerd label" vragen een ander vervolg.
+controleer_versielabel() {
+  _image="$1"
+  _naam="$2"
+  _versie="$(docker inspect -f '{{ index .Config.Labels "org.opencontainers.image.version" }}' "${_image}" 2>/dev/null || true)"
+
+  if [ -z "${_versie}" ]; then
+    fout "De ${_naam}-image van showcase-website (${_image}) draagt geen versielabel. Dat
+betekent dat dit een oude image is, van vóór squad 2's herkomst-werk — niet een lokale
+build. Vraag squad 2 of ${WEBSITE_TAG} nog de juiste tag is."
+  fi
+
+  if [ "${_versie}" != "${WEBSITE_TAG}" ]; then
+    fout "De ${_naam}-image van showcase-website meldt versie ${_versie}, dit script
+verwacht ${WEBSITE_TAG}. Dat is een andere build dan waarvoor dit script is ingesteld.
+Vraag squad 2 welke tag nu de juiste is voordat je verdergaat."
+  fi
+}
+
+controleer_versielabel "${WEBSITE_CLIENT}" client
+controleer_versielabel "${WEBSITE_SERVER}" server
+
 ( cd "${WEBSITE_MAP}" && TAG="${WEBSITE_TAG}" docker compose -f docker-compose.release.yml up -d >/dev/null 2>&1 ) \
   || fout "showcase-website startte niet."
 
